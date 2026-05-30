@@ -1,16 +1,34 @@
 # Godspeed Agent Harness
 
-Godspeed Agent Harness is a local-first Claude Code plugin and Python runtime for horizon-centric cybernetic navigation. It turns desired directions into horizon checks, affordance candidates, payment estimates, settlement events, developmental memory, and runtime validation.
+Godspeed Agent Harness is a local-first Claude Code plugin and Python runtime for horizon-centric cybernetic navigation. It turns desired directions into horizon checks, affordance review, payment estimates, settlement events, developmental memory, and runtime validation.
 
 The harness is developmental rather than arrival-centric. In this project, outcome completion is not terminal: a settled outcome becomes substrate and should expose new affordances.
+
+The doctrine in `tmp/cogos.md` is not outcome-dismissive. Outcomes matter because they are settlement events: they reveal consequence, produce error-correction data, and become developmental memory for the next loop.
+
+The current repository implements the local-first developmental harness and the core cognitive-runtime layers described in `tmp/cogos.md`: explicit representational-state handling, path dependency, environment and identity deltas, repetition scheduling, developmental memory lineage, and runtime-owned self-critique.
 
 ## What It Does
 
 - Converts desired-direction language into an explicit navigation loop.
 - Distinguishes potentials, possibilities, affordances, capabilities, and substrate.
+- Treats affordances as spendable paths, not merely visible destinations.
 - Records payment, settlement, trajectory, and developmental memory in local ledgers.
 - Exposes runtime and review workflows through a Python CLI, hooks, MCP servers, and skill packages.
 - Keeps the system open to self-critique so doctrine can be revised when it fails settlement.
+
+## Doctrine Alignment
+
+The manifesto in `tmp/cogos.md` sharpens several rules that govern this repository:
+
+- Horizon expansion is the primary metric, but resources, affordance inventory, affordance utilization, and horizon expansion are not the same thing.
+- Representational movement matters. General/specific and abstract/concrete are not casual labels; they describe how the observer is currently representing the problem and what adjacent move is affordable next.
+- Opposites are usually not directly spendable. The path between states matters more than the declared destination.
+- Outcome, payment, settlement, repetition, and metabolization are coupled. Explanation, access, or simulation are not proof of capability.
+- Positive disintegration requires both dissolution and salvage. Destruction alone is not development.
+- Self-critique is mandatory. Doctrine, policy, and runtime behavior remain subject to revision when they fail settlement.
+
+The target-state contract lives in `docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md`, and the bridge plan from the earlier harness substrate to that target lives in `docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md`. The main bridge milestones are now implemented and validated through the runtime, hooks, MCP, reports, and enterprise-readiness audit.
 
 ## Package
 
@@ -52,10 +70,14 @@ The harness operationalizes the same loop described in the doctrine:
 
 1. Start a desired direction.
 2. Review the visible horizon.
-3. Rank spendable affordances.
-4. Record payment and settlement.
-5. Review developmental reports and metabolization signals.
-6. Expand the horizon and repeat.
+3. Distinguish spendable paths from visible-but-unaffordable possibilities.
+4. Estimate payment before acting.
+5. Record outcome and settlement based on consequence.
+6. Review developmental reports, trajectory, and metabolization signals.
+7. Repeat or adjust until capability stabilizes.
+8. Expand the horizon and continue from the new substrate.
+
+The fuller doctrine described in `tmp/cogos.md` inserts an explicit representational-state check and affordance-path identification step between horizon review and action. The current runtime now models that layer directly and exposes it through public operator surfaces.
 
 Sample commands:
 
@@ -93,6 +115,8 @@ The CLI exposes deterministic and workflow-grade commands.
 - `developmental-report` summarizes settlement quality, payment burden, trajectory, and active directions.
 - `validate` runs an enterprise-readiness audit over package shape, config, storage, hooks, MCP, runtime, and reports.
 
+These surfaces implement the cognitive-runtime substrate directly. Representational state, transition policy, explicit affordance paths, identity-state accounting, repetition backlog, developmental memory lineage, and runtime-owned self-critique are now inspectable through the public surfaces.
+
 ## Implementation-defined Behavior
 
 Implementation-defined defaults are documented in `HARNESS.md`. This implementation uses `.godspeed-harness` as the local storage root, JSONL ledgers, Python deterministic computation, and a default maximum payment burden of `100`.
@@ -105,12 +129,14 @@ No external API calls by default. MCP tools and hook scripts operate on local in
 - `HARNESS.md` documents the active policy defaults and implementation-defined behavior.
 - `docs/references/` contains the operator-facing ledger, schema, CLI, policy, report, and workflow references.
 - `docs/runbooks/` documents installation, configuration, backup and restore, incident recovery, and release readiness.
-- `docs/plans/` captures implementation and hardening plans.
+- `docs/plans/` captures implementation, hardening, and target-state bridge plans.
 - `docs/understanding/` captures the doctrine and enterprise framing that shaped the runtime.
 
 ## Self-Critique
 
 The harness doctrine is not protected from review. Use the `framework-reconstruction` skill when doctrine, policy, skills, or navigation assumptions fail settlement. Failed structure should dissolve or be replaced, and repeated successful patterns should become substrate.
+
+The manifesto's falsification rule applies here: if repeated use does not produce observable horizon expansion or capability formation, if payment and settlement stop correlating with capability, or if the framework cannot identify its own blind spots, the relevant surface should be revised rather than defended.
 
 ## Verification
 
@@ -127,40 +153,6 @@ uv run pytest tests/test_docs_alignment.py -q
 uv run pytest tests/test_cli_hooks_mcp.py -q
 uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .godspeed-harness/validation
 ```
-
-Sample CLI:
-
-````bash
-uv run python -m godspeed_nav.cli compute-error --desired '{"tests": 3}' --observed '{"tests": 1}'
-```# Godspeed Agent Harness
-
-Godspeed Agent Harness is a local-first Claude Code plugin and Python harness for horizon-centric cybernetic navigation. It converts desired directions into horizon checks, affordance candidates, payment estimates, settlement events, and developmental memory.
-
-Outcome completion is not terminal. A settled outcome becomes substrate and should expose new affordances.
-
-## Package
-
-- `.claude-plugin/plugin.json` contains plugin identity metadata.
-- `skills/`, `agents/`, `hooks/`, `mcp/`, `monitors/`, `bin/`, and settings files live at plugin root level.
-- `godspeed_nav/` contains deterministic local computation and storage code.
-
-## Implementation-defined Behavior
-
-Implementation-defined defaults are documented in `HARNESS.md`. This implementation uses `.godspeed-harness` as the local storage root, JSONL ledgers, Python deterministic computation, and a default maximum payment burden of `100`.
-
-No external API calls by default. MCP tools and hook scripts operate on local input, local computation, and configured local storage.
-
-## Self-Critique
-
-The harness doctrine is not protected from review. Use the `framework-reconstruction` skill when doctrine, policy, skills, or navigation assumptions fail settlement. Failed structure should dissolve or be replaced, and repeated successful patterns should become substrate.
-
-## Verification
-
-Run:
-
-```bash
-uv run pytest -q
-````
 
 Sample CLI:
 

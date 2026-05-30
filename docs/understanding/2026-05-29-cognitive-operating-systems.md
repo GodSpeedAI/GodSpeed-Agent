@@ -206,16 +206,46 @@ If this documentation is being expanded next, the highest-value order is:
 
 ## Verified Gap Status
 
-The earlier gap summary is now partly stale. Several of the foundational concerns it named are no longer open gaps.
+The earlier gap summary is now mostly historical. The bridge-plan milestones have converted the main cognitive-runtime gaps into executable runtime surfaces.
 
-- Runtime orchestration is Mostly resolved through `NavigationRuntime`, workflow-grade CLI commands, and enterprise validation.
-- Storage durability is Mostly resolved for the current scale through checksummed event envelopes, indexes, backups, quarantine handling, and migration status.
-- Runbooks, release checks, and enterprise validation are Mostly resolved as operating surfaces, even though the operator reference layer is still missing.
+- Runtime orchestration is Mostly resolved through `NavigationRuntime`, workflow-grade CLI commands, hooks, MCP, and enterprise validation.
+- Storage durability is Mostly resolved for the current scale through checksummed event envelopes, indexes, backups, quarantine handling, migration status, and lineage-style developmental memory queries.
+- The operator reference layer is Mostly resolved through ledger, schema, CLI, policy, report, and workflow references.
+- Representational state, representational transition policy, explicit affordance paths, environment and identity deltas, repetition scheduling, developmental memory lineage, and self-critique are now real runtime-owned surfaces.
 
-The remaining gaps are narrower and more important than the old broad list:
+Still a gap:
 
-- Desired direction, horizon, affordance, payment, settlement, and trajectory are connected, but repetition and metabolization are still only thinly owned by the runtime.
-- CLI workflow commands exist, but the operator-facing reference layer is still missing, especially ledger, schema, policy, report, and end-to-end workflow documentation.
-- Hook events now record payment, settlement, trajectory, and reports, but they are not yet reconciled into one fully explainable session flow from prompt hypothesis through stop-time review.
-- Positive disintegration and absorption are still a gap because their review artifacts and policy reasoning remain too thin for enterprise scrutiny.
-- Future ML-era retrieval may justify a richer local data layer, but that should be an explicit storage-evolution decision rather than an implicit rewrite of the JSONL truth surface.
+- Positive disintegration and absorption remain thinner than the final doctrine wants, even though the review artifacts now exist.
+- The current storage substrate is intentionally JSONL-first; richer local retrieval remains a future storage-evolution decision only if settlement pressure justifies it.
+
+## Bridge To The Target State
+
+The repository began this bridge with a strong current harness substrate and several missing cognitive-runtime layers. That bridge has now been implemented as code rather than left as prose intent.
+
+The target-state cognitive operating system spec lives in `docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md`, and the execution record for closing that delta lives in `docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md`.
+
+The key bridge surfaces are now present together:
+
+- `RepresentationalState` is a first-class runtime surface.
+- `RepresentationalTransition` review and opposition-jump blocking are enforced deterministically.
+- Horizon review persists explicit spendable affordance paths instead of only ranking destinations.
+- Settlement records include identity delta, future constraints, and future affordances.
+- Repetition is scheduled as a runtime primitive rather than only inferred retrospectively.
+- Developmental memory has lineage-oriented query surfaces.
+- Runtime self-critique writes executable findings and validation can falsify doctrine drift.
+
+The correct claim now is no longer that these layers are missing. The correct claim is that the repository materially embodies the manifesto's main cognitive-runtime contract while still remaining open to revision through future settlement.
+
+## Final Settlement Audit
+
+Against `tmp/cogos.md`, the target-state spec, and the public runtime surfaces, the repository now demonstrates the required local-first cognitive operating system pattern:
+
+- desired direction selects the active attractor
+- representational state and transition policy constrain what moves are lawful next
+- affordance paths distinguish spendable routes from visible destinations
+- payment and settlement remain the truth surface
+- repeated settled action becomes explicit lifecycle state, repetition planning, and substrate candidates
+- developmental memory preserves how the runtime became what it is
+- self-critique remains executable and falsifiable
+
+That does not mean the framework is finished forever. It means the manifesto's core outcome has crossed from aspiration into runtime-owned, operator-visible capability.
