@@ -34,3 +34,20 @@ def compute_metabolization(
         "status_recommendation": "substrate_candidate" if score >= 0.75 and not missing else "not_metabolized",
         "missing_evidence": missing,
     }
+
+
+def plan_repetition(
+    affordance_id: str,
+    capability_status: str,
+    variation_coverage: int,
+    circular_motion: bool = False,
+) -> dict[str, Any]:
+    return {
+        "affordance_id": affordance_id,
+        "status": "satisfied" if capability_status == "substrate_candidate" else "scheduled",
+        "trigger": "successful_not_metabolized_settlement",
+        "variation_coverage": variation_coverage,
+        "next_condition": "changed_conditions",
+        "recommended_delay": "next_affordable_variation",
+        "critique_escalation": "circular_motion" if circular_motion else None,
+    }

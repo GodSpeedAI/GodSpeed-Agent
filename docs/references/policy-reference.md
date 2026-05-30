@@ -77,6 +77,10 @@ These keep the runtime aligned with the doctrine in which outcomes are temporary
 
 ## Operator Rule
 
+Self-critique is part of the policy surface. If the runtime starts rotating without radial growth, if settlement gets mistaken for simulation, or if docs and runtime drift apart, the correct response is to treat that as a revision trigger rather than a reporting inconvenience.
+
+Simulation is not settlement and simulation is not capability evidence.
+
 If a policy setting changes in `HARNESS.md`, rerun:
 
 ```bash

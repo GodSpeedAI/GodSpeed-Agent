@@ -78,6 +78,12 @@ uv run godspeed-nav record-settlement \
 
 Returns current ledger counts, active directions, and latest trajectory.
 
+### `cognitive-surfaces`
+
+Returns the newest public cognitive-runtime surfaces in one payload: latest representational state and transition, latest affordance path, latest settlement, repetition backlog, critique backlog, and identity state.
+
+Use this when you need the operator-facing cognition surface instead of individual ledger reads.
+
 ### `absorbability`
 
 Reads the workspace safety policy before deciding whether an absorption review requires human approval.

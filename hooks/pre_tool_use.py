@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.metrics import estimate_payment
 from godspeed_nav.policies import enforce_payment_policy
+from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.schemas import now_iso
 from hooks.common import read_stdin_json, write_stdout_json
 from hooks.common import get_policy, get_session_context, get_storage
@@ -35,6 +36,7 @@ def main() -> int:
     candidate_status = _candidate_status(event, payment, policy_decision.decision)
     session_context = get_session_context(event)
     storage = get_storage(event)
+    report = generate_developmental_report(storage.root)
     storage.append_event(
         "tool_payments",
         {
@@ -56,6 +58,10 @@ def main() -> int:
             "candidate_status": candidate_status,
             "session_context": session_context,
             "policy_decision": policy_decision.to_dict(),
+            "backlogs": {
+                "repetition": report.get("repetition", {}).get("schedule_count", 0),
+                "critique": report.get("self_critique", {}).get("finding_count", 0),
+            },
         }
     )
     return 0

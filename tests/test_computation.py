@@ -9,6 +9,7 @@ from godspeed_nav.metrics import (
     compute_error,
     estimate_payment,
     rank_affordances,
+    review_representational_transition,
     score_settlement,
 )
 from godspeed_nav.ml import (
@@ -42,6 +43,58 @@ def test_estimate_payment_computes_weighted_norm_and_spendability():
     assert result["capacity_norm"] == pytest.approx(10)
     assert result["spendability"] == "affordable"
     assert result["dominant_cost"] == "risk"
+
+
+def test_representational_transition_prices_distance_and_blocks_unearned_opposition_jumps():
+    adjacent = review_representational_transition(
+        current_state={
+            "scope_position": "general",
+            "mode_of_givenness_position": "abstract",
+            "phase": "general",
+        },
+        target_state={
+            "scope_position": "general",
+            "mode_of_givenness_position": "abstract",
+            "phase": "abstract",
+        },
+        capacity=1.5,
+    )
+    blocked = review_representational_transition(
+        current_state={
+            "scope_position": "general",
+            "mode_of_givenness_position": "abstract",
+            "phase": "general",
+        },
+        target_state={
+            "scope_position": "specific",
+            "mode_of_givenness_position": "abstract",
+            "phase": "specific",
+        },
+        capacity=2.0,
+    )
+    metabolized = review_representational_transition(
+        current_state={
+            "scope_position": "general",
+            "mode_of_givenness_position": "abstract",
+            "phase": "general",
+        },
+        target_state={
+            "scope_position": "specific",
+            "mode_of_givenness_position": "abstract",
+            "phase": "specific",
+        },
+        capacity=2.0,
+        metabolized_shortcuts=["general->specific"],
+    )
+
+    assert adjacent["is_adjacent"] is True
+    assert adjacent["status"] == "affordable"
+    assert adjacent["distance_cost"] == pytest.approx(0.0)
+    assert blocked["is_opposition_jump"] is True
+    assert blocked["status"] == "blocked"
+    assert blocked["code"] == "blocked_opposition_jump"
+    assert blocked["recommended_next_phases"] == ["abstract", "concrete"]
+    assert metabolized["status"] == "metabolized"
 
 
 def test_score_settlement_rejects_intent_only_evidence():

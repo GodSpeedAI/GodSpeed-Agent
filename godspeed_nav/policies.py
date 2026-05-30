@@ -67,3 +67,21 @@ def enforce_disintegration_review(
             "Disintegration requires human review before execution.",
         )
     return PolicyDecision("allow", "human_review_not_required", "Disintegration review gate is disabled.")
+
+
+def enforce_representational_transition_policy(
+    transition: dict[str, Any],
+    policy: dict[str, Any] | None = None,
+) -> PolicyDecision:
+    del policy
+    if transition.get("status") == "blocked":
+        return PolicyDecision(
+            "block",
+            str(transition.get("code", "blocked_transition")),
+            "Representational transition is not currently spendable.",
+        )
+    return PolicyDecision(
+        "allow",
+        str(transition.get("code", "affordable_transition")),
+        "Representational transition is currently spendable.",
+    )

@@ -18,6 +18,8 @@ NEGATIVE_POLARITY_TOKENS = {
     "latency",
 }
 
+PHASE_ORDER = ["general", "abstract", "specific", "concrete"]
+
 
 def _classify_evidence(evidence: list[Any]) -> tuple[list[str], list[str]]:
     accepted: list[str] = []
@@ -195,7 +197,8 @@ def rank_affordances(
             continue
         burden = max(payment.get("payment_burden", 0), 0.000001)
         risk = max(candidate.get("risk", 0), 0)
-        score = candidate.get("expected_horizon_delta", 0) / (burden * (1 + risk))
+        pathway_quality = float(candidate.get("pathway_quality", 0.5))
+        score = (candidate.get("expected_horizon_delta", 0) * pathway_quality) / (burden * (1 + risk))
         ranked.append({**candidate, "rank_score": score})
 
     ranked.sort(key=lambda item: item["rank_score"], reverse=True)
@@ -203,4 +206,77 @@ def rank_affordances(
         "ranked_affordances": ranked,
         "next_recommended_affordance": ranked[0] if ranked else None,
         "rejected_candidates": rejected,
+    }
+
+
+def review_representational_transition(
+    current_state: dict[str, Any],
+    target_state: dict[str, Any],
+    capacity: float,
+    metabolized_shortcuts: list[str] | None = None,
+) -> dict[str, Any]:
+    metabolized_shortcuts = metabolized_shortcuts or []
+    scope_shift = 0.0 if current_state.get("scope_position") == target_state.get("scope_position") else 1.0
+    embodiment_shift = (
+        0.0
+        if current_state.get("mode_of_givenness_position") == target_state.get("mode_of_givenness_position")
+        else 1.0
+    )
+    distance_cost = math.sqrt(scope_shift**2 + embodiment_shift**2)
+
+    current_phase = str(current_state.get("phase", "general"))
+    target_phase = str(target_state.get("phase", current_phase))
+    current_index = PHASE_ORDER.index(current_phase)
+    target_index = PHASE_ORDER.index(target_phase)
+    phase_gap = (target_index - current_index) % len(PHASE_ORDER)
+    is_adjacent = phase_gap in {1, len(PHASE_ORDER) - 1}
+    is_opposition_jump = phase_gap == 2
+    shortcut_key = f"{current_phase}->{target_phase}"
+
+    if is_opposition_jump and shortcut_key not in metabolized_shortcuts:
+        return {
+            "current_state": current_state,
+            "target_state": target_state,
+            "scope_shift": scope_shift,
+            "embodiment_shift": embodiment_shift,
+            "distance_cost": distance_cost,
+            "continuity_risk": 1.0,
+            "is_adjacent": False,
+            "is_opposition_jump": True,
+            "status": "blocked",
+            "code": "blocked_opposition_jump",
+            "recommended_next_phases": [
+                PHASE_ORDER[(current_index + 1) % len(PHASE_ORDER)],
+                PHASE_ORDER[(current_index - 1) % len(PHASE_ORDER)],
+            ],
+        }
+
+    if distance_cost > capacity:
+        return {
+            "current_state": current_state,
+            "target_state": target_state,
+            "scope_shift": scope_shift,
+            "embodiment_shift": embodiment_shift,
+            "distance_cost": distance_cost,
+            "continuity_risk": 0.75,
+            "is_adjacent": is_adjacent,
+            "is_opposition_jump": is_opposition_jump,
+            "status": "blocked",
+            "code": "representational_capacity_exceeded",
+            "recommended_next_phases": [PHASE_ORDER[(current_index + 1) % len(PHASE_ORDER)]],
+        }
+
+    status = "metabolized" if shortcut_key in metabolized_shortcuts and is_opposition_jump else "affordable"
+    return {
+        "current_state": current_state,
+        "target_state": target_state,
+        "scope_shift": scope_shift,
+        "embodiment_shift": embodiment_shift,
+        "distance_cost": distance_cost,
+        "continuity_risk": 0.25 if is_adjacent else 0.5,
+        "is_adjacent": is_adjacent,
+        "is_opposition_jump": is_opposition_jump,
+        "status": status,
+        "code": "metabolized_shortcut" if status == "metabolized" else "affordable_transition",
+        "recommended_next_phases": [],
     }

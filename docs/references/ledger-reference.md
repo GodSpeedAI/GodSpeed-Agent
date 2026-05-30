@@ -15,6 +15,7 @@ Core methods:
 - `append_event`: write an enveloped event record with sequence, timestamp, and checksum.
 - `read_events`: read and verify enveloped event records.
 - `read_event_by_record_id`: resolve an event through the ledger index.
+- `query_developmental_memory`: answer lineage questions over the existing ledger truth.
 - `export_backup`: export all ledger files plus `manifest.json`.
 - `migration_status`: verify the storage manifest schema version.
 
@@ -77,3 +78,4 @@ These ledgers are written by hook surfaces and use `append_event`.
 - Read `payments` and `settlements` together when judging whether an affordance was truly affordable and truly settled.
 - Read `horizon_reviews` and `trajectories` together when judging whether the system is expanding the horizon or rotating in place.
 - Prefer `read_events` over raw line parsing for event ledgers because it enforces checksum validation.
+- Use `query_developmental_memory` when the operator needs lineage answers such as what path was paid for, what failed to settle, which capabilities became substrate, or which critique findings were later revised.

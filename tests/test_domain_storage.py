@@ -8,11 +8,14 @@ from godspeed_nav.schemas import (
     Capability,
     DesiredDirection,
     DomainRuleError,
+    IdentityState,
     PaymentEstimate,
     Possibility,
     Potential,
+    RepresentationalState,
     SettlementEvent,
     Substrate,
+    infer_capability_lifecycle,
 )
 from godspeed_nav.storage import LedgerStore
 
@@ -113,6 +116,51 @@ def test_desired_direction_can_die_and_request_affordance_review():
     assert dead.status == "dead"
     assert dead.needs_affordance_review is True
     assert "No longer" in dead.pressure_notes
+
+
+def test_representational_state_records_quadrant_and_phase():
+    state = RepresentationalState(
+        id="rep-1",
+        direction_id="dir-1",
+        scope_position="general",
+        mode_of_givenness_position="abstract",
+        phase="general",
+        radius=1.0,
+        confidence=0.8,
+    )
+
+    assert state.embodiment_position == "abstract"
+    assert state.quadrant == "general_abstract"
+    assert state.phase == "general"
+
+
+def test_capability_lifecycle_inference_distinguishes_latent_active_repeated_metabolized_brittle_and_retired():
+    assert infer_capability_lifecycle(settlement_count=0, stability=0.0, metabolization_score=0.0) == "latent"
+    assert infer_capability_lifecycle(settlement_count=1, stability=0.9, metabolization_score=0.2) == "active"
+    assert infer_capability_lifecycle(settlement_count=2, stability=0.9, metabolization_score=0.4) == "repeated"
+    assert infer_capability_lifecycle(settlement_count=3, stability=0.9, metabolization_score=0.8) == "metabolized"
+    assert infer_capability_lifecycle(settlement_count=3, stability=0.4, metabolization_score=0.3) == "brittle"
+    assert infer_capability_lifecycle(
+        settlement_count=3,
+        stability=0.9,
+        metabolization_score=0.8,
+        retired=True,
+    ) == "retired"
+
+
+def test_identity_state_aggregates_runtime_posture_and_lock_in_risks():
+    identity = IdentityState(
+        id="ident-1",
+        active_direction_ids=["dir-1"],
+        capability_ids=["cap-1", "cap-2"],
+        substrate_ids=["sub-1"],
+        lock_in_risks=["docs-only optimization"],
+    )
+
+    assert identity.active_direction_ids == ["dir-1"]
+    assert identity.capability_ids == ["cap-1", "cap-2"]
+    assert identity.substrate_ids == ["sub-1"]
+    assert identity.lock_in_risks == ["docs-only optimization"]
 
 
 def test_json_schemas_exist_for_required_domain_entities():

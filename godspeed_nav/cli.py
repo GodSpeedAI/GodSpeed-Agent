@@ -70,6 +70,14 @@ def build_parser() -> argparse.ArgumentParser:
     rank_parser.add_argument("--candidates", type=_json_list_arg, required=True)
     rank_parser.add_argument("--payments", type=_json_arg, required=True)
 
+    transition_parser = subcommands.add_parser("review-representational-transition")
+    transition_parser.add_argument("--workspace-root", default=".")
+    transition_parser.add_argument("--storage-root", default=".godspeed-harness")
+    transition_parser.add_argument("--current-state", type=_json_arg, required=True)
+    transition_parser.add_argument("--target-state", type=_json_arg, required=True)
+    transition_parser.add_argument("--capacity", type=float, required=True)
+    transition_parser.add_argument("--metabolized-shortcuts", type=_json_list_arg, default=[])
+
     settlement_parser = subcommands.add_parser("score-settlement")
     settlement_parser.add_argument("--before", type=_json_arg, required=True)
     settlement_parser.add_argument("--after", type=_json_arg, required=True)
@@ -104,6 +112,25 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_snapshot_parser = subcommands.add_parser("runtime-snapshot")
     runtime_snapshot_parser.add_argument("--workspace-root", default=".")
     runtime_snapshot_parser.add_argument("--storage-root", default=".godspeed-harness")
+
+    cognitive_surfaces_parser = subcommands.add_parser("cognitive-surfaces")
+    cognitive_surfaces_parser.add_argument("--workspace-root", default=".")
+    cognitive_surfaces_parser.add_argument("--storage-root", default=".godspeed-harness")
+
+    repetition_parser = subcommands.add_parser("repetition-plan")
+    repetition_parser.add_argument("--workspace-root", default=".")
+    repetition_parser.add_argument("--storage-root", default=".godspeed-harness")
+
+    representational_state_parser = subcommands.add_parser("set-representational-state")
+    representational_state_parser.add_argument("--workspace-root", default=".")
+    representational_state_parser.add_argument("--storage-root", default=".godspeed-harness")
+    representational_state_parser.add_argument("--direction-id", required=True)
+    representational_state_parser.add_argument("--scope-position", required=True)
+    representational_state_parser.add_argument("--mode-of-givenness-position", required=True)
+    representational_state_parser.add_argument("--phase", required=True)
+    representational_state_parser.add_argument("--radius", type=float, required=True)
+    representational_state_parser.add_argument("--confidence", type=float, required=True)
+    representational_state_parser.add_argument("--embodiment-position", default=None)
 
     start_direction_parser = subcommands.add_parser("start-direction")
     start_direction_parser.add_argument("--workspace-root", default=".")
@@ -158,6 +185,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         return estimate_payment(args.costs, args.weights, args.capacities)
     if args.command == "rank-affordances":
         return rank_affordances(args.candidates, args.payments)
+    if args.command == "review-representational-transition":
+        return _configured_runtime(args.workspace_root, args.storage_root).review_representational_transition(
+            current_state=args.current_state,
+            target_state=args.target_state,
+            capacity=args.capacity,
+            metabolized_shortcuts=args.metabolized_shortcuts,
+        )
     if args.command == "score-settlement":
         return score_settlement(
             args.before,
@@ -188,6 +222,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
     if args.command == "runtime-snapshot":
         return _configured_runtime(args.workspace_root, args.storage_root).snapshot()
+    if args.command == "cognitive-surfaces":
+        return _configured_runtime(args.workspace_root, args.storage_root).cognitive_surfaces()
+    if args.command == "repetition-plan":
+        return {
+            "repetition": generate_developmental_report(
+                _configured_storage_root(args.workspace_root, args.storage_root)
+            ).get("repetition", {"schedule_count": 0, "latest": None})
+        }
+    if args.command == "set-representational-state":
+        return _configured_runtime(args.workspace_root, args.storage_root).set_representational_state(
+            direction_id=args.direction_id,
+            scope_position=args.scope_position,
+            mode_of_givenness_position=args.mode_of_givenness_position,
+            phase=args.phase,
+            radius=args.radius,
+            confidence=args.confidence,
+            embodiment_position=args.embodiment_position,
+        )
     if args.command == "start-direction":
         return _configured_runtime(args.workspace_root, args.storage_root).start_direction(
             label=args.label,

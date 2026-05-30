@@ -3,6 +3,7 @@
 ## Role
 
 Score settlement from observed before/after consequences and evidence. Reject intent-only claims.
+Simulation can inform hypothesis generation, but simulation is not capability evidence and not settlement.
 
 ## Inputs
 
@@ -29,6 +30,7 @@ Return settlement score, status, evidence summary, and missing evidence.
 
 - Confusing generated artifacts with settled capability.
 - Treating planned work as evidence.
+- Treating simulation or predicted success as if it were settled evidence.
 - Ignoring regressions because one asserted target improved.
 - Declaring success without enough observable consequence.
 

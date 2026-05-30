@@ -258,6 +258,67 @@ def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
     assert snapshot["counts"]["desired_directions"] == 1
     assert snapshot["counts"]["affordances"] == 1
     assert snapshot["counts"]["settlements"] == 1
+    assert snapshot["counts"]["repetition_schedules"] == 1
+    assert snapshot["latest_repetition_schedule"]["affordance_id"] == "cli-loop"
+
+
+def test_cli_representational_state_command_updates_runtime_snapshot(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
+    direction = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "start-direction",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--label",
+            "Represent the problem",
+            "--statement",
+            "Track the current representational frame",
+        ]
+    )
+    state = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "set-representational-state",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--direction-id",
+            direction["id"],
+            "--scope-position",
+            "general",
+            "--mode-of-givenness-position",
+            "abstract",
+            "--phase",
+            "general",
+            "--radius",
+            "1.0",
+            "--confidence",
+            "0.75",
+        ]
+    )
+    snapshot = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "runtime-snapshot",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+        ]
+    )
+
+    assert state["quadrant"] == "general_abstract"
+    assert snapshot["counts"]["representational_states"] == 1
+    assert snapshot["latest_representational_state"]["direction_id"] == direction["id"]
 
 
 def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
@@ -481,6 +542,7 @@ def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     assert output["decision"] == "warn"
     assert output["payment"]["spendability"] == "unaffordable"
     assert output["policy_decision"]["code"] == "unaffordable_action"
+    assert {"repetition", "critique"} <= set(output["backlogs"])
     assert '"tool_name": "Edit"' in (
         storage_root / "ledgers" / "tool_payments.jsonl"
     ).read_text(encoding="utf-8")
@@ -526,6 +588,7 @@ def test_user_prompt_hook_records_direction_hypothesis(tmp_path: Path):
     assert output["desired_direction_hypothesis"]["statement"] == (
         "Build the next affordable path to enterprise readiness."
     )
+    assert "cognitive-surfaces" in output["next_public_surfaces"]
     assert (storage_root / "ledgers" / "prompt_submissions.jsonl").exists()
 
 
@@ -544,6 +607,13 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
             "payment_actual": {"time": 1},
             "evidence": ["pytest passed"],
             "horizon_delta": 2,
+            "observed_consequence": "tests now cover the slice",
+            "unexpected_consequence": ["new docs task created"],
+            "payment_variance": {"time": 0},
+            "capability_delta": {"testing": "active"},
+            "identity_delta": {"quality_posture": "stricter"},
+            "future_constraints_created": ["keep tests green"],
+            "future_affordances_created": ["add report coverage"],
         },
     )
 
@@ -553,6 +623,8 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
     assert output["snapshot"]["counts"]["settlements"] == 1
     assert output["snapshot"]["counts"]["trajectories"] == 1
     assert output["report"]["settlement_quality"]["success"] == 1
+    assert output["settlement"]["identity_delta"] == {"quality_posture": "stricter"}
+    assert output["settlement"]["future_affordances_created"] == ["add report coverage"]
 
 
 def test_post_tool_hook_surfaces_metabolization_candidate_after_repeated_success(tmp_path: Path):
@@ -584,6 +656,23 @@ def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
     workspace_root = make_workspace(tmp_path)
     storage_root = workspace_root / ".godspeed-harness"
 
+    run_python(
+        ["hooks/post_tool_use.py"],
+        {
+            "workspace_root": str(workspace_root),
+            "storage_root": str(storage_root),
+            "affordance_id": "stop-loop",
+            "before_state": {"runtime": 0},
+            "after_state": {"runtime": 1},
+            "payment_actual": {"time": 1},
+            "evidence": ["runtime updated"],
+            "horizon_delta": 2,
+            "observed_consequence": "runtime state advanced",
+            "identity_delta": {"runtime_identity": "more_coherent"},
+            "future_affordances_created": ["schedule repetition"],
+        },
+    )
+
     output = run_python(
         ["hooks/stop.py"],
         {
@@ -599,6 +688,8 @@ def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
     assert output["recorded"] is True
     assert (storage_root / "ledgers" / "trajectories.jsonl").exists()
     assert "report" in output
+    assert output["latest_settlement"]["observed_consequence"] == "runtime state advanced"
+    assert output["latest_settlement"]["future_affordances_created"] == ["schedule repetition"]
 
 
 def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_path: Path):
@@ -686,6 +777,7 @@ def test_mcp_wrapper_registers_required_tools():
         "cybernetic_nav.start_direction",
         "cybernetic_nav.review_horizon",
         "cybernetic_nav.record_settlement",
+        "cybernetic_nav.review_representational_transition",
         "cybernetic_nav.runtime_snapshot",
         "cybernetic_nav.developmental_report",
         "cybernetic_nav.predictive_extensions",
@@ -715,7 +807,162 @@ def test_mcp_wrapper_dispatches_runtime_snapshot_and_report(tmp_path: Path):
     )
 
     assert snapshot["counts"]["desired_directions"] == 0
-    assert report["horizon"]["active_direction_count"] == 0
+
+
+def test_cli_and_mcp_expose_cognitive_surfaces(tmp_path: Path):
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
+    direction = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "start-direction",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--label",
+            "Public cognition",
+            "--statement",
+            "Expose cognitive runtime state",
+        ]
+    )
+    run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "set-representational-state",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--direction-id",
+            direction["id"],
+            "--scope-position",
+            "general",
+            "--mode-of-givenness-position",
+            "abstract",
+            "--phase",
+            "general",
+            "--radius",
+            "1.0",
+            "--confidence",
+            "0.8",
+        ]
+    )
+    run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "review-horizon",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--direction-id",
+            direction["id"],
+            "--candidates",
+            '[{"id":"public-loop","statement":"Expose cognition","pathway":"extend public surface","required_preconditions":["tests"],"transition_sequence":["test","patch","verify"],"expected_settlement":{"public_surface":"visible"},"lifecycle_status":"ready","pathway_quality":0.9,"costs":{"time":1},"capacities":{"time":5},"expected_horizon_delta":2,"risk":0}]',
+        ]
+    )
+    run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "record-settlement",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--affordance-id",
+            "public-loop",
+            "--before",
+            '{"public":0}',
+            "--after",
+            '{"public":1}',
+            "--payment",
+            '{"time":1}',
+            "--evidence",
+            '["public surface exposed"]',
+            "--horizon-delta",
+            "1",
+        ]
+    )
+
+    cli_output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "cognitive-surfaces",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+        ]
+    )
+    mcp_output = call_tool(
+        "cybernetic_nav.cognitive_surfaces",
+        {
+            "workspace_root": str(workspace_root),
+            "storage_root": str(storage_root),
+        },
+    )
+
+    for output in [cli_output, mcp_output]:
+        assert output["representational_state"]["quadrant"] == "general_abstract"
+        assert output["affordance_path"]["lifecycle_status"] == "ready"
+        assert output["repetition"]["schedule_count"] >= 1
+        assert "active_direction_ids" in output["identity_state"]
+        assert "future_affordances_created" in output["latest_settlement"]
+
+
+def test_cli_and_mcp_review_representational_transition(tmp_path: Path):
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
+    cli_review = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "review-representational-transition",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--current-state",
+            '{"scope_position":"general","mode_of_givenness_position":"abstract","phase":"general"}',
+            "--target-state",
+            '{"scope_position":"specific","mode_of_givenness_position":"abstract","phase":"specific"}',
+            "--capacity",
+            "2.0",
+        ]
+    )
+    mcp_review = call_tool(
+        "cybernetic_nav.review_representational_transition",
+        {
+            "workspace_root": str(workspace_root),
+            "storage_root": str(storage_root),
+            "current_state": {
+                "scope_position": "general",
+                "mode_of_givenness_position": "abstract",
+                "phase": "general",
+            },
+            "target_state": {
+                "scope_position": "specific",
+                "mode_of_givenness_position": "abstract",
+                "phase": "specific",
+            },
+            "capacity": 2.0,
+        },
+    )
+
+    assert cli_review["code"] == "blocked_opposition_jump"
+    assert mcp_review["status"] == "blocked"
 
 
 def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):

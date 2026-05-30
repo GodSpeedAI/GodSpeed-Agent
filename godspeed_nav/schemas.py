@@ -17,6 +17,27 @@ class DomainRuleError(ValueError):
         self.code = code
 
 
+def infer_capability_lifecycle(
+    settlement_count: int,
+    stability: float,
+    metabolization_score: float,
+    retired: bool = False,
+) -> str:
+    if retired:
+        return "retired"
+    if settlement_count <= 0:
+        return "latent"
+    if settlement_count == 1:
+        return "active"
+    if settlement_count == 2:
+        return "repeated"
+    if stability < 0.6 or metabolization_score < 0.5:
+        return "brittle"
+    if metabolization_score >= 0.75:
+        return "metabolized"
+    return "repeated"
+
+
 @dataclass(frozen=True)
 class DesiredDirection:
     id: str
@@ -45,6 +66,32 @@ class DesiredDirection:
             pressure_notes=reason,
             needs_affordance_review=True,
         )
+
+
+@dataclass(frozen=True)
+class RepresentationalState:
+    id: str
+    direction_id: str
+    scope_position: str
+    mode_of_givenness_position: str
+    phase: str
+    radius: float
+    confidence: float
+    embodiment_position: str | None = None
+    quadrant: str = ""
+    created_at: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.created_at:
+            object.__setattr__(self, "created_at", now_iso())
+        embodiment_position = self.embodiment_position or self.mode_of_givenness_position
+        object.__setattr__(self, "embodiment_position", embodiment_position)
+        if not self.quadrant:
+            object.__setattr__(
+                self,
+                "quadrant",
+                f"{self.scope_position}_{self.mode_of_givenness_position}",
+            )
 
 
 @dataclass(frozen=True)
@@ -103,6 +150,41 @@ class Affordance:
                 "affordance_requires_pathway_and_payment",
                 "Affordance requires a validated pathway and payment estimate.",
             )
+
+
+@dataclass(frozen=True)
+class AffordancePath:
+    id: str
+    affordance_id: str
+    direction_id: str
+    statement: str
+    pathway: str
+    required_preconditions: list[str]
+    transition_sequence: list[str]
+    expected_settlement: dict[str, Any]
+    lifecycle_status: str = "candidate"
+    pathway_quality: float = 0.5
+    created_at: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.created_at:
+            object.__setattr__(self, "created_at", now_iso())
+        if not self.transition_sequence:
+            object.__setattr__(self, "transition_sequence", [self.pathway])
+
+
+@dataclass(frozen=True)
+class IdentityState:
+    id: str
+    active_direction_ids: list[str]
+    capability_ids: list[str]
+    substrate_ids: list[str]
+    lock_in_risks: list[str]
+    created_at: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.created_at:
+            object.__setattr__(self, "created_at", now_iso())
 
 
 @dataclass(frozen=True)

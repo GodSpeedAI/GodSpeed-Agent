@@ -158,3 +158,178 @@ def test_runtime_truth_ledgers_use_event_envelopes(tmp_path: Path):
     assert payment_events[0]["record"]["affordance_id"] == "durable-loop"
     assert settlement_events[0]["record"]["affordance_id"] == "durable-loop"
     assert runtime.store.read("settlements")[0]["affordance_id"] == "durable-loop"
+
+
+def test_runtime_persists_representational_state_and_surfaces_it_in_snapshot(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    direction = runtime.start_direction(
+        label="Shape the frame",
+        statement="Move from broad theory toward situated action",
+        kind="goal",
+        source="test",
+    )
+    state = runtime.set_representational_state(
+        direction_id=direction["id"],
+        scope_position="general",
+        mode_of_givenness_position="abstract",
+        phase="general",
+        radius=1.0,
+        confidence=0.9,
+    )
+
+    snapshot = runtime.snapshot()
+
+    assert state["direction_id"] == direction["id"]
+    assert snapshot["counts"]["representational_states"] == 1
+    assert snapshot["latest_representational_state"]["id"] == state["id"]
+    assert snapshot["latest_representational_state"]["quadrant"] == "general_abstract"
+
+
+def test_runtime_reviews_representational_transition_and_persists_result(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    review = runtime.review_representational_transition(
+        current_state={
+            "scope_position": "general",
+            "mode_of_givenness_position": "abstract",
+            "phase": "general",
+        },
+        target_state={
+            "scope_position": "specific",
+            "mode_of_givenness_position": "abstract",
+            "phase": "specific",
+        },
+        capacity=2.0,
+    )
+
+    assert review["status"] == "blocked"
+    assert review["code"] == "blocked_opposition_jump"
+    assert runtime.store.read("representational_transitions")[-1]["status"] == "blocked"
+
+
+def test_runtime_persists_explicit_affordance_paths_and_ranks_by_pathway_quality(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    direction = runtime.start_direction(
+        label="Spendable path review",
+        statement="Prefer reachable pathways over visible destinations",
+        source="test",
+    )
+
+    review = runtime.review_horizon(
+        direction_id=direction["id"],
+        candidates=[
+            {
+                "id": "vague-destination",
+                "statement": "Ship the whole platform",
+                "pathway": "start somewhere",
+                "required_preconditions": ["platform-design"],
+                "transition_sequence": ["general framing"],
+                "expected_settlement": {"platform": "unclear"},
+                "lifecycle_status": "candidate",
+                "pathway_quality": 0.25,
+                "costs": {"time": 1},
+                "capacities": {"time": 5},
+                "expected_horizon_delta": 5,
+                "risk": 0,
+            },
+            {
+                "id": "concrete-path",
+                "statement": "Add the next local runtime slice",
+                "pathway": "edit runtime and tests",
+                "required_preconditions": ["failing tests"],
+                "transition_sequence": ["write failing tests", "patch runtime", "rerun focused tests"],
+                "expected_settlement": {"focused_tests": "pass"},
+                "lifecycle_status": "ready",
+                "pathway_quality": 0.9,
+                "costs": {"time": 1},
+                "capacities": {"time": 5},
+                "expected_horizon_delta": 4,
+                "risk": 0,
+            },
+        ],
+    )
+
+    affordance_paths = runtime.store.read("affordance_paths")
+
+    assert review["next_affordance"]["id"] == "concrete-path"
+    assert len(affordance_paths) == 2
+    assert affordance_paths[-1]["required_preconditions"] == ["failing tests"]
+    assert affordance_paths[-1]["transition_sequence"] == [
+        "write failing tests",
+        "patch runtime",
+        "rerun focused tests",
+    ]
+    assert affordance_paths[-1]["expected_settlement"] == {"focused_tests": "pass"}
+    assert affordance_paths[-1]["lifecycle_status"] == "ready"
+
+
+def test_runtime_settlement_records_environment_identity_and_future_state_deltas(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    settlement = runtime.record_settlement(
+        affordance_id="identity-loop",
+        before_state={"docs": 0},
+        after_state={"docs": 1},
+        payment_actual={"time": 2},
+        evidence=["docs updated", "tests passed"],
+        horizon_delta=2,
+        observed_consequence="operator references now exist",
+        unexpected_consequence=["follow-up policy doc needed"],
+        payment_variance={"time": 1},
+        capability_delta={"docs_loop": "active"},
+        identity_delta={"operator_posture": "more_explicit"},
+        future_constraints_created=["must keep references current"],
+        future_affordances_created=["tighten policy-reference doc"],
+    )
+
+    stored = runtime.store.read("settlements")[-1]
+
+    assert settlement["observed_consequence"] == "operator references now exist"
+    assert stored["unexpected_consequence"] == ["follow-up policy doc needed"]
+    assert stored["payment_variance"] == {"time": 1}
+    assert stored["capability_delta"] == {"docs_loop": "active"}
+    assert stored["identity_delta"] == {"operator_posture": "more_explicit"}
+    assert stored["future_constraints_created"] == ["must keep references current"]
+    assert stored["future_affordances_created"] == ["tighten policy-reference doc"]
+
+
+def test_runtime_schedules_repetition_after_successful_non_metabolized_settlement(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    runtime.record_settlement(
+        affordance_id="repeat-loop",
+        before_state={"context_a": 0},
+        after_state={"context_a": 1},
+        payment_actual={"time": 1},
+        evidence=["first success"],
+        horizon_delta=2,
+    )
+
+    snapshot = runtime.snapshot()
+    schedule = runtime.store.read("repetition_schedules")[-1]
+
+    assert snapshot["counts"]["repetition_schedules"] == 1
+    assert schedule["status"] == "scheduled"
+    assert schedule["variation_coverage"] == 1
+    assert schedule["next_condition"] == "changed_conditions"
+    assert schedule["critique_escalation"] is None
+
+
+def test_runtime_escalates_repetition_schedule_when_circular_motion_repeats(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append("trajectories", {"new_theta": 0.0, "new_radius": 1.0})
+    runtime.store.append("trajectories", {"new_theta": 7.0, "new_radius": 1.01})
+
+    runtime.record_settlement(
+        affordance_id="repeat-loop",
+        before_state={"context_a": 0},
+        after_state={"context_a": 1},
+        payment_actual={"time": 1},
+        evidence=["repeat without radial growth"],
+        horizon_delta=0,
+    )
+
+    schedule = runtime.store.read("repetition_schedules")[-1]
+
+    assert schedule["critique_escalation"] == "circular_motion"

@@ -44,6 +44,7 @@ def main() -> int:
             "active_direction_count": len(snapshot.get("active_directions", [])),
         },
     )
+    critique = runtime.review_self_critique()
     report = generate_developmental_report(str(runtime.store.root))
     write_stdout_json(
         {
@@ -51,6 +52,8 @@ def main() -> int:
             "recorded": True,
             "session_context": session_context,
             "trajectory": trajectory,
+            "latest_settlement": latest_settlement,
+            "critique": critique,
             "report": report,
             "snapshot": runtime.snapshot(),
         }

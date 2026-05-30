@@ -29,7 +29,10 @@ Outcome:
 
 - Payment is estimated and written to `payments`.
 - The candidate is classified as potential, possibility, or affordance.
-- The runtime returns the next recommended spendable transformation.
+- The runtime persists an explicit spendable path with required preconditions, transition sequence, expected settlement, and lifecycle status.
+- The runtime returns the next recommended spendable transformation rather than confusing a visible destination with a spendable path.
+
+The distinction matters: a visible destination is something the operator can name, but a spendable path is a pathway the runtime can actually sequence and pay for under present conditions. Path quality should therefore reward explicit transition sequence and readiness, not just outcome desirability.
 
 ## Step 3: Record Settlement
 

@@ -50,6 +50,7 @@ def main() -> int:
             "session_context": session_context,
             "needs_horizon_review": bool(prompt),
             "outcome_as_terminal": False,
+            "next_public_surfaces": ["review-horizon", "cognitive-surfaces", "developmental-report"],
         }
     )
     return 0

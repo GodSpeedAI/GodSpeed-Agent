@@ -27,6 +27,13 @@ def main() -> int:
         payment_actual=event.get("payment_actual", {}),
         evidence=event.get("evidence", []),
         horizon_delta=float(event.get("horizon_delta", 0)),
+        observed_consequence=event.get("observed_consequence"),
+        unexpected_consequence=event.get("unexpected_consequence"),
+        payment_variance=event.get("payment_variance"),
+        capability_delta=event.get("capability_delta"),
+        identity_delta=event.get("identity_delta"),
+        future_constraints_created=event.get("future_constraints_created"),
+        future_affordances_created=event.get("future_affordances_created"),
     )
     storage = get_storage(event)
     storage.append_event(
@@ -40,6 +47,8 @@ def main() -> int:
             "settlement_id": settlement["id"],
             "status": settlement["status"],
             "horizon_delta": float(event.get("horizon_delta", 0)),
+            "identity_delta": settlement.get("identity_delta", {}),
+            "future_affordances_created": settlement.get("future_affordances_created", []),
         },
     )
     snapshot = runtime.snapshot()

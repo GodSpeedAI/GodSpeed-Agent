@@ -12,6 +12,7 @@ from godspeed_nav.metrics import (
     compute_error,
     estimate_payment,
     rank_affordances,
+    review_representational_transition,
     score_settlement,
 )
 from godspeed_nav.ml import run_predictive_extensions
@@ -28,6 +29,7 @@ TOOL_NAMES = [
     "cybernetic_nav.update_trajectory",
     "cybernetic_nav.compute_metabolization",
     "cybernetic_nav.rank_affordances",
+    "cybernetic_nav.review_representational_transition",
     "cybernetic_nav.detect_circular_motion",
     "cybernetic_nav.review_absorbability",
     "cybernetic_nav.review_positive_disintegration",
@@ -37,6 +39,7 @@ TOOL_NAMES = [
     "cybernetic_nav.review_horizon",
     "cybernetic_nav.record_settlement",
     "cybernetic_nav.runtime_snapshot",
+    "cybernetic_nav.cognitive_surfaces",
     "cybernetic_nav.developmental_report",
     "cybernetic_nav.predictive_extensions",
     "cybernetic_nav.validate_enterprise_readiness",
@@ -77,6 +80,13 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             return compute_metabolization(**arguments)
         if name == "cybernetic_nav.rank_affordances":
             return rank_affordances(**arguments)
+        if name == "cybernetic_nav.review_representational_transition":
+            return _runtime(arguments).review_representational_transition(
+                current_state=arguments["current_state"],
+                target_state=arguments["target_state"],
+                capacity=float(arguments["capacity"]),
+                metabolized_shortcuts=arguments.get("metabolized_shortcuts"),
+            )
         if name == "cybernetic_nav.detect_circular_motion":
             return detect_circular_motion(**arguments)
         if name == "cybernetic_nav.review_absorbability":
@@ -109,6 +119,8 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                     "ledger": ledger_name,
                     "records": _store(arguments).read(ledger_name),
                 }
+            if arguments.get("query") == "lineage":
+                return _runtime(arguments).read_developmental_memory()
             return {
                 "ledgers": {
                     ledger: _store(arguments).read(ledger)
@@ -120,7 +132,8 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                         "settlements",
                         "trajectories",
                     ]
-                }
+                },
+                "lineage": _runtime(arguments).read_developmental_memory(),
             }
         if name == "cybernetic_nav.start_direction":
             return _runtime(arguments).start_direction(
@@ -145,6 +158,8 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             )
         if name == "cybernetic_nav.runtime_snapshot":
             return _runtime(arguments).snapshot()
+        if name == "cybernetic_nav.cognitive_surfaces":
+            return _runtime(arguments).cognitive_surfaces()
         if name == "cybernetic_nav.developmental_report":
             return generate_developmental_report(
                 arguments.get("storage_root", ".godspeed-harness")

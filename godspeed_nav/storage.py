@@ -187,6 +187,39 @@ class LedgerStore:
             )
         return {**manifest, "status": "current"}
 
+    def query_developmental_memory(self) -> dict[str, Any]:
+        payments = self.read("payments")
+        settlements = self.read("settlements")
+        capabilities = self.read("capabilities")
+        critique_findings = self.read("critique_findings")
+
+        paid_paths = [
+            record.get("affordance_id")
+            for record in payments
+            if record.get("affordance_id")
+        ]
+        failed_settlements = [
+            record.get("id")
+            for record in settlements
+            if record.get("status") == "failed" and record.get("id")
+        ]
+        substrate_capabilities = [
+            record.get("id")
+            for record in capabilities
+            if record.get("lifecycle_state") == "metabolized" and record.get("id")
+        ]
+        revised_critique_findings = [
+            {"id": record.get("id"), "revised_by": record.get("revised_by")}
+            for record in critique_findings
+            if record.get("id") and record.get("revised_by")
+        ]
+        return {
+            "paid_paths": paid_paths,
+            "failed_settlements": failed_settlements,
+            "substrate_capabilities": substrate_capabilities,
+            "revised_critique_findings": revised_critique_findings,
+        }
+
     def _redact(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {

@@ -103,3 +103,18 @@ def test_append_event_maintains_monotonic_sequences_under_concurrency(tmp_path: 
 
     assert sequences == list(range(1, 25))
     assert [event["sequence"] for event in persisted] == list(range(1, 25))
+
+
+def test_developmental_memory_query_answers_lineage_questions(tmp_path: Path):
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+    store.append_event("payments", {"id": "pay-1", "affordance_id": "aff-1", "payment_burden": 2})
+    store.append_event("settlements", {"id": "set-1", "affordance_id": "aff-1", "status": "failed"})
+    store.append("capabilities", {"id": "cap-1", "lifecycle_state": "metabolized"})
+    store.append("critique_findings", {"id": "crit-1", "finding": "path too broad", "revised_by": "aff-2"})
+
+    lineage = store.query_developmental_memory()
+
+    assert lineage["paid_paths"] == ["aff-1"]
+    assert lineage["failed_settlements"] == ["set-1"]
+    assert lineage["substrate_capabilities"] == ["cap-1"]
+    assert lineage["revised_critique_findings"] == [{"id": "crit-1", "revised_by": "aff-2"}]

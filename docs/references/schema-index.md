@@ -64,3 +64,15 @@ Use this index in both directions:
 ## Current Implementation Note
 
 The repository already has `desired_direction.schema.json` and `settlement.schema.json` as normative conceptual files, but not every runtime write path performs explicit schema validation on each append. Treat this index as the contract surface that future strict validation should converge on.
+
+## Cognitive OS Conformance Surfaces
+
+Conformance validation now treats these runtime surfaces as required together, not optional in isolation:
+
+- representational state
+- representational transition policy
+- affordance paths
+- environment and identity settlement deltas
+- repetition scheduler
+- developmental memory lineage
+- self-critique findings

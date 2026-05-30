@@ -59,6 +59,25 @@
 - Meaning: number of capabilities that are at least plausible candidates for substrate.
 - Operator response: inspect whether those candidates are backed by repeated settlement, not narrative optimism.
 
+## Capability Lifecycle
+
+The runtime now distinguishes six lifecycle states:
+
+- `latent`: described or desired, but not yet settled.
+- `active`: settled once, but not yet repeated.
+- `repeated`: settled more than once across still-limited variation.
+- `metabolized`: repeated with enough stability and low enough burden to count as body.
+- `brittle`: repeated, but unstable enough that the capability should not be trusted as substrate.
+- `retired`: intentionally no longer part of the active body.
+
+Operator response: do not confuse `active` or `repeated` with `metabolized`, and treat `brittle` as a warning that the capability is still fragile under variation.
+
+## Identity State
+
+`identity_state` summarizes the active directions, current capabilities, metabolized substrate, and lock-in risks currently shaping the runtime's posture.
+
+Operator response: if identity narrows around weak evidence, revise the direction or repetition pattern before that posture hardens into lock-in.
+
 ## Governing Rule
 
 The report is a scrutiny surface, not a dashboard trophy. If `partial`, `unaffordable`, or `circular_motion` appears, the correct response is to change behavior or revise direction, not to decorate the output.
