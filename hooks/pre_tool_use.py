@@ -10,7 +10,7 @@ from godspeed_nav.metrics import estimate_payment
 from godspeed_nav.policies import enforce_payment_policy
 from godspeed_nav.schemas import now_iso
 from hooks.common import read_stdin_json, write_stdout_json
-from hooks.common import get_storage
+from hooks.common import get_session_context, get_storage
 
 
 def _candidate_status(event: dict, payment: dict, decision: str) -> str:
@@ -36,6 +36,7 @@ def main() -> int:
         },
     )
     candidate_status = _candidate_status(event, payment, policy_decision.decision)
+    session_context = get_session_context(event)
     storage = get_storage(event)
     storage.append_event(
         "tool_payments",
@@ -43,6 +44,7 @@ def main() -> int:
             "id": event.get("id", f"tool-payment-{now_iso()}"),
             "tool_name": event.get("tool_name"),
             "desired_direction": event.get("desired_direction"),
+            "session_context": session_context,
             "payment": payment,
             "candidate_status": candidate_status,
             "policy_decision": policy_decision.to_dict(),
@@ -55,6 +57,7 @@ def main() -> int:
             "decision": policy_decision.decision,
             "payment": payment,
             "candidate_status": candidate_status,
+            "session_context": session_context,
             "policy_decision": policy_decision.to_dict(),
         }
     )

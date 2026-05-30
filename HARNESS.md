@@ -9,6 +9,10 @@ storage:
   format: jsonl
   retain_raw_events: true
   redact_secrets: true
+  evolution_enabled: false
+  preferred_database: sqlite
+  vector_index: ruvector
+  min_settlements_for_upgrade: 1000
 computation:
   engine: python
   use_pandas: true
@@ -42,3 +46,5 @@ safety:
 This repository uses local-first developmental memory. Outcomes are accepted as desired-direction language, but outcome completion is not terminal by default. The primary metric is horizon expansion through the next affordable affordance.
 
 Predictive extensions remain suggestion-only and activate only after the configured settlement thresholds are met.
+
+If richer retrieval becomes necessary after enough settlement history exists, prefer SQLite first and add RuVector for local vector similarity. Treat SurrealDB as an explicitly justified alternative for graph-heavy or multi-actor cases rather than the default next step.

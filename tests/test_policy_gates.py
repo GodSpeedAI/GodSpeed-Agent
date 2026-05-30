@@ -59,3 +59,13 @@ def test_policy_allows_review_when_human_review_disabled():
     )
 
     assert decision.decision == "allow"
+
+
+def test_disintegration_policy_blocks_high_risk_destructive_candidate():
+    decision = enforce_disintegration_review(
+        candidate={"id": "old-process", "risk": "high", "destructive": True},
+        policy={"require_human_review_for_disintegration": True},
+    )
+
+    assert decision.decision == "requires_review"
+    assert decision.code == "human_review_required"

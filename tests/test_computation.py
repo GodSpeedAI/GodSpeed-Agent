@@ -176,6 +176,23 @@ def test_absorbability_without_pathway_remains_potential():
     assert result["missing_pathway"]
 
 
+def test_absorbability_returns_policy_rich_blocking_reasons():
+    result = review_absorbability(
+        root_project_state={"capabilities": ["python"]},
+        external_project_state={"capabilities": ["mcp", "evals"]},
+        desired_direction={"statement": "Absorb external MCP tool"},
+        capability_delta=["mcp", "evals"],
+        license_summary={"compatible": False, "spdx": "GPL-3.0"},
+        pathway="port the tool locally",
+    )
+
+    assert result["absorbability_status"] == "blocked"
+    assert "incompatible_license" in result["blocking_reasons"]
+    assert result["policy_gate"]["code"] == "human_review_required"
+    assert result["required_human_review"] is True
+    assert result["settlement_plan"]
+
+
 def test_positive_disintegration_reports_dissolution_and_body_candidates():
     result = review_positive_disintegration(
         structures=[
@@ -193,6 +210,30 @@ def test_positive_disintegration_reports_dissolution_and_body_candidates():
     assert result["dissolution_candidates"][0]["id"] == "old-hook"
     assert result["metabolization_candidates"][0]["id"] == "review-loop"
     assert result["requires_human_review"] is True
+
+
+def test_positive_disintegration_separates_blocked_high_risk_items_from_salvageable_ones():
+    result = review_positive_disintegration(
+        structures=[
+            {
+                "id": "dangerous-cut",
+                "settlement_score": 0.1,
+                "risk": "high",
+                "salvageable_elements": ["logging"],
+            },
+            {
+                "id": "stale-loop",
+                "settlement_score": 0.2,
+                "risk": "low",
+                "salvageable_elements": ["tests", "docs"],
+            },
+        ],
+        require_human_review=True,
+    )
+
+    assert result["blocked_candidates"][0]["id"] == "dangerous-cut"
+    assert result["dissolution_candidates"][0]["id"] == "stale-loop"
+    assert result["salvage_plan"]["stale-loop"] == ["tests", "docs"]
 
 
 def test_ml_training_refuses_below_configured_threshold():

@@ -38,6 +38,11 @@ def validate_enterprise_readiness(
         {
             "primary_metric": config.harness.primary_metric,
             "outcome_as_terminal": config.harness.outcome_as_terminal,
+            "storage_format": config.storage.format,
+            "storage_evolution_enabled": config.storage.evolution_enabled,
+            "preferred_database": config.storage.preferred_database,
+            "vector_index": config.storage.vector_index,
+            "min_settlements_for_upgrade": config.storage.min_settlements_for_upgrade,
             "model_provider": config.computation.model_provider,
             "ml_event_threshold": config.computation.ml_event_threshold,
             "simulation_threshold": config.computation.simulation_threshold,

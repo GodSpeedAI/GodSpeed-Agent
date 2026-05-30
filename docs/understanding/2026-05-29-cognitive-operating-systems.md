@@ -194,6 +194,8 @@ To make the documentation fully fleshed out, the repository still needs a few ex
 - A policy reference that maps [HARNESS.md](/home/sprime01/projects/godspeed_agent/HARNESS.md) settings to runtime consequences, warnings, and hard blocks.
 - A runtime workflow example that follows one desired direction from creation through horizon review, settlement, report review, and metabolization.
 
+The operator-facing reference set now lives under [docs/references](/home/sprime01/projects/godspeed_agent/docs/references) and should be read alongside this understanding note when moving from doctrine to operation.
+
 ## Documentation Priority Order
 
 If this documentation is being expanded next, the highest-value order is:
@@ -202,14 +204,18 @@ If this documentation is being expanded next, the highest-value order is:
 2. Add a report interpretation guide, because the current report fields are only obvious if you read the code.
 3. Add schema and policy indexes, because enterprise operators need to know which fields are normative and which defaults are implementation-defined.
 
-## Current Gap Summary
+## Verified Gap Status
 
-The current codebase proves the package structure and deterministic primitives, but many pieces are still thin:
+The earlier gap summary is now partly stale. Several of the foundational concerns it named are no longer open gaps.
 
-- No orchestration service owns the full navigation loop.
-- Desired direction, horizon, affordance, payment, settlement, repetition, and metabolization are not yet connected as durable workflows.
-- Storage is append/read only and lacks atomic temp-file handling, ledger indexes, migrations, backups, and typed envelope metadata.
-- CLI commands do not yet create or review a complete developmental session.
-- Hooks write partial data but do not reconcile ledgers into horizon state.
-- Positive disintegration and absorption are deterministic stubs without policy-rich review artifacts.
-- Enterprise docs, release checks, and operational runbooks are still minimal.
+- Runtime orchestration is Mostly resolved through `NavigationRuntime`, workflow-grade CLI commands, and enterprise validation.
+- Storage durability is Mostly resolved for the current scale through checksummed event envelopes, indexes, backups, quarantine handling, and migration status.
+- Runbooks, release checks, and enterprise validation are Mostly resolved as operating surfaces, even though the operator reference layer is still missing.
+
+The remaining gaps are narrower and more important than the old broad list:
+
+- Desired direction, horizon, affordance, payment, settlement, and trajectory are connected, but repetition and metabolization are still only thinly owned by the runtime.
+- CLI workflow commands exist, but the operator-facing reference layer is still missing, especially ledger, schema, policy, report, and end-to-end workflow documentation.
+- Hook events now record payment, settlement, trajectory, and reports, but they are not yet reconciled into one fully explainable session flow from prompt hypothesis through stop-time review.
+- Positive disintegration and absorption are still a gap because their review artifacts and policy reasoning remain too thin for enterprise scrutiny.
+- Future ML-era retrieval may justify a richer local data layer, but that should be an explicit storage-evolution decision rather than an implicit rewrite of the JSONL truth surface.

@@ -108,3 +108,34 @@ def test_computation_settings_allow_provider_and_threshold_overrides(tmp_path: P
     assert config.computation.model_provider == "testing"
     assert config.computation.ml_event_threshold == 250
     assert config.computation.simulation_threshold == 1250
+
+
+def test_storage_evolution_defaults_to_gated_sqlite_and_ruvector_path(tmp_path: Path):
+    config = load_config(tmp_path)
+
+    assert config.storage.format == "jsonl"
+    assert config.storage.evolution_enabled is False
+    assert config.storage.preferred_database == "sqlite"
+    assert config.storage.vector_index == "ruvector"
+    assert config.storage.min_settlements_for_upgrade == 1000
+
+
+def test_storage_evolution_settings_allow_explicit_override(tmp_path: Path):
+    (tmp_path / "HARNESS.md").write_text(
+        "---\n"
+        "storage:\n"
+        "  evolution_enabled: true\n"
+        "  preferred_database: surrealdb\n"
+        "  vector_index: ruvector\n"
+        "  min_settlements_for_upgrade: 2500\n"
+        "---\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(tmp_path)
+
+    assert config.storage.format == "jsonl"
+    assert config.storage.evolution_enabled is True
+    assert config.storage.preferred_database == "surrealdb"
+    assert config.storage.vector_index == "ruvector"
+    assert config.storage.min_settlements_for_upgrade == 2500

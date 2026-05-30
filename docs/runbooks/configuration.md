@@ -16,6 +16,10 @@ Configuration is read from `HARNESS.md` unless an explicit path is supplied by a
 - Human review should remain enabled for absorption and positive disintegration in enterprise settings.
 - `computation.model_provider` should point at a local, explainable provider unless an operator has approved a different adapter.
 - `computation.ml_event_threshold` and `computation.simulation_threshold` should be adjusted in `HARNESS.md`, not hard-coded in scripts.
+- `storage.format` should remain `jsonl` unless a separate storage-evolution decision has passed scrutiny.
+- `storage.evolution_enabled` should remain false until settlement history justifies a richer retrieval layer.
+- `storage.preferred_database` should default to SQLite first, with `vector_index: ruvector` once ML retrieval needs local vector similarity.
+- SurrealDB should be treated as an explicitly justified alternative when graph-heavy or multi-actor needs clearly exceed SQLite.
 
 ## Validation
 
@@ -27,3 +31,5 @@ uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .go
 ```
 
 Treat provider changes and predictive threshold changes as governed `HARNESS.md` edits so validation can confirm the new operating contract.
+
+Treat storage-evolution settings the same way. They do not authorize an immediate migration on their own; they only define the approved path once the current JSONL truth surface no longer satisfies retrieval or ML needs.

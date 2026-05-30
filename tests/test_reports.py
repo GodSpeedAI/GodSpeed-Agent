@@ -53,3 +53,26 @@ def test_developmental_report_detects_circular_motion_from_trajectory_records(tm
     report = generate_developmental_report(tmp_path / ".godspeed-harness")
 
     assert report["trajectory"]["circular_motion"] is True
+
+
+def test_developmental_report_surfaces_runtime_owned_metabolization_candidates(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    for before_state, after_state in [
+        ({"report_a": 0}, {"report_a": 1}),
+        ({"report_b": 0}, {"report_b": 1}),
+        ({"report_c": 0}, {"report_c": 1}),
+    ]:
+        runtime.record_settlement(
+            affordance_id="report-loop",
+            before_state=before_state,
+            after_state=after_state,
+            payment_actual={"time": 1},
+            evidence=["report loop passed"],
+            horizon_delta=2,
+        )
+
+    report = generate_developmental_report(tmp_path / ".godspeed-harness")
+
+    assert report["metabolization"]["candidate_count"] == 1
+    assert report["metabolization"]["candidate_ids"] == ["report-loop"]

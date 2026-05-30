@@ -29,6 +29,10 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
     assert (
         result["checks"]["predictive_extensions"]["details"]["provider"] == "heuristic"
     )
+    assert result["checks"]["config"]["details"]["storage_format"] == "jsonl"
+    assert result["checks"]["config"]["details"]["storage_evolution_enabled"] is False
+    assert result["checks"]["config"]["details"]["preferred_database"] == "sqlite"
+    assert result["checks"]["config"]["details"]["vector_index"] == "ruvector"
 
 
 def test_cli_validate_outputs_pass_status(tmp_path: Path):

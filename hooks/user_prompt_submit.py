@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.schemas import now_iso
 from hooks.common import read_stdin_json, write_stdout_json
-from hooks.common import get_storage
+from hooks.common import get_session_context, get_storage
 
 
 def _prompt_label(prompt: str) -> str:
@@ -30,6 +30,7 @@ def main() -> int:
         "status": "hypothesis",
         "created_at": now_iso(),
     }
+    session_context = get_session_context(event, desired_direction_hypothesis["id"])
     storage = get_storage(event)
     storage.append_event(
         "prompt_submissions",
@@ -37,6 +38,7 @@ def main() -> int:
             "id": event.get("id", f"prompt-{now_iso()}"),
             "prompt": prompt,
             "desired_direction_hypothesis": desired_direction_hypothesis,
+            "session_context": session_context,
             "needs_horizon_review": bool(prompt),
             "outcome_as_terminal": False,
         },
@@ -45,6 +47,7 @@ def main() -> int:
         {
             "hook": "UserPromptSubmit",
             "desired_direction_hypothesis": desired_direction_hypothesis,
+            "session_context": session_context,
             "needs_horizon_review": bool(prompt),
             "outcome_as_terminal": False,
         }

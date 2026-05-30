@@ -31,9 +31,15 @@ def generate_developmental_report(storage_root: str | Path) -> dict[str, Any]:
     circular = detect_circular_motion(trajectory_points) if trajectory_points else {"circular_motion": False}
     latest = trajectory_points[-1] if trajectory_points else {"theta": 0, "radius": 1}
 
+    latest_capabilities: dict[str, dict[str, Any]] = {}
+    for capability in capabilities:
+        capability_id = capability.get("id")
+        if capability_id:
+            latest_capabilities[capability_id] = capability
+
     metabolization_candidates = [
         capability
-        for capability in capabilities
+        for capability in latest_capabilities.values()
         if capability.get("status") in {"capability", "substrate_candidate"}
     ]
 

@@ -10,7 +10,7 @@ from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.schemas import now_iso
 from hooks.common import read_stdin_json, write_stdout_json
-from hooks.common import get_storage
+from hooks.common import get_session_context, get_storage
 
 
 def _affordance_id(event: dict) -> str:
@@ -19,6 +19,7 @@ def _affordance_id(event: dict) -> str:
 
 def main() -> int:
     event = read_stdin_json()
+    session_context = get_session_context(event)
     runtime = NavigationRuntime(event.get("storage_root", ".godspeed-harness"))
     settlement = runtime.record_settlement(
         affordance_id=_affordance_id(event),
@@ -36,6 +37,7 @@ def main() -> int:
             "tool_name": event.get("tool_name"),
             "affordance_id": _affordance_id(event),
             "desired_direction": event.get("desired_direction"),
+            "session_context": session_context,
             "settlement_id": settlement["id"],
             "status": settlement["status"],
             "horizon_delta": float(event.get("horizon_delta", 0)),
@@ -47,6 +49,7 @@ def main() -> int:
         {
             "hook": "PostToolUse",
             "recorded": True,
+            "session_context": session_context,
             "settlement": settlement,
             "snapshot": snapshot,
             "report": report,

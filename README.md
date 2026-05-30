@@ -103,6 +103,7 @@ No external API calls by default. MCP tools and hook scripts operate on local in
 
 - `AGENTS.md` defines how human and machine agents should work in this repository.
 - `HARNESS.md` documents the active policy defaults and implementation-defined behavior.
+- `docs/references/` contains the operator-facing ledger, schema, CLI, policy, report, and workflow references.
 - `docs/runbooks/` documents installation, configuration, backup and restore, incident recovery, and release readiness.
 - `docs/plans/` captures implementation and hardening plans.
 - `docs/understanding/` captures the doctrine and enterprise framing that shaped the runtime.

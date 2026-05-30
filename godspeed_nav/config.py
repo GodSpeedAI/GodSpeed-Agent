@@ -31,6 +31,10 @@ class StorageSettings:
     format: str = "jsonl"
     retain_raw_events: bool = True
     redact_secrets: bool = True
+    evolution_enabled: bool = False
+    preferred_database: str = "sqlite"
+    vector_index: str = "ruvector"
+    min_settlements_for_upgrade: int = 1000
 
 
 @dataclass(frozen=True)
@@ -144,6 +148,12 @@ def load_config(
             format=storage_format,
             retain_raw_events=bool(storage_data.get("retain_raw_events", True)),
             redact_secrets=bool(storage_data.get("redact_secrets", True)),
+            evolution_enabled=bool(storage_data.get("evolution_enabled", False)),
+            preferred_database=str(storage_data.get("preferred_database", "sqlite")),
+            vector_index=str(storage_data.get("vector_index", "ruvector")),
+            min_settlements_for_upgrade=int(
+                storage_data.get("min_settlements_for_upgrade", 1000)
+            ),
         ),
         computation=ComputationSettings(
             engine=computation_data.get("engine", "python"),

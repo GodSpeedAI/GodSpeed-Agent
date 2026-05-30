@@ -11,11 +11,12 @@ from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.trajectory import update_trajectory
 from hooks.common import read_stdin_json, write_stdout_json
-from hooks.common import get_storage
+from hooks.common import get_session_context, get_storage
 
 
 def main() -> int:
     event = read_stdin_json()
+    session_context = get_session_context(event)
     runtime = NavigationRuntime(event.get("storage_root", ".godspeed-harness"))
     snapshot = runtime.snapshot()
     latest_trajectory = snapshot.get("latest_trajectory") or {}
@@ -38,6 +39,7 @@ def main() -> int:
         "stop_events",
         {
             "id": f"stop-{now_iso()}",
+            "session_context": session_context,
             "trajectory_id": record["id"],
             "latest_settlement_id": latest_settlement.get("id"),
             "active_direction_count": len(snapshot.get("active_directions", [])),
@@ -48,6 +50,7 @@ def main() -> int:
         {
             "hook": "Stop",
             "recorded": True,
+            "session_context": session_context,
             "trajectory": trajectory,
             "report": report,
             "snapshot": runtime.snapshot(),

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import estimate_payment, rank_affordances, score_settlement
 from godspeed_nav.policies import enforce_payment_policy
 from godspeed_nav.schemas import now_iso
@@ -154,6 +155,7 @@ class NavigationRuntime:
             "score": settlement_result["settlement_score"],
             "status": settlement_result["status"],
             "evidence": evidence,
+            "changed_keys": sorted(set(before_state) | set(after_state)),
             "created_at": now_iso(),
         }
         self.store.append("settlements", settlement)
@@ -172,7 +174,8 @@ class NavigationRuntime:
             "created_at": now_iso(),
         }
         self.store.append("trajectories", trajectory_record)
-        return {**settlement, "trajectory": trajectory}
+        capability = self._update_capability_evidence(affordance_id)
+        return {**settlement, "trajectory": trajectory, "capability": capability}
 
     def snapshot(self) -> dict[str, Any]:
         ledgers = {
@@ -183,6 +186,7 @@ class NavigationRuntime:
             "payments": self.store.read("payments"),
             "settlements": self.store.read("settlements"),
             "trajectories": self.store.read("trajectories"),
+            "capabilities": self.store.read("capabilities"),
         }
         return {
             "counts": {name: len(records) for name, records in ledgers.items()},
@@ -211,3 +215,41 @@ class NavigationRuntime:
     def _latest_trajectory(self) -> dict[str, Any]:
         trajectories = self.store.read("trajectories")
         return trajectories[-1] if trajectories else {}
+
+    def _update_capability_evidence(self, affordance_id: str) -> dict[str, Any]:
+        settlements = [
+            item
+            for item in self.store.read("settlements")
+            if item.get("affordance_id") == affordance_id and item.get("status") == "success"
+        ]
+        changed_contexts = {
+            tuple(item.get("changed_keys", []))
+            for item in settlements
+            if item.get("changed_keys")
+        }
+        settlement_count = len(settlements)
+        stability = sum(float(item.get("score", 0.0)) for item in settlements) / max(1, settlement_count)
+        burden_decay = max(0.0, 0.6 - (0.15 * settlement_count))
+        metabolization = compute_metabolization(
+            capability_id=affordance_id,
+            settlement_events=settlements,
+            reuse_frequency=settlement_count,
+            context_diversity=max(1, len(changed_contexts)),
+            stability=stability,
+            maintenance_burden=burden_decay,
+            attention_burden=burden_decay,
+        )
+        capability = {
+            "id": affordance_id,
+            "settlement_count": settlement_count,
+            "context_diversity": max(1, len(changed_contexts)),
+            "stability": stability,
+            "maintenance_burden": burden_decay,
+            "attention_burden": burden_decay,
+            "metabolization_score": metabolization["metabolization_score"],
+            "status": metabolization["status_recommendation"],
+            "missing_evidence": metabolization["missing_evidence"],
+            "updated_at": now_iso(),
+        }
+        self.store.append("capabilities", capability)
+        return capability

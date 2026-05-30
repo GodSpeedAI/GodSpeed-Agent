@@ -24,3 +24,19 @@ def write_stdout_json(payload: dict[str, Any]) -> None:
 def get_storage(event: dict[str, Any]) -> LedgerStore:
     return LedgerStore(event.get("storage_root", ".godspeed-harness"))
 
+
+def get_session_context(
+    event: dict[str, Any],
+    desired_direction_id: str | None = None,
+) -> dict[str, Any]:
+    derived_direction_id = desired_direction_id or event.get("desired_direction_id")
+    if not derived_direction_id:
+        desired_direction = event.get("desired_direction")
+        if isinstance(desired_direction, dict):
+            derived_direction_id = desired_direction.get("id")
+
+    return {
+        "session_id": event.get("session_id"),
+        "desired_direction_id": derived_direction_id,
+    }
+

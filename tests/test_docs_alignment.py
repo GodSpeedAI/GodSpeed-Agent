@@ -84,3 +84,46 @@ def test_readme_documents_implementation_defined_behavior_and_local_first_bounda
     assert "No external API calls by default" in readme
     assert "outcome completion is not terminal" in readme.lower()
     assert "## Self-Critique" in readme
+
+
+def test_understanding_doc_distinguishes_verified_and_remaining_gaps():
+    text = (
+        ROOT / "docs" / "understanding" / "2026-05-29-cognitive-operating-systems.md"
+    ).read_text(encoding="utf-8")
+
+    assert "## Verified Gap Status" in text
+    assert "Mostly resolved" in text
+    assert "Still a gap" in text or "still a gap" in text
+
+
+def test_operator_reference_docs_exist_and_use_normalized_directory():
+    reference_dir = ROOT / "docs" / "references"
+    odd_reference_dir = ROOT / "docs" / "references "
+
+    assert reference_dir.exists()
+    assert not odd_reference_dir.exists()
+
+    required_docs = {
+        "ledger-reference.md": ["LedgerStore", "append_event", "read_events"],
+        "schema-index.md": ["schemas/", "desired_direction.schema.json", "settlement.schema.json"],
+        "cli-reference.md": ["start-direction", "developmental-report", "predictive-extensions"],
+        "policy-reference.md": ["HARNESS.md", "block_unaffordable_actions", "require_human_review_for_absorption"],
+        "report-interpretation.md": ["partial", "unaffordable", "circular_motion"],
+        "runtime-workflow-example.md": ["start-direction", "review-horizon", "record-settlement"],
+    }
+
+    for filename, terms in required_docs.items():
+        text = (reference_dir / filename).read_text(encoding="utf-8")
+        for term in terms:
+            assert term in text
+
+
+def test_absorber_and_disintegrator_docs_describe_review_artifacts():
+    absorber = (ROOT / "agents" / "absorber.md").read_text(encoding="utf-8")
+    disintegrator = (ROOT / "agents" / "disintegrator.md").read_text(encoding="utf-8")
+    configuration = (ROOT / "docs" / "runbooks" / "configuration.md").read_text(encoding="utf-8")
+
+    assert "human review" in absorber.lower()
+    assert "settlement plan" in absorber.lower()
+    assert "salvage" in disintegrator.lower()
+    assert "positive disintegration" in configuration.lower()

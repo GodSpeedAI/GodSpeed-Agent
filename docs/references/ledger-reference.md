@@ -1,0 +1,79 @@
+# Ledger Reference
+
+## Purpose
+
+This document names the local ledgers that make the harness real at runtime. Payment and settlement ledgers are the truth surface. If a transformation is not recorded in a ledger or cannot survive ledger scrutiny, it has not settled.
+
+## Controlling Surface
+
+The ledger implementation lives in `godspeed_nav/storage.py` in `LedgerStore`.
+
+Core methods:
+
+- `append`: write a plain JSONL record.
+- `read`: read plain JSONL records from a ledger.
+- `append_event`: write an enveloped event record with sequence, timestamp, and checksum.
+- `read_events`: read and verify enveloped event records.
+- `read_event_by_record_id`: resolve an event through the ledger index.
+- `export_backup`: export all ledger files plus `manifest.json`.
+- `migration_status`: verify the storage manifest schema version.
+
+## Event Envelope
+
+When a caller uses `append_event`, the stored record includes these required fields:
+
+- `schema_version`
+- `sequence`
+- `timestamp`
+- `ledger`
+- `record`
+- `checksum`
+
+`read_events` rejects corrupted lines and checksum mismatches into quarantine. That is part of the evidence contract, not bookkeeping decoration.
+
+## Storage Layout
+
+Default storage root: `.godspeed-harness`
+
+Relevant subdirectories:
+
+- `ledgers/`: JSONL ledger files.
+- `indexes/`: per-ledger lookup files keyed by record id.
+- `config/`: storage manifest metadata.
+- `cache/quarantine/`: corrupt or checksum-invalid lines.
+
+## Runtime Workflow Ledgers
+
+These ledgers are written by the connected runtime in `NavigationRuntime`.
+
+- `desired_directions`: active or historical directions created by `start-direction`.
+- `horizons`: horizon state created with a direction.
+- `horizon_reviews`: ranked affordance reviews created by `review-horizon`.
+- `potentials`: candidate transformations lacking a spendable pathway.
+- `possibilities`: candidates blocked by affordability or payment policy.
+- `affordances`: spendable candidates accepted into the active horizon.
+- `payments`: payment estimates recorded during horizon review.
+- `settlements`: before/after consequence records from `record-settlement`.
+- `trajectories`: Euler-style trajectory updates created after settlement.
+- `capabilities`: capability or substrate-candidate records used by metabolization reporting.
+
+## Hook Event Ledgers
+
+These ledgers are written by hook surfaces and use `append_event`.
+
+- `prompt_submissions`: prompt hypotheses from `hooks/user_prompt_submit.py`.
+- `tool_payments`: payment and policy decisions from `hooks/pre_tool_use.py`.
+- `post_tool_use_events`: settlement linkage emitted by `hooks/post_tool_use.py`.
+- `stop_events`: stop-time observability emitted by `hooks/stop.py`.
+
+## Backup And Recovery Notes
+
+- Use `export_backup` when you need a portable snapshot of local ledger state.
+- Expect `manifest.json` in the backup root.
+- Treat quarantine files as settlement warnings. They indicate evidence corruption, not harmless noise.
+
+## Operational Reading Rules
+
+- Read `payments` and `settlements` together when judging whether an affordance was truly affordable and truly settled.
+- Read `horizon_reviews` and `trajectories` together when judging whether the system is expanding the horizon or rotating in place.
+- Prefer `read_events` over raw line parsing for event ledgers because it enforces checksum validation.

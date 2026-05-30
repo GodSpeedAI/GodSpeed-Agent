@@ -415,6 +415,29 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
     assert output["report"]["settlement_quality"]["success"] == 1
 
 
+def test_post_tool_hook_surfaces_metabolization_candidate_after_repeated_success(tmp_path: Path):
+    storage_root = tmp_path / ".godspeed-harness"
+
+    final_output = None
+    for index, key in enumerate(["hook_a", "hook_b", "hook_c"], start=1):
+        final_output = run_python(
+            ["hooks/post_tool_use.py"],
+            {
+                "storage_root": str(storage_root),
+                "affordance_id": "aff-repeat",
+                "before_state": {key: 0},
+                "after_state": {key: 1},
+                "payment_actual": {"time": 1},
+                "evidence": [f"hook pass {index}"],
+                "horizon_delta": 2,
+            },
+        )
+
+    assert final_output is not None
+    assert final_output["report"]["metabolization"]["candidate_count"] == 1
+    assert final_output["report"]["metabolization"]["candidate_ids"] == ["aff-repeat"]
+
+
 def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
     storage_root = tmp_path / ".godspeed-harness"
 
@@ -432,6 +455,73 @@ def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
     assert output["recorded"] is True
     assert (storage_root / "ledgers" / "trajectories.jsonl").exists()
     assert "report" in output
+
+
+def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_path: Path):
+    storage_root = tmp_path / ".godspeed-harness"
+    session_id = "sess-123"
+
+    prompt_output = run_python(
+        ["hooks/user_prompt_submit.py"],
+        {
+            "storage_root": str(storage_root),
+            "prompt": "Build the next affordable documentation loop.",
+            "session_id": session_id,
+        },
+    )
+    desired_direction_id = prompt_output["desired_direction_hypothesis"]["id"]
+
+    pre_output = run_python(
+        ["hooks/pre_tool_use.py"],
+        {
+            "storage_root": str(storage_root),
+            "tool_name": "Edit",
+            "session_id": session_id,
+            "desired_direction_id": desired_direction_id,
+            "costs": {"time": 1},
+            "capacities": {"time": 5},
+        },
+    )
+    post_output = run_python(
+        ["hooks/post_tool_use.py"],
+        {
+            "storage_root": str(storage_root),
+            "tool_name": "Edit",
+            "affordance_id": "edit-docs",
+            "session_id": session_id,
+            "desired_direction_id": desired_direction_id,
+            "before_state": {"docs": 0},
+            "after_state": {"docs": 1},
+            "payment_actual": {"time": 1},
+            "evidence": ["docs changed"],
+            "horizon_delta": 1,
+        },
+    )
+    stop_output = run_python(
+        ["hooks/stop.py"],
+        {
+            "storage_root": str(storage_root),
+            "session_id": session_id,
+            "desired_direction_id": desired_direction_id,
+            "previous_theta": 0,
+            "previous_radius": 1,
+            "settlement_score": 0.9,
+            "horizon_delta": 1,
+        },
+    )
+
+    assert prompt_output["session_context"]["session_id"] == session_id
+    assert pre_output["session_context"]["desired_direction_id"] == desired_direction_id
+    assert post_output["session_context"]["session_id"] == session_id
+    assert stop_output["session_context"]["desired_direction_id"] == desired_direction_id
+
+    tool_payments = (storage_root / "ledgers" / "tool_payments.jsonl").read_text(encoding="utf-8")
+    post_events = (storage_root / "ledgers" / "post_tool_use_events.jsonl").read_text(encoding="utf-8")
+    stop_events = (storage_root / "ledgers" / "stop_events.jsonl").read_text(encoding="utf-8")
+
+    assert f'"session_id": "{session_id}"' in tool_payments
+    assert f'"desired_direction_id": "{desired_direction_id}"' in post_events
+    assert f'"session_id": "{session_id}"' in stop_events
 
 
 def test_mcp_wrapper_registers_required_tools():
