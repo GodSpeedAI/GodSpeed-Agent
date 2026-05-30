@@ -1,0 +1,12 @@
+{
+  "title": "Horizon",
+  "type": "object",
+  "required": ["id", "observer_id", "visible_affordance_ids"],
+  "properties": {
+    "id": {"type": "string"},
+    "observer_id": {"type": "string"},
+    "visible_affordance_ids": {"type": "array"},
+    "potential_ids": {"type": "array"},
+    "radius": {"type": "number"}
+  }
+}

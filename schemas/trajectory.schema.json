@@ -1,0 +1,12 @@
+{
+  "title": "Trajectory Record",
+  "type": "object",
+  "required": ["id", "theta", "radius", "coordinate"],
+  "properties": {
+    "id": {"type": "string"},
+    "theta": {"type": "number"},
+    "radius": {"type": "number"},
+    "coordinate": {"type": "object"},
+    "circular_motion": {"type": "boolean"}
+  }
+}
