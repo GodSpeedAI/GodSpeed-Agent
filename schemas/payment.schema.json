@@ -1,0 +1,13 @@
+{
+  "title": "Payment Estimate",
+  "type": "object",
+  "required": ["id", "affordance_id", "dimensions", "burden"],
+  "properties": {
+    "id": {"type": "string"},
+    "affordance_id": {"type": "string"},
+    "dimensions": {"type": "object"},
+    "burden": {"type": "number"},
+    "capacity_norm": {"type": "number"},
+    "spendability": {"type": "string"}
+  }
+}

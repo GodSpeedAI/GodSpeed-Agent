@@ -1,0 +1,12 @@
+{
+  "title": "Substrate",
+  "type": "object",
+  "required": ["id", "capability_id", "label", "metabolization_score", "evidence"],
+  "properties": {
+    "id": {"type": "string"},
+    "capability_id": {"type": "string"},
+    "label": {"type": "string"},
+    "metabolization_score": {"type": "number"},
+    "evidence": {"type": "array"}
+  }
+}

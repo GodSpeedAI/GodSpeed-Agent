@@ -1,0 +1,11 @@
+{
+  "title": "Capability",
+  "type": "object",
+  "required": ["id", "label", "settlement_event_ids", "status"],
+  "properties": {
+    "id": {"type": "string"},
+    "label": {"type": "string"},
+    "settlement_event_ids": {"type": "array"},
+    "status": {"type": "string"}
+  }
+}

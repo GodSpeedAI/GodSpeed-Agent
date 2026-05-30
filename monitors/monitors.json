@@ -1,0 +1,9 @@
+{
+  "monitors": [
+    {"name": "settlement-log-monitor", "ledger": "settlements"},
+    {"name": "horizon-drift-monitor", "ledger": "horizons"},
+    {"name": "circular-motion-monitor", "ledger": "trajectories"},
+    {"name": "unaffordable-action-monitor", "ledger": "payments"}
+  ]
+}
+

@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+from godspeed_nav.cli import main
+
+raise SystemExit(main())
+

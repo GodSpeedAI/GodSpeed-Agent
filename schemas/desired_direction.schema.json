@@ -1,0 +1,14 @@
+{
+  "title": "Desired Direction",
+  "type": "object",
+  "required": ["id", "label", "kind", "statement", "status", "horizon_id"],
+  "properties": {
+    "id": {"type": "string"},
+    "label": {"type": "string"},
+    "kind": {"type": "string"},
+    "statement": {"type": "string"},
+    "source": {"type": ["string", "null"]},
+    "status": {"type": "string"},
+    "horizon_id": {"type": "string"}
+  }
+}

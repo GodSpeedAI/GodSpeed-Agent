@@ -1,0 +1,12 @@
+{
+  "title": "Affordance",
+  "type": "object",
+  "required": ["id", "statement", "pathway", "payment_estimate"],
+  "properties": {
+    "id": {"type": "string"},
+    "statement": {"type": "string"},
+    "pathway": {"type": "string"},
+    "payment_estimate": {"type": "object"},
+    "expected_horizon_delta": {"type": "number"}
+  }
+}
