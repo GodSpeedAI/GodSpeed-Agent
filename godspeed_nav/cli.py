@@ -10,6 +10,7 @@ from godspeed_nav.metrics import compute_error, estimate_payment
 from godspeed_nav.metrics import rank_affordances, score_settlement
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.validation import validate_enterprise_readiness
 
 
 def _json_arg(value: str) -> dict[str, Any]:
@@ -94,6 +95,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     developmental_report_parser = subcommands.add_parser("developmental-report")
     developmental_report_parser.add_argument("--storage-root", default=".godspeed-harness")
+
+    validate_parser = subcommands.add_parser("validate")
+    validate_parser.add_argument("--workspace-root", default=".")
+    validate_parser.add_argument("--storage-root", default=".godspeed-harness")
     return parser
 
 
@@ -156,6 +161,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
     if args.command == "developmental-report":
         return generate_developmental_report(args.storage_root)
+    if args.command == "validate":
+        return validate_enterprise_readiness(args.workspace_root, args.storage_root)
     raise SystemExit(f"Unknown command: {args.command}")
 
 
