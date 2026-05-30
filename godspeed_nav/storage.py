@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 from typing import Any
+
+from godspeed_nav.schemas import now_iso
 
 
 SECRET_KEYS = {
@@ -16,6 +20,14 @@ SECRET_KEYS = {
 }
 
 
+class StorageError(ValueError):
+    """Typed storage error for operator-visible failure surfaces."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+
+
 class LedgerStore:
     """Append-only JSONL developmental memory store."""
 
@@ -26,8 +38,9 @@ class LedgerStore:
         (self.root / "cache" / "quarantine").mkdir(parents=True, exist_ok=True)
 
     def ledger_path(self, ledger_name: str) -> Path:
-        safe_name = ledger_name.replace("/", "_").replace("..", "_")
-        return self.root / "ledgers" / f"{safe_name}.jsonl"
+        if not ledger_name.replace("_", "").replace("-", "").isalnum():
+            raise StorageError("unsafe_ledger_name", f"Unsafe ledger name: {ledger_name}")
+        return self.root / "ledgers" / f"{ledger_name}.jsonl"
 
     def append(self, ledger_name: str, record: dict[str, Any]) -> Path:
         path = self.ledger_path(ledger_name)
@@ -65,6 +78,67 @@ class LedgerStore:
 
         return records
 
+    def append_event(self, ledger_name: str, record: dict[str, Any]) -> dict[str, Any]:
+        existing = self.read_events(ledger_name)
+        payload = self._redact(record) if self.redact_secrets else record
+        envelope = {
+            "schema_version": 1,
+            "sequence": len(existing) + 1,
+            "timestamp": now_iso(),
+            "ledger": ledger_name,
+            "record": payload,
+        }
+        envelope["checksum"] = self._checksum(envelope)
+        path = self.ledger_path(ledger_name)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(envelope, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        return envelope
+
+    def read_events(self, ledger_name: str) -> list[dict[str, Any]]:
+        path = self.ledger_path(ledger_name)
+        if not path.exists():
+            return []
+
+        events: list[dict[str, Any]] = []
+        corrupt: list[str] = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                corrupt.append(line)
+                continue
+            if event.get("checksum") != self._checksum(event):
+                corrupt.append(json.dumps({"reason": "checksum_mismatch", "line": line}, sort_keys=True))
+                continue
+            events.append(event)
+
+        if corrupt:
+            self._write_quarantine(ledger_name, corrupt)
+        return events
+
+    def export_backup(self, destination: str | Path) -> Path:
+        destination = Path(destination)
+        if destination.exists():
+            shutil.rmtree(destination)
+        (destination / "ledgers").mkdir(parents=True, exist_ok=True)
+
+        ledger_files = sorted((self.root / "ledgers").glob("*.jsonl"))
+        for path in ledger_files:
+            shutil.copy2(path, destination / "ledgers" / path.name)
+
+        manifest = {
+            "created_at": now_iso(),
+            "source_root": str(self.root),
+            "ledger_count": len(ledger_files),
+            "ledgers": [path.name for path in ledger_files],
+        }
+        (destination / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+        return destination
+
     def _redact(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {
@@ -75,3 +149,13 @@ class LedgerStore:
             return [self._redact(item) for item in value]
         return value
 
+    def _write_quarantine(self, ledger_name: str, lines: list[str]) -> None:
+        quarantine = self.root / "cache" / "quarantine" / f"{ledger_name}.corrupt.jsonl"
+        with quarantine.open("a", encoding="utf-8") as handle:
+            for line in lines:
+                handle.write(line + "\n")
+
+    def _checksum(self, envelope: dict[str, Any]) -> str:
+        payload = {key: value for key, value in envelope.items() if key != "checksum"}
+        serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
