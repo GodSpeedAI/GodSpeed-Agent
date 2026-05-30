@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "cybernetic-nav": {
+      "command": "python",
+      "args": ["mcp/cybernetic-nav-server/server.py"]
+    }
+  }
+}
+
