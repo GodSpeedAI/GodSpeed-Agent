@@ -8,6 +8,7 @@ from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import compute_error, estimate_payment
 from godspeed_nav.metrics import rank_affordances, score_settlement
+from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 
 
@@ -90,6 +91,9 @@ def build_parser() -> argparse.ArgumentParser:
     record_settlement_parser.add_argument("--payment", type=_json_arg, required=True)
     record_settlement_parser.add_argument("--evidence", type=_json_list_arg, required=True)
     record_settlement_parser.add_argument("--horizon-delta", type=float, required=True)
+
+    developmental_report_parser = subcommands.add_parser("developmental-report")
+    developmental_report_parser.add_argument("--storage-root", default=".godspeed-harness")
     return parser
 
 
@@ -150,6 +154,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             evidence=args.evidence,
             horizon_delta=args.horizon_delta,
         )
+    if args.command == "developmental-report":
+        return generate_developmental_report(args.storage_root)
     raise SystemExit(f"Unknown command: {args.command}")
 
 

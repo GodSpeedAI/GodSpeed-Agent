@@ -239,6 +239,36 @@ def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
     assert snapshot["counts"]["settlements"] == 1
 
 
+def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
+    storage_root = tmp_path / ".godspeed-harness"
+    run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "start-direction",
+            "--storage-root",
+            str(storage_root),
+            "--label",
+            "Report",
+            "--statement",
+            "Summarize ledgers",
+        ]
+    )
+
+    output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "developmental-report",
+            "--storage-root",
+            str(storage_root),
+        ]
+    )
+
+    assert output["horizon"]["active_direction_count"] == 1
+    assert "settlement_quality" in output
+
+
 def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     output = run_python(
         ["hooks/pre_tool_use.py"],

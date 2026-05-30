@@ -17,11 +17,12 @@
 - 2026-05-29: Started Phase 2 enterprise ledger durability by adding `StorageError`, strict ledger-name validation, event envelopes with schema version/sequence/timestamp/checksum, checksum quarantine, and backup export. Verification: wrote failing tests first in `tests/test_enterprise_storage.py`; initial run failed on missing `StorageError`; after implementation, `uv run pytest tests/test_enterprise_storage.py -q` passed with 4 tests and `uv run pytest -q` passed with 53 tests.
 - 2026-05-29: Extended ledger durability with per-ledger indexes, record-id lookup, storage manifest initialization, and migration/version checks. Verification: wrote failing tests first in `tests/test_enterprise_storage.py`; initial run failed on missing index files and `migration_status`; after implementation, `uv run pytest tests/test_enterprise_storage.py -q` passed with 7 tests and `uv run pytest -q` passed with 56 tests.
 - 2026-05-29: Added enterprise policy gates for unaffordable actions and human review enforcement on absorption/disintegration decisions, with runtime horizon review recording explainable policy decisions. Verification: wrote failing tests first in `tests/test_policy_gates.py`; initial run failed on missing `godspeed_nav.policies`; after implementation, `uv run pytest tests/test_policy_gates.py -q` passed with 4 tests and `uv run pytest -q` passed with 60 tests.
+- 2026-05-29: Added developmental observability reports and the `developmental-report` CLI command, summarizing settlement quality, payment burden, trajectory/circular motion, active horizon directions, and metabolization candidates from local ledgers. Verification: wrote failing tests first in `tests/test_reports.py` and `tests/test_cli_hooks_mcp.py`; initial runs failed on missing `godspeed_nav.reports` and missing `developmental-report`; after implementation, `uv run pytest tests/test_reports.py tests/test_cli_hooks_mcp.py::test_cli_developmental_report_outputs_observability_summary -q` passed with 3 tests and `uv run pytest -q` passed with 63 tests.
 
 
 ## what is still missing (what does each afford towards the overall project goals, and how will we know when it's done)
 
-- Observability reports, workflow-grade hooks/MCP, validation command, and enterprise runbooks.
+- Workflow-grade hooks/MCP, validation command, and enterprise runbooks.
 
 ## lessons learned (that will inform future work making this process more efficient, prune unnecessary steps, and avoid pitfalls)
 
@@ -31,4 +32,4 @@
 
 ## next steps (each step should unlock the next step and justifiably contribute to the overall project progress)
 
-- Start observability reports with TDD: settlement quality, payment debt, horizon drift, circular motion, and metabolization candidate summaries.
+- Upgrade hooks and MCP to use the runtime/policy/reporting surfaces, then add a validation command and enterprise runbooks.
