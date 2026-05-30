@@ -49,6 +49,46 @@ def test_score_settlement_rejects_intent_only_evidence():
     assert result["evidence_summary"] == "intent_only"
 
 
+def test_score_settlement_flags_regressions_as_partial():
+    result = score_settlement(
+        before_state={"tests": 1, "bugs": 0},
+        after_state={"tests": 2, "bugs": 2},
+        desired_direction={"statement": "Improve quality"},
+        payment_actual={"time": 2},
+        evaluator_config={"evidence": ["pytest passed", "bug count increased in smoke test"]},
+    )
+
+    assert result["status"] == "partial"
+    assert "bugs" in result["regression_keys"]
+    assert "tests" in result["improved_keys"]
+
+
+def test_score_settlement_uses_desired_state_when_available():
+    result = score_settlement(
+        before_state={"tests": 1, "docs": 0},
+        after_state={"tests": 3, "docs": 1},
+        desired_direction={"desired_state": {"tests": 3, "docs": 1}},
+        payment_actual={"time": 1},
+        evaluator_config={"evidence": ["pytest passed", "docs updated"]},
+    )
+
+    assert result["status"] == "success"
+    assert result["settlement_score"] == pytest.approx(1.0)
+
+
+def test_score_settlement_reports_missing_observable_change():
+    result = score_settlement(
+        before_state={"runtime": 1},
+        after_state={"runtime": 1},
+        desired_direction={"statement": "Improve runtime"},
+        payment_actual={"time": 1},
+        evaluator_config={"evidence": ["command ran successfully"]},
+    )
+
+    assert result["status"] == "failed"
+    assert result["missing_evidence"] == ["observable_change"]
+
+
 def test_update_trajectory_increases_radius_only_on_positive_settlement():
     positive = update_trajectory(
         previous_theta=0,

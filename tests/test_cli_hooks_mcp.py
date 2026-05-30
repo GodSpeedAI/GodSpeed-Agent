@@ -362,8 +362,12 @@ def test_mcp_wrapper_registers_required_tools():
         "cybernetic_nav.update_trajectory",
         "cybernetic_nav.compute_metabolization",
         "cybernetic_nav.rank_affordances",
+        "cybernetic_nav.start_direction",
+        "cybernetic_nav.review_horizon",
+        "cybernetic_nav.record_settlement",
         "cybernetic_nav.runtime_snapshot",
         "cybernetic_nav.developmental_report",
+        "cybernetic_nav.validate_enterprise_readiness",
     } <= set(TOOL_NAMES)
 
 
@@ -377,6 +381,72 @@ def test_mcp_wrapper_dispatches_runtime_snapshot_and_report(tmp_path: Path):
 
     assert snapshot["counts"]["desired_directions"] == 0
     assert report["horizon"]["active_direction_count"] == 0
+
+
+def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    storage_root = tmp_path / ".godspeed-harness"
+
+    direction = call_tool(
+        "cybernetic_nav.start_direction",
+        {
+            "storage_root": str(storage_root),
+            "label": "MCP runtime",
+            "statement": "Drive the developmental loop through MCP",
+            "kind": "goal",
+            "source": "test",
+        },
+    )
+    review = call_tool(
+        "cybernetic_nav.review_horizon",
+        {
+            "storage_root": str(storage_root),
+            "direction_id": direction["id"],
+            "candidates": [
+                {
+                    "id": "mcp-loop",
+                    "statement": "Run runtime loop through MCP",
+                    "pathway": "dispatch runtime tools",
+                    "costs": {"time": 1},
+                    "capacities": {"time": 5},
+                    "expected_horizon_delta": 3,
+                    "risk": 0,
+                }
+            ],
+        },
+    )
+    settlement = call_tool(
+        "cybernetic_nav.record_settlement",
+        {
+            "storage_root": str(storage_root),
+            "affordance_id": "mcp-loop",
+            "before_state": {"mcp": 0},
+            "after_state": {"mcp": 1},
+            "payment_actual": {"time": 1},
+            "evidence": ["mcp workflow passed"],
+            "horizon_delta": 3,
+        },
+    )
+
+    assert review["next_affordance"]["id"] == "mcp-loop"
+    assert settlement["status"] == "success"
+    assert settlement["trajectory"]["new_radius"] > 1
+
+
+def test_mcp_wrapper_dispatches_enterprise_validation(tmp_path: Path):
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    result = call_tool(
+        "cybernetic_nav.validate_enterprise_readiness",
+        {
+            "workspace_root": str(ROOT),
+            "storage_root": str(tmp_path / ".godspeed-harness"),
+        },
+    )
+
+    assert result["status"] == "pass"
+    assert "mcp" in result["checks"]
 
 
 def test_monitor_configuration_contains_recommended_monitors():

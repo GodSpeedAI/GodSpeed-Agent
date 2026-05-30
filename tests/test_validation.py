@@ -17,10 +17,13 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
         "config",
         "storage",
         "runtime_workflow",
+        "agents",
         "hooks",
         "mcp",
         "reports",
     } <= set(result["checks"])
+
+    assert result["checks"]["mcp"]["details"]["snapshot_counts"]["desired_directions"] >= 0
 
 
 def test_cli_validate_outputs_pass_status(tmp_path: Path):

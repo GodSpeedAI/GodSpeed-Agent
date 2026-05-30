@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import json
+import sys
+from pathlib import Path
 from typing import Any
 
+from godspeed_nav.absorption import review_absorbability
+from godspeed_nav.disintegration import review_positive_disintegration
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import compute_error, estimate_payment, rank_affordances, score_settlement
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.storage import LedgerStore
 from godspeed_nav.trajectory import update_trajectory
+from godspeed_nav.trajectory import detect_circular_motion
+from godspeed_nav.validation import validate_enterprise_readiness
 
 
 TOOL_NAMES = [
@@ -16,26 +24,118 @@ TOOL_NAMES = [
     "cybernetic_nav.update_trajectory",
     "cybernetic_nav.compute_metabolization",
     "cybernetic_nav.rank_affordances",
+    "cybernetic_nav.detect_circular_motion",
+    "cybernetic_nav.review_absorbability",
+    "cybernetic_nav.review_positive_disintegration",
+    "cybernetic_nav.write_ledger_event",
+    "cybernetic_nav.read_developmental_memory",
+    "cybernetic_nav.start_direction",
+    "cybernetic_nav.review_horizon",
+    "cybernetic_nav.record_settlement",
     "cybernetic_nav.runtime_snapshot",
     "cybernetic_nav.developmental_report",
+    "cybernetic_nav.validate_enterprise_readiness",
 ]
 
 
+def _runtime(arguments: dict[str, Any]) -> NavigationRuntime:
+    return NavigationRuntime(arguments.get("storage_root", ".godspeed-harness"))
+
+
+def _store(arguments: dict[str, Any]) -> LedgerStore:
+    return LedgerStore(arguments.get("storage_root", ".godspeed-harness"))
+
+
 def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    if name == "cybernetic_nav.compute_error":
-        return compute_error(**arguments)
-    if name == "cybernetic_nav.estimate_payment":
-        return estimate_payment(**arguments)
-    if name == "cybernetic_nav.score_settlement":
-        return score_settlement(**arguments)
-    if name == "cybernetic_nav.update_trajectory":
-        return update_trajectory(**arguments)
-    if name == "cybernetic_nav.compute_metabolization":
-        return compute_metabolization(**arguments)
-    if name == "cybernetic_nav.rank_affordances":
-        return rank_affordances(**arguments)
-    if name == "cybernetic_nav.runtime_snapshot":
-        return NavigationRuntime(arguments.get("storage_root", ".godspeed-harness")).snapshot()
-    if name == "cybernetic_nav.developmental_report":
-        return generate_developmental_report(arguments.get("storage_root", ".godspeed-harness"))
+    try:
+        if name == "cybernetic_nav.compute_error":
+            return compute_error(**arguments)
+        if name == "cybernetic_nav.estimate_payment":
+            return estimate_payment(**arguments)
+        if name == "cybernetic_nav.score_settlement":
+            return score_settlement(**arguments)
+        if name == "cybernetic_nav.update_trajectory":
+            return update_trajectory(**arguments)
+        if name == "cybernetic_nav.compute_metabolization":
+            return compute_metabolization(**arguments)
+        if name == "cybernetic_nav.rank_affordances":
+            return rank_affordances(**arguments)
+        if name == "cybernetic_nav.detect_circular_motion":
+            return detect_circular_motion(**arguments)
+        if name == "cybernetic_nav.review_absorbability":
+            return review_absorbability(**arguments)
+        if name == "cybernetic_nav.review_positive_disintegration":
+            return review_positive_disintegration(**arguments)
+        if name == "cybernetic_nav.write_ledger_event":
+            envelope = _store(arguments).append_event(arguments["ledger_name"], arguments["record"])
+            return {"recorded": True, "event": envelope}
+        if name == "cybernetic_nav.read_developmental_memory":
+            ledger_name = arguments.get("ledger_name")
+            if ledger_name:
+                return {"ledger": ledger_name, "records": _store(arguments).read(ledger_name)}
+            return {
+                "ledgers": {
+                    ledger: _store(arguments).read(ledger)
+                    for ledger in [
+                        "desired_directions",
+                        "horizons",
+                        "affordances",
+                        "payments",
+                        "settlements",
+                        "trajectories",
+                    ]
+                }
+            }
+        if name == "cybernetic_nav.start_direction":
+            return _runtime(arguments).start_direction(
+                label=arguments["label"],
+                statement=arguments["statement"],
+                kind=arguments.get("kind", "goal"),
+                source=arguments.get("source"),
+            )
+        if name == "cybernetic_nav.review_horizon":
+            return _runtime(arguments).review_horizon(
+                direction_id=arguments["direction_id"],
+                candidates=arguments["candidates"],
+            )
+        if name == "cybernetic_nav.record_settlement":
+            return _runtime(arguments).record_settlement(
+                affordance_id=arguments["affordance_id"],
+                before_state=arguments["before_state"],
+                after_state=arguments["after_state"],
+                payment_actual=arguments["payment_actual"],
+                evidence=arguments["evidence"],
+                horizon_delta=float(arguments["horizon_delta"]),
+            )
+        if name == "cybernetic_nav.runtime_snapshot":
+            return _runtime(arguments).snapshot()
+        if name == "cybernetic_nav.developmental_report":
+            return generate_developmental_report(arguments.get("storage_root", ".godspeed-harness"))
+        if name == "cybernetic_nav.validate_enterprise_readiness":
+            return validate_enterprise_readiness(
+                workspace_root=arguments.get("workspace_root", "."),
+                storage_root=arguments.get("storage_root", ".godspeed-harness"),
+            )
+    except KeyError as exc:
+        raise ValueError(f"invalid_input: missing required argument {exc.args[0]}") from exc
+    except TypeError as exc:
+        raise ValueError(f"invalid_input: {exc}") from exc
     raise ValueError(f"invalid_input: unknown tool {name}")
+
+
+def main() -> int:
+    raw = sys.stdin.read().strip()
+    if not raw:
+        print(json.dumps({"tools": TOOL_NAMES}, sort_keys=True))
+        return 0
+
+    request = json.loads(raw)
+    if not isinstance(request, dict):
+        raise SystemExit("invalid_input: MCP request must be a JSON object")
+    result = call_tool(request["name"], request.get("arguments", {}))
+    print(json.dumps(result, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

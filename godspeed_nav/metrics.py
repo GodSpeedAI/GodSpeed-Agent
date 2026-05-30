@@ -4,6 +4,80 @@ import math
 from typing import Any
 
 
+NEGATIVE_POLARITY_TOKENS = {
+    "bug",
+    "bugs",
+    "defect",
+    "defects",
+    "error",
+    "errors",
+    "failure",
+    "failures",
+    "risk",
+    "debt",
+    "latency",
+}
+
+
+def _classify_evidence(evidence: list[Any]) -> tuple[list[str], list[str]]:
+    accepted: list[str] = []
+    rejected: list[str] = []
+    for item in evidence:
+        text = str(item).strip()
+        if not text:
+            continue
+        if text.lower().startswith("intent:"):
+            rejected.append(text)
+        else:
+            accepted.append(text)
+    return accepted, rejected
+
+
+def _delta_classification(key: str, before: Any, after: Any) -> int:
+    negative_polarity = any(token in key.lower() for token in NEGATIVE_POLARITY_TOKENS)
+    if isinstance(before, bool) or isinstance(after, bool):
+        raw_delta = int(bool(after)) - int(bool(before))
+        return -raw_delta if negative_polarity else raw_delta
+    if isinstance(before, (int, float)) and isinstance(after, (int, float)):
+        if after > before:
+            return -1 if negative_polarity else 1
+        if after < before:
+            return 1 if negative_polarity else -1
+        return 0
+    if before == after:
+        return 0
+    raw_delta = 1 if after else -1
+    return -raw_delta if negative_polarity else raw_delta
+
+
+def _score_against_desired_state(
+    before_state: dict[str, Any],
+    after_state: dict[str, Any],
+    desired_state: dict[str, Any],
+) -> tuple[float, list[str], list[str]]:
+    improved: list[str] = []
+    regressed: list[str] = []
+    total = 0
+    progress = 0.0
+
+    for key, desired_value in desired_state.items():
+        total += 1
+        before_distance = abs(float(desired_value) - float(before_state.get(key, 0)))
+        after_distance = abs(float(desired_value) - float(after_state.get(key, 0)))
+        if after_distance < before_distance:
+            improved.append(key)
+            progress += 1.0
+        elif after_distance > before_distance:
+            regressed.append(key)
+            progress -= 1.0
+        elif after_state.get(key) == desired_value:
+            improved.append(key)
+            progress += 1.0
+
+    score = max(0.0, progress / max(1, total))
+    return score, improved, regressed
+
+
 def compute_error(
     desired_state: dict[str, float],
     observed_state: dict[str, float],
@@ -50,19 +124,60 @@ def score_settlement(
     payment_actual: dict[str, float],
     evaluator_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    del desired_direction, payment_actual
     evaluator_config = evaluator_config or {}
     evidence = evaluator_config.get("evidence", [])
-    if not evidence or all(str(item).lower().startswith("intent:") for item in evidence):
-        return {"settlement_score": 0, "status": "failed", "evidence_summary": "intent_only"}
+    accepted_evidence, rejected_evidence = _classify_evidence(evidence)
+    if not accepted_evidence:
+        return {
+            "settlement_score": 0,
+            "status": "failed",
+            "evidence_summary": "intent_only",
+            "accepted_evidence": [],
+            "rejected_evidence": rejected_evidence,
+            "missing_evidence": ["observable_consequence"],
+            "improved_keys": [],
+            "regression_keys": [],
+            "payment_summary": payment_actual,
+        }
 
-    changed_keys = [key for key, value in after_state.items() if before_state.get(key) != value]
-    score = min(1.0, len(changed_keys) / max(1, len(after_state)))
-    status = "success" if score >= 0.7 else "partial" if score > 0 else "failed"
+    desired_state = desired_direction.get("desired_state")
+    if isinstance(desired_state, dict) and desired_state:
+        score, improved_keys, regression_keys = _score_against_desired_state(
+            before_state,
+            after_state,
+            desired_state,
+        )
+    else:
+        all_keys = set(before_state) | set(after_state)
+        improved_keys = [
+            key for key in all_keys if _delta_classification(key, before_state.get(key), after_state.get(key)) > 0
+        ]
+        regression_keys = [
+            key for key in all_keys if _delta_classification(key, before_state.get(key), after_state.get(key)) < 0
+        ]
+        score = max(0.0, (len(improved_keys) - len(regression_keys)) / max(1, len(all_keys)))
+        if improved_keys and regression_keys and score == 0.0:
+            score = 0.5
+
+    missing_evidence: list[str] = []
+    if not improved_keys and not regression_keys:
+        missing_evidence.append("observable_change")
+        score = 0.0
+
+    if regression_keys and score >= 0.7:
+        score = min(score, 0.69)
+
+    status = "success" if score >= 0.7 and not regression_keys else "partial" if score > 0 else "failed"
     return {
         "settlement_score": score,
         "status": status,
-        "evidence_summary": "; ".join(map(str, evidence)),
+        "evidence_summary": "; ".join(accepted_evidence),
+        "accepted_evidence": accepted_evidence,
+        "rejected_evidence": rejected_evidence,
+        "missing_evidence": missing_evidence,
+        "improved_keys": improved_keys,
+        "regression_keys": regression_keys,
+        "payment_summary": payment_actual,
     }
 
 

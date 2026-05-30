@@ -57,6 +57,17 @@ def test_agent_role_files_exist_with_role_contracts():
         assert "## Output" in text
 
 
+def test_evaluator_agent_includes_enterprise_settlement_contract():
+    text = (ROOT / "agents" / "evaluator.md").read_text(encoding="utf-8")
+
+    assert "## Inputs" in text
+    assert "## Workflow" in text
+    assert "## Failure Modes" in text
+    assert "before_state" in text
+    assert "after_state" in text
+    assert "evidence" in text
+
+
 def test_skill_evals_include_trigger_and_non_trigger_cases():
     evals = json.loads((ROOT / "evals" / "evals.json").read_text(encoding="utf-8"))
 

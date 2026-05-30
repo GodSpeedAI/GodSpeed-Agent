@@ -73,7 +73,42 @@ def validate_enterprise_readiness(
     )
 
     checks["hooks"] = _check((workspace / "hooks" / "pre_tool_use.py").exists(), {})
-    checks["mcp"] = _check((workspace / "mcp" / "cybernetic_nav_server" / "server.py").exists(), {})
+
+    evaluator_contract = (workspace / "agents" / "evaluator.md").read_text(encoding="utf-8")
+    checks["agents"] = _check(
+        all(section in evaluator_contract for section in ["## Inputs", "## Workflow", "## Failure Modes"]),
+        {"evaluator_sections": ["## Inputs", "## Workflow", "## Failure Modes"]},
+    )
+
+    from mcp.cybernetic_nav_server.server import TOOL_NAMES, call_tool
+
+    expected_mcp_tools = {
+        "cybernetic_nav.compute_error",
+        "cybernetic_nav.estimate_payment",
+        "cybernetic_nav.score_settlement",
+        "cybernetic_nav.update_trajectory",
+        "cybernetic_nav.compute_metabolization",
+        "cybernetic_nav.rank_affordances",
+        "cybernetic_nav.detect_circular_motion",
+        "cybernetic_nav.review_absorbability",
+        "cybernetic_nav.review_positive_disintegration",
+        "cybernetic_nav.write_ledger_event",
+        "cybernetic_nav.read_developmental_memory",
+        "cybernetic_nav.start_direction",
+        "cybernetic_nav.review_horizon",
+        "cybernetic_nav.record_settlement",
+        "cybernetic_nav.runtime_snapshot",
+        "cybernetic_nav.developmental_report",
+        "cybernetic_nav.validate_enterprise_readiness",
+    }
+    snapshot = call_tool("cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)})
+    checks["mcp"] = _check(
+        expected_mcp_tools <= set(TOOL_NAMES) and "counts" in snapshot,
+        {
+            "registered_tools": sorted(TOOL_NAMES),
+            "snapshot_counts": snapshot.get("counts", {}),
+        },
+    )
 
     report = generate_developmental_report(storage_root)
     checks["reports"] = _check(
