@@ -5,6 +5,7 @@ from typing import Any
 from uuid import uuid4
 
 from godspeed_nav.metrics import estimate_payment, rank_affordances, score_settlement
+from godspeed_nav.policies import enforce_payment_policy
 from godspeed_nav.schemas import now_iso
 from godspeed_nav.storage import LedgerStore
 from godspeed_nav.trajectory import update_trajectory
@@ -13,8 +14,9 @@ from godspeed_nav.trajectory import update_trajectory
 class NavigationRuntime:
     """Coordinates the developmental loop over local ledgers."""
 
-    def __init__(self, storage_root: str | Path):
+    def __init__(self, storage_root: str | Path, policy: dict[str, Any] | None = None):
         self.store = LedgerStore(storage_root)
+        self.policy = policy or {}
 
     def start_direction(
         self,
@@ -58,6 +60,7 @@ class NavigationRuntime:
         affordances: list[dict[str, Any]] = []
         payments: dict[str, dict[str, float]] = {}
         rejected: list[dict[str, Any]] = []
+        policy_decisions: list[dict[str, str]] = []
 
         for candidate in candidates:
             candidate_id = candidate["id"]
@@ -80,8 +83,10 @@ class NavigationRuntime:
                 "created_at": now_iso(),
             }
             self.store.append("payments", payment_record)
+            policy_decision = enforce_payment_policy(payment, self.policy)
+            policy_decisions.append(policy_decision.to_dict())
 
-            if payment["spendability"] != "affordable":
+            if payment["spendability"] != "affordable" or policy_decision.decision == "block":
                 self.store.append(
                     "possibilities",
                     {
@@ -118,6 +123,7 @@ class NavigationRuntime:
             "ranked_affordances": ranked["ranked_affordances"],
             "next_affordance": ranked["next_recommended_affordance"],
             "rejected_candidates": rejected + ranked["rejected_candidates"],
+            "policy_decisions": policy_decisions,
             "created_at": now_iso(),
         }
         self.store.append("horizon_reviews", review)
