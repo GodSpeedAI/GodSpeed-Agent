@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.metrics import score_settlement
+from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.schemas import now_iso
 from godspeed_nav.storage import LedgerStore
 from hooks.common import read_stdin_json, write_stdout_json
@@ -34,7 +35,10 @@ def main() -> int:
         "created_at": now_iso(),
     }
     storage.append("settlements", record)
-    write_stdout_json({"hook": "PostToolUse", "recorded": True, "settlement": settlement})
+    snapshot = NavigationRuntime(event.get("storage_root", ".godspeed-harness")).snapshot()
+    write_stdout_json(
+        {"hook": "PostToolUse", "recorded": True, "settlement": settlement, "snapshot": snapshot}
+    )
     return 0
 
 

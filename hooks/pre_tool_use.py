@@ -7,6 +7,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.metrics import estimate_payment
+from godspeed_nav.policies import enforce_payment_policy
+from godspeed_nav.storage import LedgerStore
 from hooks.common import read_stdin_json, write_stdout_json
 
 
@@ -17,16 +19,29 @@ def main() -> int:
         event.get("weights", {}),
         event.get("capacities", {}),
     )
-    unaffordable = payment["spendability"] == "unaffordable"
-    decision = "allow"
-    if unaffordable:
-        decision = "block" if event.get("block_unaffordable_actions", False) else "warn"
+    policy_decision = enforce_payment_policy(
+        payment,
+        {
+            "block_unaffordable_actions": event.get("block_unaffordable_actions", False),
+            "warn_unaffordable_actions": event.get("warn_unaffordable_actions", True),
+        },
+    )
+    storage = LedgerStore(event.get("storage_root", ".godspeed-harness"))
+    storage.append(
+        "tool_payments",
+        {
+            "tool_name": event.get("tool_name"),
+            "payment": payment,
+            "policy_decision": policy_decision.to_dict(),
+        },
+    )
     write_stdout_json(
         {
             "hook": "PreToolUse",
             "tool_name": event.get("tool_name"),
-            "decision": decision,
+            "decision": policy_decision.decision,
             "payment": payment,
+            "policy_decision": policy_decision.to_dict(),
         }
     )
     return 0

@@ -18,11 +18,12 @@
 - 2026-05-29: Extended ledger durability with per-ledger indexes, record-id lookup, storage manifest initialization, and migration/version checks. Verification: wrote failing tests first in `tests/test_enterprise_storage.py`; initial run failed on missing index files and `migration_status`; after implementation, `uv run pytest tests/test_enterprise_storage.py -q` passed with 7 tests and `uv run pytest -q` passed with 56 tests.
 - 2026-05-29: Added enterprise policy gates for unaffordable actions and human review enforcement on absorption/disintegration decisions, with runtime horizon review recording explainable policy decisions. Verification: wrote failing tests first in `tests/test_policy_gates.py`; initial run failed on missing `godspeed_nav.policies`; after implementation, `uv run pytest tests/test_policy_gates.py -q` passed with 4 tests and `uv run pytest -q` passed with 60 tests.
 - 2026-05-29: Added developmental observability reports and the `developmental-report` CLI command, summarizing settlement quality, payment burden, trajectory/circular motion, active horizon directions, and metabolization candidates from local ledgers. Verification: wrote failing tests first in `tests/test_reports.py` and `tests/test_cli_hooks_mcp.py`; initial runs failed on missing `godspeed_nav.reports` and missing `developmental-report`; after implementation, `uv run pytest tests/test_reports.py tests/test_cli_hooks_mcp.py::test_cli_developmental_report_outputs_observability_summary -q` passed with 3 tests and `uv run pytest -q` passed with 63 tests.
+- 2026-05-29: Upgraded hooks and MCP toward workflow-grade runtime surfaces. `PreToolUse` now records tool payment decisions with policy explanations, `PostToolUse` returns a runtime snapshot after settlement recording, `Stop` returns a developmental report, and MCP exposes `runtime_snapshot` plus `developmental_report`. Verification: wrote failing tests first in `tests/test_cli_hooks_mcp.py`; initial run failed on missing policy/report/snapshot outputs and missing MCP tools; after implementation, focused hook/MCP tests passed and `uv run pytest -q` passed with 64 tests.
 
 
 ## what is still missing (what does each afford towards the overall project goals, and how will we know when it's done)
 
-- Workflow-grade hooks/MCP, validation command, and enterprise runbooks.
+- Validation command and enterprise runbooks.
 
 ## lessons learned (that will inform future work making this process more efficient, prune unnecessary steps, and avoid pitfalls)
 
@@ -32,4 +33,4 @@
 
 ## next steps (each step should unlock the next step and justifiably contribute to the overall project progress)
 
-- Upgrade hooks and MCP to use the runtime/policy/reporting surfaces, then add a validation command and enterprise runbooks.
+- Add an enterprise `validate` command that checks package structure, config, storage, hooks, MCP, reports, and sample workflow; then write enterprise runbooks.

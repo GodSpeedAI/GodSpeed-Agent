@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.schemas import now_iso
+from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.storage import LedgerStore
 from godspeed_nav.trajectory import update_trajectory
 from hooks.common import read_stdin_json, write_stdout_json
@@ -23,7 +24,8 @@ def main() -> int:
     )
     record = {"id": event.get("id", f"trajectory-{now_iso()}"), **trajectory, "created_at": now_iso()}
     storage.append("trajectories", record)
-    write_stdout_json({"hook": "Stop", "recorded": True, "trajectory": trajectory})
+    report = generate_developmental_report(event.get("storage_root", ".godspeed-harness"))
+    write_stdout_json({"hook": "Stop", "recorded": True, "trajectory": trajectory, "report": report})
     return 0
 
 

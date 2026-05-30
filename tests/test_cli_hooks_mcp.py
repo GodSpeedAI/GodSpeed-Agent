@@ -270,10 +270,11 @@ def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
 
 
 def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
+    storage_root = tmp_path / ".godspeed-harness"
     output = run_python(
         ["hooks/pre_tool_use.py"],
         {
-            "storage_root": str(tmp_path / ".godspeed-harness"),
+            "storage_root": str(storage_root),
             "tool_name": "Edit",
             "costs": {"time": 9, "risk": 9},
             "capacities": {"time": 1, "risk": 1},
@@ -283,6 +284,10 @@ def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
 
     assert output["decision"] == "warn"
     assert output["payment"]["spendability"] == "unaffordable"
+    assert output["policy_decision"]["code"] == "unaffordable_action"
+    assert '"tool_name": "Edit"' in (storage_root / "ledgers" / "tool_payments.jsonl").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_post_tool_hook_records_settlement_event(tmp_path: Path):
@@ -302,6 +307,7 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
     assert output["recorded"] is True
     ledger = storage_root / "ledgers" / "settlements.jsonl"
     assert '"affordance_id": "aff-1"' in ledger.read_text(encoding="utf-8")
+    assert output["snapshot"]["counts"]["settlements"] == 1
 
 
 def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
@@ -320,6 +326,7 @@ def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
 
     assert output["recorded"] is True
     assert (storage_root / "ledgers" / "trajectories.jsonl").exists()
+    assert "report" in output
 
 
 def test_mcp_wrapper_registers_required_tools():
@@ -332,7 +339,21 @@ def test_mcp_wrapper_registers_required_tools():
         "cybernetic_nav.update_trajectory",
         "cybernetic_nav.compute_metabolization",
         "cybernetic_nav.rank_affordances",
+        "cybernetic_nav.runtime_snapshot",
+        "cybernetic_nav.developmental_report",
     } <= set(TOOL_NAMES)
+
+
+def test_mcp_wrapper_dispatches_runtime_snapshot_and_report(tmp_path: Path):
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    storage_root = tmp_path / ".godspeed-harness"
+
+    snapshot = call_tool("cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)})
+    report = call_tool("cybernetic_nav.developmental_report", {"storage_root": str(storage_root)})
+
+    assert snapshot["counts"]["desired_directions"] == 0
+    assert report["horizon"]["active_direction_count"] == 0
 
 
 def test_monitor_configuration_contains_recommended_monitors():
