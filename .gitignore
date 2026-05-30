@@ -2,4 +2,4 @@
 .godspeed-harness/
 __pycache__/
 .pytest_cache/
-
+*:Zone.Identifier

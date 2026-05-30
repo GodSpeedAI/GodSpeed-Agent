@@ -11,17 +11,19 @@
 - 2026-05-29: Made the required self-critique/reconstruction surface explicit in `README.md`. Verification: added a failing assertion to `tests/test_docs_alignment.py`, observed it fail on missing `## Self-Critique`, added the section, then `uv run pytest tests/test_docs_alignment.py -q` passed with 5 tests and `uv run pytest -q` passed with 45 tests.
 - 2026-05-29: Ran final implementation audit on feature branch `feature/harness`. Verification: `uv run pytest -q` passed with 45 tests; artifact audit checked 39 required paths from the spec and found no missing files; `git diff --stat main..HEAD` shows plugin, config, schemas, storage, computation, hooks, MCP, monitors, agents, evals, docs, and tests added across 74 files.
 - 2026-05-29: Merged `feature/harness` into `main` locally and verified the integrated checkout. Verification: `uv run pytest -q` on `main` passed with 45 tests; artifact audit checked 39 required paths from the spec and found no missing files.
+- 2026-05-29: Reviewed `Cognitive Operating Systems (1).pdf` and captured the grand understanding in `docs/understanding/2026-05-29-cognitive-operating-systems.md`, then translated it into the enterprise hardening plan at `docs/plans/2026-05-29-enterprise-hardening.md`. Verification: extracted the 13-page PDF with `uv run --with pypdf`, confirmed the existing suite still passed with `uv run pytest -q` (`45 passed`), and documented the current gaps against the PDF’s desired runtime.
 
 
 ## what is still missing (what does each afford towards the overall project goals, and how will we know when it's done)
 
-- Nothing currently known for the implemented local harness scope. Future work may deepen optional integrations beyond the current local MCP wrapper and deterministic implementation.
+- Runtime orchestration, enterprise ledger durability, policy gates, observability reports, workflow-grade hooks/MCP, validation command, and enterprise runbooks.
 
 ## lessons learned (that will inform future work making this process more efficient, prune unnecessary steps, and avoid pitfalls)
 
 - The user-requested `Godspeed_Agent_Harness_SPEC.mdis` appears in this repository as `Godspeed_Agent_Harness_SPEC.md`.
 - Project instructions require `.github/copilot-instructions.md`, but that file is absent, so the spec is the active project contract.
+- The PDF makes clear that enterprise readiness means a connected developmental operating loop, not just plugin shape and stateless deterministic helpers.
 
 ## next steps (each step should unlock the next step and justifiably contribute to the overall project progress)
 
-- Use the harness in a real Claude Code plugin installation and add settlement events from real usage.
+- Start Phase 1 of the enterprise hardening plan with TDD: runtime orchestration foundation and connected workflow CLI commands.
