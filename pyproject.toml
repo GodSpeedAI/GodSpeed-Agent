@@ -20,4 +20,4 @@ godspeed-nav = "godspeed_nav.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
+pythonpath = ["."]
