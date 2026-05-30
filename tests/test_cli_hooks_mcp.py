@@ -157,6 +157,21 @@ def test_cli_absorption_rejection_outputs_potential_status():
     assert output["absorbability_status"] == "potential"
 
 
+def test_cli_runtime_snapshot_outputs_connected_counts(tmp_path: Path):
+    output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "runtime-snapshot",
+            "--storage-root",
+            str(tmp_path / ".godspeed-harness"),
+        ]
+    )
+
+    assert output["counts"]["desired_directions"] == 0
+    assert output["latest_trajectory"] is None
+
+
 def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     output = run_python(
         ["hooks/pre_tool_use.py"],

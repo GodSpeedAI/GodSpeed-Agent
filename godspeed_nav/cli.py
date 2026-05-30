@@ -8,6 +8,7 @@ from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import compute_error, estimate_payment
 from godspeed_nav.metrics import rank_affordances, score_settlement
+from godspeed_nav.runtime import NavigationRuntime
 
 
 def _json_arg(value: str) -> dict[str, Any]:
@@ -65,6 +66,9 @@ def build_parser() -> argparse.ArgumentParser:
     absorption_parser.add_argument("--capability-delta", type=_json_list_arg, required=True)
     absorption_parser.add_argument("--license", type=_json_arg, required=True)
     absorption_parser.add_argument("--pathway", default=None)
+
+    runtime_snapshot_parser = subcommands.add_parser("runtime-snapshot")
+    runtime_snapshot_parser.add_argument("--storage-root", default=".godspeed-harness")
     return parser
 
 
@@ -102,6 +106,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             license_summary=args.license,
             pathway=args.pathway,
         )
+    if args.command == "runtime-snapshot":
+        return NavigationRuntime(args.storage_root).snapshot()
     raise SystemExit(f"Unknown command: {args.command}")
 
 
