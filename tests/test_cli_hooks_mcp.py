@@ -172,6 +172,73 @@ def test_cli_runtime_snapshot_outputs_connected_counts(tmp_path: Path):
     assert output["latest_trajectory"] is None
 
 
+def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
+    storage_root = tmp_path / ".godspeed-harness"
+
+    direction = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "start-direction",
+            "--storage-root",
+            str(storage_root),
+            "--label",
+            "Enterprise runtime",
+            "--statement",
+            "Connect workflow commands",
+        ]
+    )
+    review = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "review-horizon",
+            "--storage-root",
+            str(storage_root),
+            "--direction-id",
+            direction["id"],
+            "--candidates",
+            '[{"id":"cli-loop","statement":"Use runtime CLI","pathway":"call CLI","costs":{"time":1},"capacities":{"time":5},"expected_horizon_delta":4,"risk":0}]',
+        ]
+    )
+    settlement = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "record-settlement",
+            "--storage-root",
+            str(storage_root),
+            "--affordance-id",
+            "cli-loop",
+            "--before",
+            '{"cli": 0}',
+            "--after",
+            '{"cli": 1}',
+            "--payment",
+            '{"time": 1}',
+            "--evidence",
+            '["cli workflow test passed"]',
+            "--horizon-delta",
+            "4",
+        ]
+    )
+    snapshot = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "runtime-snapshot",
+            "--storage-root",
+            str(storage_root),
+        ]
+    )
+
+    assert review["next_affordance"]["id"] == "cli-loop"
+    assert settlement["status"] == "success"
+    assert snapshot["counts"]["desired_directions"] == 1
+    assert snapshot["counts"]["affordances"] == 1
+    assert snapshot["counts"]["settlements"] == 1
+
+
 def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     output = run_python(
         ["hooks/pre_tool_use.py"],

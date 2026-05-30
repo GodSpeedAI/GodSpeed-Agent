@@ -69,6 +69,27 @@ def build_parser() -> argparse.ArgumentParser:
 
     runtime_snapshot_parser = subcommands.add_parser("runtime-snapshot")
     runtime_snapshot_parser.add_argument("--storage-root", default=".godspeed-harness")
+
+    start_direction_parser = subcommands.add_parser("start-direction")
+    start_direction_parser.add_argument("--storage-root", default=".godspeed-harness")
+    start_direction_parser.add_argument("--label", required=True)
+    start_direction_parser.add_argument("--statement", required=True)
+    start_direction_parser.add_argument("--kind", default="goal")
+    start_direction_parser.add_argument("--source", default="cli")
+
+    review_horizon_parser = subcommands.add_parser("review-horizon")
+    review_horizon_parser.add_argument("--storage-root", default=".godspeed-harness")
+    review_horizon_parser.add_argument("--direction-id", required=True)
+    review_horizon_parser.add_argument("--candidates", type=_json_list_arg, required=True)
+
+    record_settlement_parser = subcommands.add_parser("record-settlement")
+    record_settlement_parser.add_argument("--storage-root", default=".godspeed-harness")
+    record_settlement_parser.add_argument("--affordance-id", required=True)
+    record_settlement_parser.add_argument("--before", type=_json_arg, required=True)
+    record_settlement_parser.add_argument("--after", type=_json_arg, required=True)
+    record_settlement_parser.add_argument("--payment", type=_json_arg, required=True)
+    record_settlement_parser.add_argument("--evidence", type=_json_list_arg, required=True)
+    record_settlement_parser.add_argument("--horizon-delta", type=float, required=True)
     return parser
 
 
@@ -108,6 +129,27 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
     if args.command == "runtime-snapshot":
         return NavigationRuntime(args.storage_root).snapshot()
+    if args.command == "start-direction":
+        return NavigationRuntime(args.storage_root).start_direction(
+            label=args.label,
+            statement=args.statement,
+            kind=args.kind,
+            source=args.source,
+        )
+    if args.command == "review-horizon":
+        return NavigationRuntime(args.storage_root).review_horizon(
+            direction_id=args.direction_id,
+            candidates=args.candidates,
+        )
+    if args.command == "record-settlement":
+        return NavigationRuntime(args.storage_root).record_settlement(
+            affordance_id=args.affordance_id,
+            before_state=args.before,
+            after_state=args.after,
+            payment_actual=args.payment,
+            evidence=args.evidence,
+            horizon_delta=args.horizon_delta,
+        )
     raise SystemExit(f"Unknown command: {args.command}")
 
 

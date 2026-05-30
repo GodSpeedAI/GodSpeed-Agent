@@ -13,11 +13,12 @@
 - 2026-05-29: Merged `feature/harness` into `main` locally and verified the integrated checkout. Verification: `uv run pytest -q` on `main` passed with 45 tests; artifact audit checked 39 required paths from the spec and found no missing files.
 - 2026-05-29: Reviewed `Cognitive Operating Systems (1).pdf` and captured the grand understanding in `docs/understanding/2026-05-29-cognitive-operating-systems.md`, then translated it into the enterprise hardening plan at `docs/plans/2026-05-29-enterprise-hardening.md`. Verification: extracted the 13-page PDF with `uv run --with pypdf`, confirmed the existing suite still passed with `uv run pytest -q` (`45 passed`), and documented the current gaps against the PDF’s desired runtime.
 - 2026-05-29: Started Phase 1 enterprise hardening by adding `NavigationRuntime`, a connected local orchestration service for desired directions, horizon review, affordance/payment recording, settlement, trajectory update, and runtime snapshots. Verification: wrote failing tests first in `tests/test_runtime_workflow.py` and a failing CLI snapshot test; initial runs failed on missing `godspeed_nav.runtime` and missing `runtime-snapshot`; after implementation, `uv run pytest -q` passed with 48 tests.
+- 2026-05-29: Added workflow-grade CLI commands over `NavigationRuntime`: `start-direction`, `review-horizon`, `record-settlement`, and `runtime-snapshot`. Verification: wrote failing CLI workflow test first; initial run failed because `start-direction` was not a valid command; after implementation, `uv run pytest -q` passed with 49 tests.
 
 
 ## what is still missing (what does each afford towards the overall project goals, and how will we know when it's done)
 
-- Deeper runtime CLI workflow commands, enterprise ledger durability, policy gates, observability reports, workflow-grade hooks/MCP, validation command, and enterprise runbooks.
+- Enterprise ledger durability, policy gates, observability reports, workflow-grade hooks/MCP, validation command, and enterprise runbooks.
 
 ## lessons learned (that will inform future work making this process more efficient, prune unnecessary steps, and avoid pitfalls)
 
@@ -27,4 +28,4 @@
 
 ## next steps (each step should unlock the next step and justifiably contribute to the overall project progress)
 
-- Continue Phase 1 by adding workflow CLI commands for starting directions, reviewing horizons, and recording settlements through `NavigationRuntime`.
+- Start Phase 2 with TDD: strengthen ledger safety with safe names, event envelopes, sequence metadata, and backup/export behavior.
