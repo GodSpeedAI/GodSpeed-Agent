@@ -4,6 +4,8 @@ import json
 import sys
 from typing import Any
 
+from godspeed_nav.storage import LedgerStore
+
 
 def read_stdin_json() -> dict[str, Any]:
     raw = sys.stdin.read()
@@ -17,4 +19,8 @@ def read_stdin_json() -> dict[str, Any]:
 
 def write_stdout_json(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, sort_keys=True))
+
+
+def get_storage(event: dict[str, Any]) -> LedgerStore:
+    return LedgerStore(event.get("storage_root", ".godspeed-harness"))
 

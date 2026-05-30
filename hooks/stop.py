@@ -8,24 +8,51 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.schemas import now_iso
 from godspeed_nav.reports import generate_developmental_report
-from godspeed_nav.storage import LedgerStore
+from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.trajectory import update_trajectory
 from hooks.common import read_stdin_json, write_stdout_json
+from hooks.common import get_storage
 
 
 def main() -> int:
     event = read_stdin_json()
-    storage = LedgerStore(event.get("storage_root", ".godspeed-harness"))
+    runtime = NavigationRuntime(event.get("storage_root", ".godspeed-harness"))
+    snapshot = runtime.snapshot()
+    latest_trajectory = snapshot.get("latest_trajectory") or {}
+    storage = get_storage(event)
+    settlements = storage.read("settlements")
+    latest_settlement = settlements[-1] if settlements else {}
     trajectory = update_trajectory(
-        previous_theta=float(event.get("previous_theta", 0)),
-        previous_radius=float(event.get("previous_radius", 1)),
-        settlement_score=float(event.get("settlement_score", 0)),
+        previous_theta=float(
+            event.get("previous_theta", latest_trajectory.get("new_theta", latest_trajectory.get("theta", 0)))
+        ),
+        previous_radius=float(
+            event.get("previous_radius", latest_trajectory.get("new_radius", latest_trajectory.get("radius", 1)))
+        ),
+        settlement_score=float(event.get("settlement_score", latest_settlement.get("score", 0))),
         horizon_delta=float(event.get("horizon_delta", 0)),
     )
     record = {"id": event.get("id", f"trajectory-{now_iso()}"), **trajectory, "created_at": now_iso()}
     storage.append("trajectories", record)
+    storage.append_event(
+        "stop_events",
+        {
+            "id": f"stop-{now_iso()}",
+            "trajectory_id": record["id"],
+            "latest_settlement_id": latest_settlement.get("id"),
+            "active_direction_count": len(snapshot.get("active_directions", [])),
+        },
+    )
     report = generate_developmental_report(event.get("storage_root", ".godspeed-harness"))
-    write_stdout_json({"hook": "Stop", "recorded": True, "trajectory": trajectory, "report": report})
+    write_stdout_json(
+        {
+            "hook": "Stop",
+            "recorded": True,
+            "trajectory": trajectory,
+            "report": report,
+            "snapshot": runtime.snapshot(),
+        }
+    )
     return 0
 
 

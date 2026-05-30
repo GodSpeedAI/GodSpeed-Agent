@@ -6,38 +6,51 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from godspeed_nav.metrics import score_settlement
+from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.schemas import now_iso
-from godspeed_nav.storage import LedgerStore
 from hooks.common import read_stdin_json, write_stdout_json
+from hooks.common import get_storage
+
+
+def _affordance_id(event: dict) -> str:
+    return event.get("affordance_id") or event.get("tool_name") or "unspecified-affordance"
 
 
 def main() -> int:
     event = read_stdin_json()
-    storage = LedgerStore(event.get("storage_root", ".godspeed-harness"))
-    settlement = score_settlement(
-        event.get("before_state", {}),
-        event.get("after_state", {}),
-        event.get("desired_direction", {}),
-        event.get("payment_actual", {}),
-        {"evidence": event.get("evidence", [])},
+    runtime = NavigationRuntime(event.get("storage_root", ".godspeed-harness"))
+    settlement = runtime.record_settlement(
+        affordance_id=_affordance_id(event),
+        before_state=event.get("before_state", {}),
+        after_state=event.get("after_state", {}),
+        payment_actual=event.get("payment_actual", {}),
+        evidence=event.get("evidence", []),
+        horizon_delta=float(event.get("horizon_delta", 0)),
     )
-    record = {
-        "id": event.get("id", f"settlement-{now_iso()}"),
-        "affordance_id": event.get("affordance_id"),
-        "before_state": event.get("before_state", {}),
-        "after_state": event.get("after_state", {}),
-        "payment_actual": event.get("payment_actual", {}),
-        "score": settlement["settlement_score"],
-        "status": settlement["status"],
-        "evidence": event.get("evidence", []),
-        "created_at": now_iso(),
-    }
-    storage.append("settlements", record)
-    snapshot = NavigationRuntime(event.get("storage_root", ".godspeed-harness")).snapshot()
+    storage = get_storage(event)
+    storage.append_event(
+        "post_tool_use_events",
+        {
+            "id": event.get("id", f"post-tool-{now_iso()}"),
+            "tool_name": event.get("tool_name"),
+            "affordance_id": _affordance_id(event),
+            "desired_direction": event.get("desired_direction"),
+            "settlement_id": settlement["id"],
+            "status": settlement["status"],
+            "horizon_delta": float(event.get("horizon_delta", 0)),
+        },
+    )
+    snapshot = runtime.snapshot()
+    report = generate_developmental_report(event.get("storage_root", ".godspeed-harness"))
     write_stdout_json(
-        {"hook": "PostToolUse", "recorded": True, "settlement": settlement, "snapshot": snapshot}
+        {
+            "hook": "PostToolUse",
+            "recorded": True,
+            "settlement": settlement,
+            "snapshot": snapshot,
+            "report": report,
+        }
     )
     return 0
 

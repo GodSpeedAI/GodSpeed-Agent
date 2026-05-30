@@ -290,6 +290,25 @@ def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     )
 
 
+def test_user_prompt_hook_records_direction_hypothesis(tmp_path: Path):
+    storage_root = tmp_path / ".godspeed-harness"
+
+    output = run_python(
+        ["hooks/user_prompt_submit.py"],
+        {
+            "storage_root": str(storage_root),
+            "prompt": "Build the next affordable path to enterprise readiness.",
+        },
+    )
+
+    assert output["outcome_as_terminal"] is False
+    assert output["needs_horizon_review"] is True
+    assert output["desired_direction_hypothesis"]["statement"] == (
+        "Build the next affordable path to enterprise readiness."
+    )
+    assert (storage_root / "ledgers" / "prompt_submissions.jsonl").exists()
+
+
 def test_post_tool_hook_records_settlement_event(tmp_path: Path):
     storage_root = tmp_path / ".godspeed-harness"
 
@@ -300,7 +319,9 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
             "affordance_id": "aff-1",
             "before_state": {"tests": 0},
             "after_state": {"tests": 1},
+            "payment_actual": {"time": 1},
             "evidence": ["pytest passed"],
+            "horizon_delta": 2,
         },
     )
 
@@ -308,6 +329,8 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
     ledger = storage_root / "ledgers" / "settlements.jsonl"
     assert '"affordance_id": "aff-1"' in ledger.read_text(encoding="utf-8")
     assert output["snapshot"]["counts"]["settlements"] == 1
+    assert output["snapshot"]["counts"]["trajectories"] == 1
+    assert output["report"]["settlement_quality"]["success"] == 1
 
 
 def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):

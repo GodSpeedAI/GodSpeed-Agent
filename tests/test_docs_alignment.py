@@ -26,6 +26,22 @@ def test_skill_descriptions_include_trigger_context_and_task_purpose():
         assert any(term in description for term in ["horizon", "payment", "settlement", "substrate", "absorb"])
 
 
+def test_skill_bodies_include_operational_sections():
+    required_sections = [
+        "## Overview",
+        "## When To Use",
+        "## Inputs",
+        "## Workflow",
+        "## Output",
+        "## Common Failure Modes",
+    ]
+
+    for skill in SKILLS:
+        text = (ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+        for section in required_sections:
+            assert section in text, f"{skill} is missing {section}"
+
+
 def test_each_skill_has_reference_and_script_material():
     for skill in SKILLS:
         skill_root = ROOT / "skills" / skill
