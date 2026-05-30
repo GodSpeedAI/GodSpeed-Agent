@@ -8,16 +8,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.schemas import now_iso
 from godspeed_nav.reports import generate_developmental_report
-from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.trajectory import update_trajectory
 from hooks.common import read_stdin_json, write_stdout_json
-from hooks.common import get_session_context, get_storage
+from hooks.common import get_runtime, get_session_context, get_storage
 
 
 def main() -> int:
     event = read_stdin_json()
     session_context = get_session_context(event)
-    runtime = NavigationRuntime(event.get("storage_root", ".godspeed-harness"))
+    runtime = get_runtime(event)
     snapshot = runtime.snapshot()
     latest_trajectory = snapshot.get("latest_trajectory") or {}
     storage = get_storage(event)
@@ -45,7 +44,7 @@ def main() -> int:
             "active_direction_count": len(snapshot.get("active_directions", [])),
         },
     )
-    report = generate_developmental_report(event.get("storage_root", ".godspeed-harness"))
+    report = generate_developmental_report(str(runtime.store.root))
     write_stdout_json(
         {
             "hook": "Stop",

@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -84,3 +85,21 @@ def test_storage_manifest_version_mismatch_requires_migration(tmp_path: Path):
         store.migration_status()
 
     assert error.value.code == "storage_migration_required"
+
+
+def test_append_event_maintains_monotonic_sequences_under_concurrency(tmp_path: Path):
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+
+    def write_event(index: int) -> dict:
+        return LedgerStore(store.root).append_event(
+            "settlements", {"id": f"set-{index}", "status": "success"}
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(write_event, range(24)))
+
+    sequences = sorted(item["sequence"] for item in results)
+    persisted = store.read_events("settlements")
+
+    assert sequences == list(range(1, 25))
+    assert [event["sequence"] for event in persisted] == list(range(1, 25))

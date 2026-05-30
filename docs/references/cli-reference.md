@@ -32,12 +32,16 @@ Scores whether consequence actually settled from before/after state and evidence
 
 ## Runtime Workflow Commands
 
+Storage-backed commands (`start-direction`, `review-horizon`, `record-settlement`, `runtime-snapshot`, `developmental-report`, `predictive-extensions`, and `validate`) resolve `--storage-root` inside `--workspace-root`. The CLI rejects storage paths outside the workspace boundary.
+
 ### `start-direction`
 
 Creates a desired direction and its initial horizon.
 
 ```bash
 uv run godspeed-nav start-direction \
+  --workspace-root . \
+  --storage-root .godspeed-harness/session \
   --label "Reference layer" \
   --statement "Add operator reference docs"
 ```
@@ -48,6 +52,8 @@ Evaluates candidate transformations, records payment estimates, applies policy g
 
 ```bash
 uv run godspeed-nav review-horizon \
+  --workspace-root . \
+  --storage-root .godspeed-harness/session \
   --direction-id <direction-id> \
   --candidates '[{"id":"docs-ref","statement":"Write references","pathway":"edit docs","costs":{"time":2},"capacities":{"time":5},"expected_horizon_delta":3,"risk":0}]'
 ```
@@ -58,6 +64,8 @@ Records before/after consequence, stores settlement evidence, and updates trajec
 
 ```bash
 uv run godspeed-nav record-settlement \
+  --workspace-root . \
+  --storage-root .godspeed-harness/session \
   --affordance-id docs-ref \
   --before '{"references":0}' \
   --after '{"references":1}' \
@@ -70,6 +78,10 @@ uv run godspeed-nav record-settlement \
 
 Returns current ledger counts, active directions, and latest trajectory.
 
+### `absorbability`
+
+Reads the workspace safety policy before deciding whether an absorption review requires human approval.
+
 ### `developmental-report`
 
 Returns the observability summary with settlement quality, payment debt, horizon state, metabolization candidates, and trajectory fields such as `circular_motion`.
@@ -81,6 +93,8 @@ Builds the predictive extension plan without overriding deterministic ranking. `
 ### `validate`
 
 Runs the enterprise-readiness audit across package structure, config, runtime workflow, storage, hooks, MCP, reports, and predictive settings.
+
+`validate` uses a scratch runtime store for its sample workflow checks so it does not fabricate settlement history inside the target storage root.
 
 ## Interpretation Rule
 

@@ -7,10 +7,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from godspeed_nav.reports import generate_developmental_report
-from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.schemas import now_iso
 from hooks.common import read_stdin_json, write_stdout_json
-from hooks.common import get_session_context, get_storage
+from hooks.common import get_runtime, get_session_context, get_storage
 
 
 def _affordance_id(event: dict) -> str:
@@ -20,7 +19,7 @@ def _affordance_id(event: dict) -> str:
 def main() -> int:
     event = read_stdin_json()
     session_context = get_session_context(event)
-    runtime = NavigationRuntime(event.get("storage_root", ".godspeed-harness"))
+    runtime = get_runtime(event)
     settlement = runtime.record_settlement(
         affordance_id=_affordance_id(event),
         before_state=event.get("before_state", {}),
@@ -44,7 +43,7 @@ def main() -> int:
         },
     )
     snapshot = runtime.snapshot()
-    report = generate_developmental_report(event.get("storage_root", ".godspeed-harness"))
+    report = generate_developmental_report(str(runtime.store.root))
     write_stdout_json(
         {
             "hook": "PostToolUse",

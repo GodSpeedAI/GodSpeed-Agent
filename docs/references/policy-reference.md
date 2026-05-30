@@ -10,6 +10,8 @@ This document maps `HARNESS.md` policy settings to runtime consequences. Policy 
 - Loader: `godspeed_nav/config.py`
 - Enforcement: `godspeed_nav/policies.py`
 
+Public surfaces inherit these settings through the workspace loader. The CLI, hooks, MCP wrapper, and validation command do not trust caller-supplied storage roots or ad hoc policy flags when a workspace policy exists.
+
 ## Core Harness Invariants
 
 - `primary_metric: horizon_expansion`

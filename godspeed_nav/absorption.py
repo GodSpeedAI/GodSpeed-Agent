@@ -12,6 +12,7 @@ def review_absorbability(
     capability_delta: list[str],
     license_summary: dict[str, Any],
     pathway: str | None,
+    policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     missing_pathway = pathway is None or not pathway.strip()
     license_ok = bool(license_summary.get("compatible", False))
@@ -32,7 +33,8 @@ def review_absorbability(
             "capability_delta": capability_delta,
             "root_project_state": root_project_state,
             "external_project_state": external_project_state,
-        }
+        },
+        policy=policy,
     )
     required_human_review = policy_gate.decision == "requires_review"
 

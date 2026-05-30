@@ -5,6 +5,7 @@ import sys
 from typing import Any
 
 from godspeed_nav.absorption import review_absorbability
+from godspeed_nav.config import load_config, resolve_storage_root, runtime_policy
 from godspeed_nav.disintegration import review_positive_disintegration
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import (
@@ -43,11 +44,23 @@ TOOL_NAMES = [
 
 
 def _runtime(arguments: dict[str, Any]) -> NavigationRuntime:
-    return NavigationRuntime(arguments.get("storage_root", ".godspeed-harness"))
+    workspace_root = arguments.get("workspace_root", ".")
+    config = load_config(workspace_root)
+    return NavigationRuntime(
+        resolve_storage_root(workspace_root, arguments.get("storage_root")),
+        policy=runtime_policy(config),
+    )
 
 
 def _store(arguments: dict[str, Any]) -> LedgerStore:
-    return LedgerStore(arguments.get("storage_root", ".godspeed-harness"))
+    workspace_root = arguments.get("workspace_root", ".")
+    return LedgerStore(
+        resolve_storage_root(workspace_root, arguments.get("storage_root"))
+    )
+
+
+def _policy(arguments: dict[str, Any]) -> dict[str, Any]:
+    return runtime_policy(load_config(arguments.get("workspace_root", ".")))
 
 
 def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -67,9 +80,23 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "cybernetic_nav.detect_circular_motion":
             return detect_circular_motion(**arguments)
         if name == "cybernetic_nav.review_absorbability":
-            return review_absorbability(**arguments)
+            return review_absorbability(
+                root_project_state=arguments["root_project_state"],
+                external_project_state=arguments["external_project_state"],
+                desired_direction=arguments["desired_direction"],
+                capability_delta=arguments["capability_delta"],
+                license_summary=arguments["license_summary"],
+                pathway=arguments.get("pathway"),
+                policy=_policy(arguments),
+            )
         if name == "cybernetic_nav.review_positive_disintegration":
-            return review_positive_disintegration(**arguments)
+            return review_positive_disintegration(
+                structures=arguments["structures"],
+                require_human_review=arguments.get(
+                    "require_human_review",
+                    _policy(arguments)["require_human_review_for_disintegration"],
+                ),
+            )
         if name == "cybernetic_nav.write_ledger_event":
             envelope = _store(arguments).append_event(
                 arguments["ledger_name"], arguments["record"]
@@ -132,7 +159,7 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "cybernetic_nav.validate_enterprise_readiness":
             return validate_enterprise_readiness(
                 workspace_root=arguments.get("workspace_root", "."),
-                storage_root=arguments.get("storage_root", ".godspeed-harness"),
+                storage_root=str(_store(arguments).root),
             )
     except KeyError as exc:
         raise ValueError(

@@ -119,3 +119,42 @@ def test_runtime_promotes_repeated_success_into_metabolization_evidence(tmp_path
     assert latest["context_diversity"] >= 2
     assert latest["status"] == "substrate_candidate"
     assert runtime.snapshot()["counts"]["capabilities"] >= 1
+
+
+def test_runtime_truth_ledgers_use_event_envelopes(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    direction = runtime.start_direction(
+        label="Durable truth surface",
+        statement="Record payment and settlement with integrity metadata",
+        source="test",
+    )
+    runtime.review_horizon(
+        direction_id=direction["id"],
+        candidates=[
+            {
+                "id": "durable-loop",
+                "statement": "Use event-backed truth ledgers",
+                "pathway": "append enveloped records",
+                "costs": {"time": 1},
+                "capacities": {"time": 5},
+                "expected_horizon_delta": 2,
+                "risk": 0,
+            }
+        ],
+    )
+    runtime.record_settlement(
+        affordance_id="durable-loop",
+        before_state={"truth": 0},
+        after_state={"truth": 1},
+        payment_actual={"time": 1},
+        evidence=["integrity verified"],
+        horizon_delta=2,
+    )
+
+    payment_events = runtime.store.read_events("payments")
+    settlement_events = runtime.store.read_events("settlements")
+
+    assert payment_events[0]["record"]["affordance_id"] == "durable-loop"
+    assert settlement_events[0]["record"]["affordance_id"] == "durable-loop"
+    assert runtime.store.read("settlements")[0]["affordance_id"] == "durable-loop"

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import shutil
+import fcntl
 from pathlib import Path
 from typing import Any
 
@@ -52,10 +53,15 @@ class LedgerStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = self._redact(record) if self.redact_secrets else record
         line = json.dumps(payload, sort_keys=True)
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(line + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
+        with path.open("a+", encoding="utf-8") as handle:
+            self._lock_handle(handle)
+            try:
+                handle.seek(0, os.SEEK_END)
+                handle.write(line + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            finally:
+                self._unlock_handle(handle)
         return path
 
     def read(self, ledger_name: str) -> list[dict[str, Any]]:
@@ -73,32 +79,48 @@ class LedgerStore:
             except json.JSONDecodeError:
                 corrupt.append(line)
                 continue
+            if self._is_event_envelope(record):
+                if record.get("checksum") != self._checksum(record):
+                    corrupt.append(
+                        json.dumps(
+                            {"reason": "checksum_mismatch", "line": line},
+                            sort_keys=True,
+                        )
+                    )
+                    continue
+                payload = record.get("record")
+                if isinstance(payload, dict):
+                    records.append(payload)
+                    continue
             records.append(record)
 
         if corrupt:
-            quarantine = self.root / "cache" / "quarantine" / f"{ledger_name}.corrupt.jsonl"
-            with quarantine.open("a", encoding="utf-8") as handle:
-                for line in corrupt:
-                    handle.write(line + "\n")
+            self._write_quarantine(ledger_name, corrupt)
 
         return records
 
     def append_event(self, ledger_name: str, record: dict[str, Any]) -> dict[str, Any]:
-        existing = self.read_events(ledger_name)
-        payload = self._redact(record) if self.redact_secrets else record
-        envelope = {
-            "schema_version": 1,
-            "sequence": len(existing) + 1,
-            "timestamp": now_iso(),
-            "ledger": ledger_name,
-            "record": payload,
-        }
-        envelope["checksum"] = self._checksum(envelope)
         path = self.ledger_path(ledger_name)
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(envelope, sort_keys=True) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = self._redact(record) if self.redact_secrets else record
+        with path.open("a+", encoding="utf-8") as handle:
+            self._lock_handle(handle)
+            try:
+                sequence = self._next_event_sequence(handle)
+                envelope = {
+                    "schema_version": 1,
+                    "sequence": sequence,
+                    "timestamp": now_iso(),
+                    "ledger": ledger_name,
+                    "record": payload,
+                }
+                envelope["checksum"] = self._checksum(envelope)
+                handle.seek(0, os.SEEK_END)
+                handle.write(json.dumps(envelope, sort_keys=True) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            finally:
+                self._unlock_handle(handle)
         self._update_index(ledger_name, envelope)
         return envelope
 
@@ -199,20 +221,48 @@ class LedgerStore:
                 "updated_at": now_iso(),
                 "records": {},
             }
-        return json.loads(path.read_text(encoding="utf-8"))
+        text = path.read_text(encoding="utf-8")
+        if not text.strip():
+            return {
+                "schema_version": STORAGE_SCHEMA_VERSION,
+                "ledger": ledger_name,
+                "updated_at": now_iso(),
+                "records": {},
+            }
+        return json.loads(text)
 
     def _update_index(self, ledger_name: str, envelope: dict[str, Any]) -> None:
-        index = self._read_index(ledger_name)
-        record_id = envelope.get("record", {}).get("id")
-        if record_id:
-            index["records"][record_id] = {
-                "sequence": envelope["sequence"],
-                "timestamp": envelope["timestamp"],
-                "checksum": envelope["checksum"],
-            }
-        index["updated_at"] = now_iso()
         path = self._index_path(ledger_name)
-        path.write_text(json.dumps(index, indent=2, sort_keys=True), encoding="utf-8")
+        with path.open("a+", encoding="utf-8") as handle:
+            self._lock_handle(handle)
+            try:
+                handle.seek(0)
+                raw = handle.read()
+                index = (
+                    json.loads(raw)
+                    if raw.strip()
+                    else {
+                        "schema_version": STORAGE_SCHEMA_VERSION,
+                        "ledger": ledger_name,
+                        "updated_at": now_iso(),
+                        "records": {},
+                    }
+                )
+                record_id = envelope.get("record", {}).get("id")
+                if record_id:
+                    index["records"][record_id] = {
+                        "sequence": envelope["sequence"],
+                        "timestamp": envelope["timestamp"],
+                        "checksum": envelope["checksum"],
+                    }
+                index["updated_at"] = now_iso()
+                handle.seek(0)
+                handle.truncate()
+                handle.write(json.dumps(index, indent=2, sort_keys=True))
+                handle.flush()
+                os.fsync(handle.fileno())
+            finally:
+                self._unlock_handle(handle)
 
     def _manifest_path(self) -> Path:
         return self.root / "config" / "storage_manifest.json"
@@ -231,3 +281,29 @@ class LedgerStore:
 
     def _read_storage_manifest(self) -> dict[str, Any]:
         return json.loads(self._manifest_path().read_text(encoding="utf-8"))
+
+    def _is_event_envelope(self, record: dict[str, Any]) -> bool:
+        return {"schema_version", "sequence", "timestamp", "ledger", "record", "checksum"} <= set(record)
+
+    def _next_event_sequence(self, handle: Any) -> int:
+        handle.seek(0)
+        sequence = 0
+        for line in handle.read().splitlines():
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(event, dict) or not self._is_event_envelope(event):
+                continue
+            if event.get("checksum") != self._checksum(event):
+                continue
+            sequence = max(sequence, int(event.get("sequence", 0)))
+        return sequence + 1
+
+    def _lock_handle(self, handle: Any) -> None:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+
+    def _unlock_handle(self, handle: Any) -> None:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)

@@ -83,7 +83,7 @@ class NavigationRuntime:
                 **payment,
                 "created_at": now_iso(),
             }
-            self.store.append("payments", payment_record)
+            self.store.append_event("payments", payment_record)
             policy_decision = enforce_payment_policy(payment, self.policy)
             policy_decisions.append(policy_decision.to_dict())
 
@@ -158,7 +158,7 @@ class NavigationRuntime:
             "changed_keys": sorted(set(before_state) | set(after_state)),
             "created_at": now_iso(),
         }
-        self.store.append("settlements", settlement)
+        self.store.append_event("settlements", settlement)
 
         previous = self._latest_trajectory()
         trajectory = update_trajectory(

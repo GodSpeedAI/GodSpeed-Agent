@@ -5,6 +5,7 @@ import json
 from typing import Any
 
 from godspeed_nav.absorption import review_absorbability
+from godspeed_nav.config import load_config, resolve_storage_root, runtime_policy
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import (
     compute_error,
@@ -16,6 +17,25 @@ from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.validation import validate_enterprise_readiness
+
+
+def _configured_runtime(
+    workspace_root: str,
+    storage_root: str | None,
+) -> NavigationRuntime:
+    config = load_config(workspace_root)
+    return NavigationRuntime(
+        resolve_storage_root(workspace_root, storage_root),
+        policy=runtime_policy(config),
+    )
+
+
+def _configured_storage_root(workspace_root: str, storage_root: str | None) -> str:
+    return str(resolve_storage_root(workspace_root, storage_root))
+
+
+def _configured_policy(workspace_root: str) -> dict[str, Any]:
+    return runtime_policy(load_config(workspace_root))
 
 
 def _json_arg(value: str) -> dict[str, Any]:
@@ -74,6 +94,7 @@ def build_parser() -> argparse.ArgumentParser:
     absorption_parser.add_argument("--root-state", type=_json_arg, required=True)
     absorption_parser.add_argument("--external-state", type=_json_arg, required=True)
     absorption_parser.add_argument("--desired", type=_json_arg, required=True)
+    absorption_parser.add_argument("--workspace-root", default=".")
     absorption_parser.add_argument(
         "--capability-delta", type=_json_list_arg, required=True
     )
@@ -81,9 +102,11 @@ def build_parser() -> argparse.ArgumentParser:
     absorption_parser.add_argument("--pathway", default=None)
 
     runtime_snapshot_parser = subcommands.add_parser("runtime-snapshot")
+    runtime_snapshot_parser.add_argument("--workspace-root", default=".")
     runtime_snapshot_parser.add_argument("--storage-root", default=".godspeed-harness")
 
     start_direction_parser = subcommands.add_parser("start-direction")
+    start_direction_parser.add_argument("--workspace-root", default=".")
     start_direction_parser.add_argument("--storage-root", default=".godspeed-harness")
     start_direction_parser.add_argument("--label", required=True)
     start_direction_parser.add_argument("--statement", required=True)
@@ -91,6 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
     start_direction_parser.add_argument("--source", default="cli")
 
     review_horizon_parser = subcommands.add_parser("review-horizon")
+    review_horizon_parser.add_argument("--workspace-root", default=".")
     review_horizon_parser.add_argument("--storage-root", default=".godspeed-harness")
     review_horizon_parser.add_argument("--direction-id", required=True)
     review_horizon_parser.add_argument(
@@ -98,6 +122,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     record_settlement_parser = subcommands.add_parser("record-settlement")
+    record_settlement_parser.add_argument("--workspace-root", default=".")
     record_settlement_parser.add_argument("--storage-root", default=".godspeed-harness")
     record_settlement_parser.add_argument("--affordance-id", required=True)
     record_settlement_parser.add_argument("--before", type=_json_arg, required=True)
@@ -109,6 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
     record_settlement_parser.add_argument("--horizon-delta", type=float, required=True)
 
     developmental_report_parser = subcommands.add_parser("developmental-report")
+    developmental_report_parser.add_argument("--workspace-root", default=".")
     developmental_report_parser.add_argument(
         "--storage-root", default=".godspeed-harness"
     )
@@ -158,23 +184,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             capability_delta=args.capability_delta,
             license_summary=args.license,
             pathway=args.pathway,
+            policy=_configured_policy(args.workspace_root),
         )
     if args.command == "runtime-snapshot":
-        return NavigationRuntime(args.storage_root).snapshot()
+        return _configured_runtime(args.workspace_root, args.storage_root).snapshot()
     if args.command == "start-direction":
-        return NavigationRuntime(args.storage_root).start_direction(
+        return _configured_runtime(args.workspace_root, args.storage_root).start_direction(
             label=args.label,
             statement=args.statement,
             kind=args.kind,
             source=args.source,
         )
     if args.command == "review-horizon":
-        return NavigationRuntime(args.storage_root).review_horizon(
+        return _configured_runtime(args.workspace_root, args.storage_root).review_horizon(
             direction_id=args.direction_id,
             candidates=args.candidates,
         )
     if args.command == "record-settlement":
-        return NavigationRuntime(args.storage_root).record_settlement(
+        return _configured_runtime(args.workspace_root, args.storage_root).record_settlement(
             affordance_id=args.affordance_id,
             before_state=args.before,
             after_state=args.after,
@@ -183,16 +210,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             horizon_delta=args.horizon_delta,
         )
     if args.command == "developmental-report":
-        return generate_developmental_report(args.storage_root)
+        return generate_developmental_report(
+            _configured_storage_root(args.workspace_root, args.storage_root)
+        )
     if args.command == "predictive-extensions":
         return run_predictive_extensions(
             workspace_root=args.workspace_root,
-            storage_root=args.storage_root,
+            storage_root=_configured_storage_root(args.workspace_root, args.storage_root),
             candidates=args.candidates,
             provider_name=args.provider,
         )
     if args.command == "validate":
-        return validate_enterprise_readiness(args.workspace_root, args.storage_root)
+        return validate_enterprise_readiness(
+            args.workspace_root,
+            _configured_storage_root(args.workspace_root, args.storage_root),
+        )
     raise SystemExit(f"Unknown command: {args.command}")
 
 

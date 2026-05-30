@@ -10,7 +10,7 @@ from godspeed_nav.metrics import estimate_payment
 from godspeed_nav.policies import enforce_payment_policy
 from godspeed_nav.schemas import now_iso
 from hooks.common import read_stdin_json, write_stdout_json
-from hooks.common import get_session_context, get_storage
+from hooks.common import get_policy, get_session_context, get_storage
 
 
 def _candidate_status(event: dict, payment: dict, decision: str) -> str:
@@ -30,10 +30,7 @@ def main() -> int:
     )
     policy_decision = enforce_payment_policy(
         payment,
-        {
-            "block_unaffordable_actions": event.get("block_unaffordable_actions", False),
-            "warn_unaffordable_actions": event.get("warn_unaffordable_actions", True),
-        },
+        get_policy(event),
     )
     candidate_status = _candidate_status(event, payment, policy_decision.decision)
     session_context = get_session_context(event)

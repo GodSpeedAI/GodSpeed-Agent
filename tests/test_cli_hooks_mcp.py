@@ -3,7 +3,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def make_workspace(tmp_path: Path) -> Path:
+    workspace_root = tmp_path / "workspace"
+    workspace_root.mkdir()
+    return workspace_root
 
 
 def run_python(args: list[str], stdin: dict | None = None) -> dict:
@@ -157,13 +165,18 @@ def test_cli_absorption_rejection_outputs_potential_status():
 
 
 def test_cli_runtime_snapshot_outputs_connected_counts(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
     output = run_python(
         [
             "-m",
             "godspeed_nav.cli",
             "runtime-snapshot",
+            "--workspace-root",
+            str(workspace_root),
             "--storage-root",
-            str(tmp_path / ".godspeed-harness"),
+            str(storage_root),
         ]
     )
 
@@ -172,13 +185,16 @@ def test_cli_runtime_snapshot_outputs_connected_counts(tmp_path: Path):
 
 
 def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
 
     direction = run_python(
         [
             "-m",
             "godspeed_nav.cli",
             "start-direction",
+            "--workspace-root",
+            str(workspace_root),
             "--storage-root",
             str(storage_root),
             "--label",
@@ -192,6 +208,8 @@ def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
             "-m",
             "godspeed_nav.cli",
             "review-horizon",
+            "--workspace-root",
+            str(workspace_root),
             "--storage-root",
             str(storage_root),
             "--direction-id",
@@ -205,6 +223,8 @@ def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
             "-m",
             "godspeed_nav.cli",
             "record-settlement",
+            "--workspace-root",
+            str(workspace_root),
             "--storage-root",
             str(storage_root),
             "--affordance-id",
@@ -226,6 +246,8 @@ def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
             "-m",
             "godspeed_nav.cli",
             "runtime-snapshot",
+            "--workspace-root",
+            str(workspace_root),
             "--storage-root",
             str(storage_root),
         ]
@@ -239,12 +261,15 @@ def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
 
 
 def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
     run_python(
         [
             "-m",
             "godspeed_nav.cli",
             "start-direction",
+            "--workspace-root",
+            str(workspace_root),
             "--storage-root",
             str(storage_root),
             "--label",
@@ -259,6 +284,8 @@ def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
             "-m",
             "godspeed_nav.cli",
             "developmental-report",
+            "--workspace-root",
+            str(workspace_root),
             "--storage-root",
             str(storage_root),
         ]
@@ -271,8 +298,7 @@ def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
 def test_cli_predictive_extensions_respects_configured_provider_and_thresholds(
     tmp_path: Path,
 ):
-    workspace_root = tmp_path / "workspace"
-    workspace_root.mkdir()
+    workspace_root = make_workspace(tmp_path)
     (workspace_root / "HARNESS.md").write_text(
         "---\n"
         "computation:\n"
@@ -282,7 +308,7 @@ def test_cli_predictive_extensions_respects_configured_provider_and_thresholds(
         "---\n",
         encoding="utf-8",
     )
-    storage_root = tmp_path / ".godspeed-harness"
+    storage_root = workspace_root / ".godspeed-harness"
 
     from godspeed_nav.storage import LedgerStore
 
@@ -309,12 +335,82 @@ def test_cli_predictive_extensions_respects_configured_provider_and_thresholds(
     assert output["active_extensions"] == ["ml_prediction", "simulation"]
 
 
+def test_cli_runtime_commands_apply_workspace_safety_policy(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    (workspace_root / "HARNESS.md").write_text(
+        "---\n"
+        "safety:\n"
+        "  block_unaffordable_actions: true\n"
+        "  warn_unaffordable_actions: true\n"
+        "---\n",
+        encoding="utf-8",
+    )
+    storage_root = workspace_root / ".godspeed-harness"
+
+    direction = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "start-direction",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--label",
+            "Policy",
+            "--statement",
+            "Honor workspace safety policy",
+        ]
+    )
+    review = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "review-horizon",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--direction-id",
+            direction["id"],
+            "--candidates",
+            '[{"id":"too-expensive","statement":"Rewrite everything","pathway":"big migration","costs":{"time":99},"capacities":{"time":1},"expected_horizon_delta":9,"risk":9}]',
+        ]
+    )
+
+    assert review["policy_decisions"][0]["decision"] == "block"
+    assert review["next_affordance"] is None
+
+
+def test_cli_rejects_storage_root_outside_workspace(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    (workspace_root / "HARNESS.md").write_text("---\n---\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "godspeed_nav.cli",
+            "runtime-snapshot",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(tmp_path / "outside-root"),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode != 0
+    assert "invalid_storage_root" in result.stderr
+
+
 def test_mcp_wrapper_dispatches_predictive_extensions(tmp_path: Path):
     from godspeed_nav.storage import LedgerStore
     from mcp.cybernetic_nav_server.server import call_tool
 
-    workspace_root = tmp_path / "workspace"
-    workspace_root.mkdir()
+    workspace_root = make_workspace(tmp_path)
     (workspace_root / "HARNESS.md").write_text(
         "---\n"
         "computation:\n"
@@ -324,7 +420,7 @@ def test_mcp_wrapper_dispatches_predictive_extensions(tmp_path: Path):
         "---\n",
         encoding="utf-8",
     )
-    storage_root = tmp_path / ".godspeed-harness"
+    storage_root = workspace_root / ".godspeed-harness"
     LedgerStore(storage_root).append_event(
         "settlements", {"id": "set-1", "status": "success"}
     )
@@ -351,11 +447,29 @@ def test_mcp_wrapper_dispatches_predictive_extensions(tmp_path: Path):
     assert result["active_extensions"] == ["ml_prediction"]
 
 
+def test_mcp_wrapper_rejects_storage_root_outside_workspace(tmp_path: Path):
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    workspace_root = make_workspace(tmp_path)
+    (workspace_root / "HARNESS.md").write_text("---\n---\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="invalid_storage_root"):
+        call_tool(
+            "cybernetic_nav.runtime_snapshot",
+            {
+                "workspace_root": str(workspace_root),
+                "storage_root": str(tmp_path / "outside-root"),
+            },
+        )
+
+
 def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
     output = run_python(
         ["hooks/pre_tool_use.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "tool_name": "Edit",
             "costs": {"time": 9, "risk": 9},
@@ -372,12 +486,36 @@ def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     ).read_text(encoding="utf-8")
 
 
+def test_pre_tool_hook_rejects_storage_root_outside_workspace(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    (workspace_root / "HARNESS.md").write_text("---\n---\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, "hooks/pre_tool_use.py"],
+        input=json.dumps(
+            {
+                "workspace_root": str(workspace_root),
+                "storage_root": str(tmp_path / "outside-root"),
+                "tool_name": "Edit",
+            }
+        ),
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode != 0
+    assert "invalid_storage_root" in result.stderr
+
+
 def test_user_prompt_hook_records_direction_hypothesis(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
 
     output = run_python(
         ["hooks/user_prompt_submit.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "prompt": "Build the next affordable path to enterprise readiness.",
         },
@@ -392,11 +530,13 @@ def test_user_prompt_hook_records_direction_hypothesis(tmp_path: Path):
 
 
 def test_post_tool_hook_records_settlement_event(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
 
     output = run_python(
         ["hooks/post_tool_use.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "affordance_id": "aff-1",
             "before_state": {"tests": 0},
@@ -416,13 +556,15 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
 
 
 def test_post_tool_hook_surfaces_metabolization_candidate_after_repeated_success(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
 
     final_output = None
     for index, key in enumerate(["hook_a", "hook_b", "hook_c"], start=1):
         final_output = run_python(
             ["hooks/post_tool_use.py"],
             {
+                "workspace_root": str(workspace_root),
                 "storage_root": str(storage_root),
                 "affordance_id": "aff-repeat",
                 "before_state": {key: 0},
@@ -439,11 +581,13 @@ def test_post_tool_hook_surfaces_metabolization_candidate_after_repeated_success
 
 
 def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
 
     output = run_python(
         ["hooks/stop.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "previous_theta": 0,
             "previous_radius": 1,
@@ -458,12 +602,14 @@ def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
 
 
 def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_path: Path):
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
     session_id = "sess-123"
 
     prompt_output = run_python(
         ["hooks/user_prompt_submit.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "prompt": "Build the next affordable documentation loop.",
             "session_id": session_id,
@@ -474,6 +620,7 @@ def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_
     pre_output = run_python(
         ["hooks/pre_tool_use.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "tool_name": "Edit",
             "session_id": session_id,
@@ -485,6 +632,7 @@ def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_
     post_output = run_python(
         ["hooks/post_tool_use.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "tool_name": "Edit",
             "affordance_id": "edit-docs",
@@ -500,6 +648,7 @@ def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_
     stop_output = run_python(
         ["hooks/stop.py"],
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "session_id": session_id,
             "desired_direction_id": desired_direction_id,
@@ -547,13 +696,22 @@ def test_mcp_wrapper_registers_required_tools():
 def test_mcp_wrapper_dispatches_runtime_snapshot_and_report(tmp_path: Path):
     from mcp.cybernetic_nav_server.server import call_tool
 
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
 
     snapshot = call_tool(
-        "cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)}
+        "cybernetic_nav.runtime_snapshot",
+        {
+            "workspace_root": str(workspace_root),
+            "storage_root": str(storage_root),
+        },
     )
     report = call_tool(
-        "cybernetic_nav.developmental_report", {"storage_root": str(storage_root)}
+        "cybernetic_nav.developmental_report",
+        {
+            "workspace_root": str(workspace_root),
+            "storage_root": str(storage_root),
+        },
     )
 
     assert snapshot["counts"]["desired_directions"] == 0
@@ -563,11 +721,13 @@ def test_mcp_wrapper_dispatches_runtime_snapshot_and_report(tmp_path: Path):
 def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):
     from mcp.cybernetic_nav_server.server import call_tool
 
-    storage_root = tmp_path / ".godspeed-harness"
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
 
     direction = call_tool(
         "cybernetic_nav.start_direction",
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "label": "MCP runtime",
             "statement": "Drive the developmental loop through MCP",
@@ -578,6 +738,7 @@ def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):
     review = call_tool(
         "cybernetic_nav.review_horizon",
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "direction_id": direction["id"],
             "candidates": [
@@ -596,6 +757,7 @@ def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):
     settlement = call_tool(
         "cybernetic_nav.record_settlement",
         {
+            "workspace_root": str(workspace_root),
             "storage_root": str(storage_root),
             "affordance_id": "mcp-loop",
             "before_state": {"mcp": 0},
@@ -614,11 +776,13 @@ def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):
 def test_mcp_wrapper_dispatches_enterprise_validation(tmp_path: Path):
     from mcp.cybernetic_nav_server.server import call_tool
 
+    storage_root = f".godspeed-harness/{tmp_path.name}-validation"
+
     result = call_tool(
         "cybernetic_nav.validate_enterprise_readiness",
         {
             "workspace_root": str(ROOT),
-            "storage_root": str(tmp_path / ".godspeed-harness"),
+            "storage_root": storage_root,
         },
     )
 

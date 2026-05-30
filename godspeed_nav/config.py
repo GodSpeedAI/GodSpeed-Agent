@@ -13,7 +13,7 @@ class ConfigError(ValueError):
     """Typed configuration error surfaced to operators and gates."""
 
     def __init__(self, code: str, message: str):
-        super().__init__(message)
+        super().__init__(f"{code}: {message}")
         self.code = code
 
 
@@ -85,6 +85,27 @@ class HarnessConfig:
     absorption: AbsorptionSettings
     safety: SafetySettings
     policy_body: str = ""
+
+
+def runtime_policy(config: HarnessConfig) -> dict[str, Any]:
+    return {
+        "block_unaffordable_actions": config.safety.block_unaffordable_actions,
+        "warn_unaffordable_actions": config.safety.warn_unaffordable_actions,
+        "max_payment_burden": config.safety.max_payment_burden,
+        "require_human_review_for_absorption": config.safety.require_human_review_for_absorption,
+        "require_human_review_for_disintegration": config.safety.require_human_review_for_disintegration,
+    }
+
+
+def resolve_storage_root(
+    workspace_root: str | Path,
+    storage_root: str | Path | None = None,
+    explicit_path: str | Path | None = None,
+) -> Path:
+    config = load_config(workspace_root, explicit_path=explicit_path)
+    if storage_root is None:
+        return config.storage.root
+    return _resolve_workspace_path(config.workspace_root, storage_root)
 
 
 def load_config(
@@ -236,11 +257,11 @@ def _section(frontmatter: dict[str, Any], key: str) -> dict[str, Any]:
 
 def _resolve_workspace_path(workspace_root: Path, value: str | Path) -> Path:
     raw = Path(value)
-    if raw.is_absolute() or ".." in raw.parts:
+    if ".." in raw.parts:
         raise ConfigError(
             "invalid_storage_root", f"Path must remain inside workspace: {value}"
         )
-    resolved = (workspace_root / raw).resolve()
+    resolved = raw.resolve() if raw.is_absolute() else (workspace_root / raw).resolve()
     try:
         resolved.relative_to(workspace_root)
     except ValueError as exc:

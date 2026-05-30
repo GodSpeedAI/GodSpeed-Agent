@@ -4,6 +4,8 @@ import json
 import sys
 from typing import Any
 
+from godspeed_nav.config import load_config, resolve_storage_root, runtime_policy
+from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.storage import LedgerStore
 
 
@@ -22,7 +24,21 @@ def write_stdout_json(payload: dict[str, Any]) -> None:
 
 
 def get_storage(event: dict[str, Any]) -> LedgerStore:
-    return LedgerStore(event.get("storage_root", ".godspeed-harness"))
+    workspace_root = event.get("workspace_root", ".")
+    storage_root = resolve_storage_root(workspace_root, event.get("storage_root"))
+    return LedgerStore(storage_root)
+
+
+def get_runtime(event: dict[str, Any]) -> NavigationRuntime:
+    workspace_root = event.get("workspace_root", ".")
+    config = load_config(workspace_root)
+    storage_root = resolve_storage_root(workspace_root, event.get("storage_root"))
+    return NavigationRuntime(storage_root, policy=runtime_policy(config))
+
+
+def get_policy(event: dict[str, Any]) -> dict[str, Any]:
+    workspace_root = event.get("workspace_root", ".")
+    return runtime_policy(load_config(workspace_root))
 
 
 def get_session_context(

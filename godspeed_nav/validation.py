@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 from typing import Any
 
-from godspeed_nav.config import load_config
+from godspeed_nav.config import load_config, runtime_policy
 from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
@@ -80,51 +81,6 @@ def validate_enterprise_readiness(
         store.migration_status()["status"] == "current", store.migration_status()
     )
 
-    runtime = NavigationRuntime(storage_root)
-    direction = runtime.start_direction(
-        "Validation", "Run enterprise validation", source="validate"
-    )
-    review = runtime.review_horizon(
-        direction_id=direction["id"],
-        candidates=[
-            {
-                "id": "validation-affordance",
-                "statement": "Validate runtime workflow",
-                "pathway": "local deterministic sample",
-                "costs": {"time": 1},
-                "capacities": {"time": 5},
-                "expected_horizon_delta": 1,
-                "risk": 0,
-            }
-        ],
-    )
-    settlement = runtime.record_settlement(
-        affordance_id="validation-affordance",
-        before_state={"validated": 0},
-        after_state={"validated": 1},
-        payment_actual={"time": 1},
-        evidence=["validation sample completed"],
-        horizon_delta=1,
-    )
-    checks["runtime_workflow"] = _check(
-        review["next_affordance"]["id"] == "validation-affordance"
-        and settlement["status"] == "success",
-        {"direction_id": direction["id"], "settlement_status": settlement["status"]},
-    )
-
-    checks["hooks"] = _check((workspace / "hooks" / "pre_tool_use.py").exists(), {})
-
-    evaluator_contract = (workspace / "agents" / "evaluator.md").read_text(
-        encoding="utf-8"
-    )
-    checks["agents"] = _check(
-        all(
-            section in evaluator_contract
-            for section in ["## Inputs", "## Workflow", "## Failure Modes"]
-        ),
-        {"evaluator_sections": ["## Inputs", "## Workflow", "## Failure Modes"]},
-    )
-
     from mcp.cybernetic_nav_server.server import TOOL_NAMES, call_tool
 
     expected_mcp_tools = {
@@ -147,21 +103,74 @@ def validate_enterprise_readiness(
         "cybernetic_nav.predictive_extensions",
         "cybernetic_nav.validate_enterprise_readiness",
     }
-    snapshot = call_tool(
-        "cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)}
-    )
-    checks["mcp"] = _check(
-        expected_mcp_tools <= set(TOOL_NAMES) and "counts" in snapshot,
-        {
-            "registered_tools": sorted(TOOL_NAMES),
-            "snapshot_counts": snapshot.get("counts", {}),
-        },
-    )
 
-    report = generate_developmental_report(storage_root)
-    checks["reports"] = _check(
-        report["horizon"]["active_direction_count"] >= 1,
-        {"active_direction_count": report["horizon"]["active_direction_count"]},
+    with tempfile.TemporaryDirectory(prefix="godspeed-validate-") as scratch_dir:
+        scratch_workspace = Path(scratch_dir)
+        scratch_root = scratch_workspace / ".godspeed-harness"
+        runtime = NavigationRuntime(scratch_root, policy=runtime_policy(config))
+        direction = runtime.start_direction(
+            "Validation", "Run enterprise validation", source="validate"
+        )
+        review = runtime.review_horizon(
+            direction_id=direction["id"],
+            candidates=[
+                {
+                    "id": "validation-affordance",
+                    "statement": "Validate runtime workflow",
+                    "pathway": "local deterministic sample",
+                    "costs": {"time": 1},
+                    "capacities": {"time": 5},
+                    "expected_horizon_delta": 1,
+                    "risk": 0,
+                }
+            ],
+        )
+        settlement = runtime.record_settlement(
+            affordance_id="validation-affordance",
+            before_state={"validated": 0},
+            after_state={"validated": 1},
+            payment_actual={"time": 1},
+            evidence=["validation sample completed"],
+            horizon_delta=1,
+        )
+        checks["runtime_workflow"] = _check(
+            review["next_affordance"]["id"] == "validation-affordance"
+            and settlement["status"] == "success",
+            {"direction_id": direction["id"], "settlement_status": settlement["status"]},
+        )
+
+        snapshot = call_tool(
+            "cybernetic_nav.runtime_snapshot",
+            {
+                "workspace_root": str(scratch_workspace),
+                "storage_root": str(scratch_root),
+            },
+        )
+        checks["mcp"] = _check(
+            expected_mcp_tools <= set(TOOL_NAMES) and "counts" in snapshot,
+            {
+                "registered_tools": sorted(TOOL_NAMES),
+                "snapshot_counts": snapshot.get("counts", {}),
+            },
+        )
+
+        report = generate_developmental_report(scratch_root)
+        checks["reports"] = _check(
+            report["horizon"]["active_direction_count"] >= 1,
+            {"active_direction_count": report["horizon"]["active_direction_count"]},
+        )
+
+    checks["hooks"] = _check((workspace / "hooks" / "pre_tool_use.py").exists(), {})
+
+    evaluator_contract = (workspace / "agents" / "evaluator.md").read_text(
+        encoding="utf-8"
+    )
+    checks["agents"] = _check(
+        all(
+            section in evaluator_contract
+            for section in ["## Inputs", "## Workflow", "## Failure Modes"]
+        ),
+        {"evaluator_sections": ["## Inputs", "## Workflow", "## Failure Modes"]},
     )
 
     status = (

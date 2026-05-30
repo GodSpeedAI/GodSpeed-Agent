@@ -2,6 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from godspeed_nav.storage import LedgerStore
 from godspeed_nav.validation import validate_enterprise_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +37,8 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
 
 
 def test_cli_validate_outputs_pass_status(tmp_path: Path):
+    storage_root = f".godspeed-harness/{tmp_path.name}-cli-validate"
+
     result = subprocess.run(
         [
             sys.executable,
@@ -45,7 +48,7 @@ def test_cli_validate_outputs_pass_status(tmp_path: Path):
             "--workspace-root",
             str(ROOT),
             "--storage-root",
-            str(tmp_path / ".godspeed-harness"),
+            storage_root,
         ],
         cwd=ROOT,
         text=True,
@@ -54,3 +57,16 @@ def test_cli_validate_outputs_pass_status(tmp_path: Path):
     )
 
     assert '"status": "pass"' in result.stdout
+
+
+def test_validate_enterprise_readiness_does_not_mutate_target_storage(tmp_path: Path):
+    storage_root = tmp_path / ".godspeed-harness"
+
+    result = validate_enterprise_readiness(ROOT, storage_root)
+    store = LedgerStore(storage_root)
+
+    assert result["status"] == "pass"
+    assert store.read("desired_directions") == []
+    assert store.read("horizon_reviews") == []
+    assert store.read("settlements") == []
+    assert store.read("trajectories") == []
