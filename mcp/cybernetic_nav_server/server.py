@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
 from typing import Any
 
 from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.disintegration import review_positive_disintegration
 from godspeed_nav.metabolization import compute_metabolization
-from godspeed_nav.metrics import compute_error, estimate_payment, rank_affordances, score_settlement
+from godspeed_nav.metrics import (
+    compute_error,
+    estimate_payment,
+    rank_affordances,
+    score_settlement,
+)
 from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.storage import LedgerStore
-from godspeed_nav.trajectory import update_trajectory
-from godspeed_nav.trajectory import detect_circular_motion
+from godspeed_nav.trajectory import detect_circular_motion, update_trajectory
 from godspeed_nav.validation import validate_enterprise_readiness
-
 
 TOOL_NAMES = [
     "cybernetic_nav.compute_error",
@@ -69,12 +71,17 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "cybernetic_nav.review_positive_disintegration":
             return review_positive_disintegration(**arguments)
         if name == "cybernetic_nav.write_ledger_event":
-            envelope = _store(arguments).append_event(arguments["ledger_name"], arguments["record"])
+            envelope = _store(arguments).append_event(
+                arguments["ledger_name"], arguments["record"]
+            )
             return {"recorded": True, "event": envelope}
         if name == "cybernetic_nav.read_developmental_memory":
             ledger_name = arguments.get("ledger_name")
             if ledger_name:
-                return {"ledger": ledger_name, "records": _store(arguments).read(ledger_name)}
+                return {
+                    "ledger": ledger_name,
+                    "records": _store(arguments).read(ledger_name),
+                }
             return {
                 "ledgers": {
                     ledger: _store(arguments).read(ledger)
@@ -112,7 +119,9 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "cybernetic_nav.runtime_snapshot":
             return _runtime(arguments).snapshot()
         if name == "cybernetic_nav.developmental_report":
-            return generate_developmental_report(arguments.get("storage_root", ".godspeed-harness"))
+            return generate_developmental_report(
+                arguments.get("storage_root", ".godspeed-harness")
+            )
         if name == "cybernetic_nav.predictive_extensions":
             return run_predictive_extensions(
                 workspace_root=arguments.get("workspace_root", "."),
@@ -126,7 +135,9 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 storage_root=arguments.get("storage_root", ".godspeed-harness"),
             )
     except KeyError as exc:
-        raise ValueError(f"invalid_input: missing required argument {exc.args[0]}") from exc
+        raise ValueError(
+            f"invalid_input: missing required argument {exc.args[0]}"
+        ) from exc
     except TypeError as exc:
         raise ValueError(f"invalid_input: {exc}") from exc
     raise ValueError(f"invalid_input: unknown tool {name}")

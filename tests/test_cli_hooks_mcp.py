@@ -3,7 +3,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -269,7 +268,9 @@ def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
     assert "settlement_quality" in output
 
 
-def test_cli_predictive_extensions_respects_configured_provider_and_thresholds(tmp_path: Path):
+def test_cli_predictive_extensions_respects_configured_provider_and_thresholds(
+    tmp_path: Path,
+):
     workspace_root = tmp_path / "workspace"
     workspace_root.mkdir()
     (workspace_root / "HARNESS.md").write_text(
@@ -324,7 +325,9 @@ def test_mcp_wrapper_dispatches_predictive_extensions(tmp_path: Path):
         encoding="utf-8",
     )
     storage_root = tmp_path / ".godspeed-harness"
-    LedgerStore(storage_root).append_event("settlements", {"id": "set-1", "status": "success"})
+    LedgerStore(storage_root).append_event(
+        "settlements", {"id": "set-1", "status": "success"}
+    )
 
     result = call_tool(
         "cybernetic_nav.predictive_extensions",
@@ -364,9 +367,9 @@ def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     assert output["decision"] == "warn"
     assert output["payment"]["spendability"] == "unaffordable"
     assert output["policy_decision"]["code"] == "unaffordable_action"
-    assert '"tool_name": "Edit"' in (storage_root / "ledgers" / "tool_payments.jsonl").read_text(
-        encoding="utf-8"
-    )
+    assert '"tool_name": "Edit"' in (
+        storage_root / "ledgers" / "tool_payments.jsonl"
+    ).read_text(encoding="utf-8")
 
 
 def test_user_prompt_hook_records_direction_hypothesis(tmp_path: Path):
@@ -456,8 +459,12 @@ def test_mcp_wrapper_dispatches_runtime_snapshot_and_report(tmp_path: Path):
 
     storage_root = tmp_path / ".godspeed-harness"
 
-    snapshot = call_tool("cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)})
-    report = call_tool("cybernetic_nav.developmental_report", {"storage_root": str(storage_root)})
+    snapshot = call_tool(
+        "cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)}
+    )
+    report = call_tool(
+        "cybernetic_nav.developmental_report", {"storage_root": str(storage_root)}
+    )
 
     assert snapshot["counts"]["desired_directions"] == 0
     assert report["horizon"]["active_direction_count"] == 0
@@ -530,7 +537,9 @@ def test_mcp_wrapper_dispatches_enterprise_validation(tmp_path: Path):
 
 
 def test_monitor_configuration_contains_recommended_monitors():
-    monitors = json.loads((ROOT / "monitors" / "monitors.json").read_text(encoding="utf-8"))
+    monitors = json.loads(
+        (ROOT / "monitors" / "monitors.json").read_text(encoding="utf-8")
+    )
 
     assert {
         "settlement-log-monitor",

@@ -9,7 +9,6 @@ from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.storage import LedgerStore
 
-
 REQUIRED_PATHS = [
     ".claude-plugin/plugin.json",
     "HARNESS.md",
@@ -60,8 +59,10 @@ def validate_enterprise_readiness(
     )
     checks["predictive_extensions"] = _check(
         predictive["provider"] == config.computation.model_provider
-        and predictive["thresholds"]["ml_event_threshold"] == config.computation.ml_event_threshold
-        and predictive["thresholds"]["simulation_threshold"] == config.computation.simulation_threshold,
+        and predictive["thresholds"]["ml_event_threshold"]
+        == config.computation.ml_event_threshold
+        and predictive["thresholds"]["simulation_threshold"]
+        == config.computation.simulation_threshold,
         {
             "provider": predictive["provider"],
             "stage": predictive["stage"],
@@ -70,10 +71,14 @@ def validate_enterprise_readiness(
     )
 
     store = LedgerStore(storage_root)
-    checks["storage"] = _check(store.migration_status()["status"] == "current", store.migration_status())
+    checks["storage"] = _check(
+        store.migration_status()["status"] == "current", store.migration_status()
+    )
 
     runtime = NavigationRuntime(storage_root)
-    direction = runtime.start_direction("Validation", "Run enterprise validation", source="validate")
+    direction = runtime.start_direction(
+        "Validation", "Run enterprise validation", source="validate"
+    )
     review = runtime.review_horizon(
         direction_id=direction["id"],
         candidates=[
@@ -97,15 +102,21 @@ def validate_enterprise_readiness(
         horizon_delta=1,
     )
     checks["runtime_workflow"] = _check(
-        review["next_affordance"]["id"] == "validation-affordance" and settlement["status"] == "success",
+        review["next_affordance"]["id"] == "validation-affordance"
+        and settlement["status"] == "success",
         {"direction_id": direction["id"], "settlement_status": settlement["status"]},
     )
 
     checks["hooks"] = _check((workspace / "hooks" / "pre_tool_use.py").exists(), {})
 
-    evaluator_contract = (workspace / "agents" / "evaluator.md").read_text(encoding="utf-8")
+    evaluator_contract = (workspace / "agents" / "evaluator.md").read_text(
+        encoding="utf-8"
+    )
     checks["agents"] = _check(
-        all(section in evaluator_contract for section in ["## Inputs", "## Workflow", "## Failure Modes"]),
+        all(
+            section in evaluator_contract
+            for section in ["## Inputs", "## Workflow", "## Failure Modes"]
+        ),
         {"evaluator_sections": ["## Inputs", "## Workflow", "## Failure Modes"]},
     )
 
@@ -131,7 +142,9 @@ def validate_enterprise_readiness(
         "cybernetic_nav.predictive_extensions",
         "cybernetic_nav.validate_enterprise_readiness",
     }
-    snapshot = call_tool("cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)})
+    snapshot = call_tool(
+        "cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)}
+    )
     checks["mcp"] = _check(
         expected_mcp_tools <= set(TOOL_NAMES) and "counts" in snapshot,
         {
@@ -146,7 +159,11 @@ def validate_enterprise_readiness(
         {"active_direction_count": report["horizon"]["active_direction_count"]},
     )
 
-    status = "pass" if all(check["status"] == "pass" for check in checks.values()) else "fail"
+    status = (
+        "pass"
+        if all(check["status"] == "pass" for check in checks.values())
+        else "fail"
+    )
     return {"status": status, "checks": checks}
 
 

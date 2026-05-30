@@ -5,7 +5,12 @@ import pytest
 from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.disintegration import review_positive_disintegration
 from godspeed_nav.metabolization import compute_metabolization
-from godspeed_nav.metrics import compute_error, estimate_payment, rank_affordances, score_settlement
+from godspeed_nav.metrics import (
+    compute_error,
+    estimate_payment,
+    rank_affordances,
+    score_settlement,
+)
 from godspeed_nav.ml import (
     TestingPredictiveModelAdapter,
     build_predictive_extension_plan,
@@ -59,7 +64,9 @@ def test_score_settlement_flags_regressions_as_partial():
         after_state={"tests": 2, "bugs": 2},
         desired_direction={"statement": "Improve quality"},
         payment_actual={"time": 2},
-        evaluator_config={"evidence": ["pytest passed", "bug count increased in smoke test"]},
+        evaluator_config={
+            "evidence": ["pytest passed", "bug count increased in smoke test"]
+        },
     )
 
     assert result["status"] == "partial"
@@ -173,7 +180,12 @@ def test_positive_disintegration_reports_dissolution_and_body_candidates():
     result = review_positive_disintegration(
         structures=[
             {"id": "old-hook", "settlement_score": 0.1, "risk": "low"},
-            {"id": "review-loop", "settlement_score": 0.9, "attention_burden": 0.1, "repetitions": 5},
+            {
+                "id": "review-loop",
+                "settlement_score": 0.9,
+                "attention_burden": 0.1,
+                "repetitions": 5,
+            },
         ],
         require_human_review=True,
     )

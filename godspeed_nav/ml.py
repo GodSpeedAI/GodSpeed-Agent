@@ -45,16 +45,22 @@ class HeuristicPredictiveModelAdapter(PredictiveModelPort):
 
         for candidate in candidates:
             candidate_id = candidate["id"]
-            payment_burden = max(payment_estimates.get(candidate_id, {}).get("payment_burden", 1.0), 1.0)
+            payment_burden = max(
+                payment_estimates.get(candidate_id, {}).get("payment_burden", 1.0), 1.0
+            )
             expected_delta = float(candidate.get("expected_horizon_delta", 0))
             risk = max(float(candidate.get("risk", 0)), 0.0)
-            raw_score = expected_delta / max(expected_delta + payment_burden + risk + 1.0, 1.0)
+            raw_score = expected_delta / max(
+                expected_delta + payment_burden + risk + 1.0, 1.0
+            )
             success_probability = max(0.0, min(1.0, raw_score * settlement_factor))
             predictions.append(
                 {
                     "candidate_id": candidate_id,
                     "success_probability": round(success_probability, 4),
-                    "predicted_horizon_delta": round(expected_delta * success_probability, 4),
+                    "predicted_horizon_delta": round(
+                        expected_delta * success_probability, 4
+                    ),
                     "rationale": "local_heuristic_prediction",
                 }
             )
@@ -69,7 +75,9 @@ class HeuristicPredictiveModelAdapter(PredictiveModelPort):
         payment_estimates: dict[str, dict[str, Any]],
     ) -> list[dict[str, Any]]:
         simulations: list[dict[str, Any]] = []
-        for prediction in self.predict_affordances(settlement_history, candidates, payment_estimates):
+        for prediction in self.predict_affordances(
+            settlement_history, candidates, payment_estimates
+        ):
             probability = prediction["success_probability"]
             if probability >= 0.7:
                 status = "success"
@@ -157,9 +165,13 @@ def build_predictive_extension_plan(
     simulation_results: list[dict[str, Any]] = []
 
     if model_port and "ml_prediction" in active_extensions:
-        ml_predictions = model_port.predict_affordances(settlement_history, candidates, payment_estimates)
+        ml_predictions = model_port.predict_affordances(
+            settlement_history, candidates, payment_estimates
+        )
     if model_port and "simulation" in active_extensions:
-        simulation_results = model_port.simulate_affordances(settlement_history, candidates, payment_estimates)
+        simulation_results = model_port.simulate_affordances(
+            settlement_history, candidates, payment_estimates
+        )
 
     return {
         "stage": stage,
@@ -203,7 +215,9 @@ def run_predictive_extensions(
     }
 
 
-def _build_candidate_payment_estimates(candidates: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def _build_candidate_payment_estimates(
+    candidates: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
     payment_estimates: dict[str, dict[str, Any]] = {}
     for candidate in candidates:
         payment_estimates[candidate["id"]] = estimate_payment(

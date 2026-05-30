@@ -129,7 +129,7 @@ uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .go
 
 Sample CLI:
 
-```bash
+````bash
 uv run python -m godspeed_nav.cli compute-error --desired '{"tests": 3}' --observed '{"tests": 1}'
 ```# Godspeed Agent Harness
 
@@ -159,7 +159,7 @@ Run:
 
 ```bash
 uv run pytest -q
-```
+````
 
 Sample CLI:
 

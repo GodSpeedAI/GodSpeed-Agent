@@ -6,8 +6,12 @@ from typing import Any
 
 from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.metabolization import compute_metabolization
-from godspeed_nav.metrics import compute_error, estimate_payment
-from godspeed_nav.metrics import rank_affordances, score_settlement
+from godspeed_nav.metrics import (
+    compute_error,
+    estimate_payment,
+    rank_affordances,
+    score_settlement,
+)
 from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
@@ -55,18 +59,24 @@ def build_parser() -> argparse.ArgumentParser:
 
     metabolization_parser = subcommands.add_parser("metabolization")
     metabolization_parser.add_argument("--capability-id", required=True)
-    metabolization_parser.add_argument("--settlements", type=_json_list_arg, required=True)
+    metabolization_parser.add_argument(
+        "--settlements", type=_json_list_arg, required=True
+    )
     metabolization_parser.add_argument("--reuse-frequency", type=int, required=True)
     metabolization_parser.add_argument("--context-diversity", type=int, required=True)
     metabolization_parser.add_argument("--stability", type=float, required=True)
-    metabolization_parser.add_argument("--maintenance-burden", type=float, required=True)
+    metabolization_parser.add_argument(
+        "--maintenance-burden", type=float, required=True
+    )
     metabolization_parser.add_argument("--attention-burden", type=float, required=True)
 
     absorption_parser = subcommands.add_parser("absorbability")
     absorption_parser.add_argument("--root-state", type=_json_arg, required=True)
     absorption_parser.add_argument("--external-state", type=_json_arg, required=True)
     absorption_parser.add_argument("--desired", type=_json_arg, required=True)
-    absorption_parser.add_argument("--capability-delta", type=_json_list_arg, required=True)
+    absorption_parser.add_argument(
+        "--capability-delta", type=_json_list_arg, required=True
+    )
     absorption_parser.add_argument("--license", type=_json_arg, required=True)
     absorption_parser.add_argument("--pathway", default=None)
 
@@ -83,7 +93,9 @@ def build_parser() -> argparse.ArgumentParser:
     review_horizon_parser = subcommands.add_parser("review-horizon")
     review_horizon_parser.add_argument("--storage-root", default=".godspeed-harness")
     review_horizon_parser.add_argument("--direction-id", required=True)
-    review_horizon_parser.add_argument("--candidates", type=_json_list_arg, required=True)
+    review_horizon_parser.add_argument(
+        "--candidates", type=_json_list_arg, required=True
+    )
 
     record_settlement_parser = subcommands.add_parser("record-settlement")
     record_settlement_parser.add_argument("--storage-root", default=".godspeed-harness")
@@ -91,11 +103,15 @@ def build_parser() -> argparse.ArgumentParser:
     record_settlement_parser.add_argument("--before", type=_json_arg, required=True)
     record_settlement_parser.add_argument("--after", type=_json_arg, required=True)
     record_settlement_parser.add_argument("--payment", type=_json_arg, required=True)
-    record_settlement_parser.add_argument("--evidence", type=_json_list_arg, required=True)
+    record_settlement_parser.add_argument(
+        "--evidence", type=_json_list_arg, required=True
+    )
     record_settlement_parser.add_argument("--horizon-delta", type=float, required=True)
 
     developmental_report_parser = subcommands.add_parser("developmental-report")
-    developmental_report_parser.add_argument("--storage-root", default=".godspeed-harness")
+    developmental_report_parser.add_argument(
+        "--storage-root", default=".godspeed-harness"
+    )
 
     predictive_parser = subcommands.add_parser("predictive-extensions")
     predictive_parser.add_argument("--workspace-root", default=".")
