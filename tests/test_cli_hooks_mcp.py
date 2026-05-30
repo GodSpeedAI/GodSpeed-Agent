@@ -53,6 +53,110 @@ def test_cli_estimate_payment_outputs_json():
     assert output["spendability"] == "affordable"
 
 
+def test_cli_rank_affordances_outputs_next_recommendation():
+    output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "rank-affordances",
+            "--candidates",
+            '[{"id": "a", "expected_horizon_delta": 2, "risk": 2}, {"id": "b", "expected_horizon_delta": 3, "risk": 0}]',
+            "--payments",
+            '{"a": {"payment_burden": 4}, "b": {"payment_burden": 1}}',
+        ]
+    )
+
+    assert output["next_recommended_affordance"]["id"] == "b"
+
+
+def test_cli_score_settlement_outputs_failed_and_successful_cases():
+    failed = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "score-settlement",
+            "--before",
+            '{"tests": 0}',
+            "--after",
+            '{"tests": 0}',
+            "--desired",
+            '{"statement": "add tests"}',
+            "--payment",
+            '{"time": 1}',
+            "--evidence",
+            '["intent: add tests"]',
+        ]
+    )
+    success = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "score-settlement",
+            "--before",
+            '{"tests": 0}',
+            "--after",
+            '{"tests": 3}',
+            "--desired",
+            '{"statement": "add tests"}',
+            "--payment",
+            '{"time": 1}',
+            "--evidence",
+            '["pytest passed"]',
+        ]
+    )
+
+    assert failed["status"] == "failed"
+    assert success["status"] == "success"
+
+
+def test_cli_metabolization_rejection_outputs_missing_evidence():
+    output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "metabolization",
+            "--capability-id",
+            "cap-1",
+            "--settlements",
+            '[{"id": "s1"}]',
+            "--reuse-frequency",
+            "1",
+            "--context-diversity",
+            "1",
+            "--stability",
+            "0.9",
+            "--maintenance-burden",
+            "0.1",
+            "--attention-burden",
+            "0.1",
+        ]
+    )
+
+    assert output["status_recommendation"] == "not_metabolized"
+
+
+def test_cli_absorption_rejection_outputs_potential_status():
+    output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "absorbability",
+            "--root-state",
+            '{"capabilities": ["python"]}',
+            "--external-state",
+            '{"capabilities": ["mcp"]}',
+            "--desired",
+            '{"statement": "absorb mcp"}',
+            "--capability-delta",
+            '["mcp"]',
+            "--license",
+            '{"compatible": true}',
+        ]
+    )
+
+    assert output["absorbability_status"] == "potential"
+
+
 def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     output = run_python(
         ["hooks/pre_tool_use.py"],

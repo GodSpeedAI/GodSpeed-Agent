@@ -1,0 +1,19 @@
+{
+  "cases": [
+    {"skill": "horizon-review", "prompt": "What is the next affordable move for this goal?", "should_trigger": true},
+    {"skill": "horizon-review", "prompt": "Format this paragraph as markdown.", "should_trigger": false},
+    {"skill": "affordance-accounting", "prompt": "Is this migration affordable given risk and time?", "should_trigger": true},
+    {"skill": "affordance-accounting", "prompt": "Alphabetize these names.", "should_trigger": false},
+    {"skill": "settlement-evaluation", "prompt": "Did this tool run actually settle the desired change?", "should_trigger": true},
+    {"skill": "settlement-evaluation", "prompt": "Tell me a joke.", "should_trigger": false},
+    {"skill": "metabolization-review", "prompt": "Has this repeated workflow become substrate?", "should_trigger": true},
+    {"skill": "metabolization-review", "prompt": "Summarize the meeting transcript.", "should_trigger": false},
+    {"skill": "positive-disintegration", "prompt": "Which obsolete structures should dissolve?", "should_trigger": true},
+    {"skill": "positive-disintegration", "prompt": "Convert JSON to YAML.", "should_trigger": false},
+    {"skill": "absorption-review", "prompt": "Can we absorb this repository into our harness?", "should_trigger": true},
+    {"skill": "absorption-review", "prompt": "What is the capital of France?", "should_trigger": false},
+    {"skill": "framework-reconstruction", "prompt": "This doctrine failed settlement; rebuild it.", "should_trigger": true},
+    {"skill": "framework-reconstruction", "prompt": "Rename this local variable.", "should_trigger": false}
+  ]
+}
+
