@@ -1,10 +1,11 @@
 ## what has been implemented so far (including evidence of verification and validation)
 - 2026-05-29: Loaded the project spec and created an implementation plan at `docs/plans/2026-05-29-godspeed-agent-harness.md`. Verification: repository inspection confirmed only `CURRENT_STATE.md` and `Godspeed_Agent_Harness_SPEC.md` existed before planning; `.github/copilot-instructions.md` is absent in this checkout.
+- 2026-05-29: Implemented the initial Claude Code plugin scaffold with `.claude-plugin/plugin.json`, `pyproject.toml`, root-level `skills/*/SKILL.md`, and package marker `godspeed_nav/__init__.py`. Verification: wrote failing tests first in `tests/test_plugin_structure.py`; initial run failed on missing manifest and skills; after implementation, `uv run pytest tests/test_plugin_structure.py -q` passed with 3 tests.
 
 
 
 ## what is still missing
-- Plugin scaffold, manifest, skills, agents, hooks, MCP wrapper, monitors, schemas, storage, deterministic computation, CLI, tests, and docs.
+- Harness config loader, agents, hooks, MCP wrapper, monitors, schemas, storage, deterministic computation, CLI, detailed skill references/scripts, evals, and docs.
 
 
 ## lessons learned
@@ -13,4 +14,4 @@
 
 
 ## next steps
-- Start Task 1 with failing plugin structure tests, then implement the scaffold and commit.
+- Start Task 2 with failing harness config loader tests, then implement defaults and validation.
