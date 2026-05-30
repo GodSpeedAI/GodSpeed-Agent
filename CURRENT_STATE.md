@@ -7,11 +7,12 @@
 - 2026-05-29: Implemented runtime surfaces: `godspeed-nav` CLI module/bin wrapper, Claude Code hook scripts/config, local MCP wrapper/config, and monitor configuration. Verification: wrote failing tests first in `tests/test_cli_hooks_mcp.py`; initial run failed on missing CLI/hooks/MCP/monitors; after implementation, `uv run pytest tests/test_cli_hooks_mcp.py -q` passed with 7 tests, and `uv run pytest -q` passed with 36 tests.
 - 2026-05-29: Completed skill reference/script material, agent role files, eval cases, README documentation, and expanded CLI operational commands for horizon review, settlement, metabolization, and absorption review. Verification: wrote failing tests first in `tests/test_docs_alignment.py` and extended `tests/test_cli_hooks_mcp.py`; after implementation, `uv run pytest tests/test_cli_hooks_mcp.py tests/test_docs_alignment.py -q` passed with 16 tests and `uv run pytest -q` passed with 45 tests. Operational samples passed through the CLI: horizon affordance ranking recommended `sample-horizon-review`, intent-only settlement returned `failed`, evidence-backed settlement returned `success`, low-evidence metabolization returned `not_metabolized`, and absorption without pathway returned `potential`.
 - 2026-05-29: Made the required self-critique/reconstruction surface explicit in `README.md`. Verification: added a failing assertion to `tests/test_docs_alignment.py`, observed it fail on missing `## Self-Critique`, added the section, then `uv run pytest tests/test_docs_alignment.py -q` passed with 5 tests and `uv run pytest -q` passed with 45 tests.
+- 2026-05-29: Ran final implementation audit on feature branch `feature/harness`. Verification: `uv run pytest -q` passed with 45 tests; artifact audit checked 39 required paths from the spec and found no missing files; `git diff --stat main..HEAD` shows plugin, config, schemas, storage, computation, hooks, MCP, monitors, agents, evals, docs, and tests added across 74 files.
 
 
 
 ## what is still missing
-- Final completion audit against `Godspeed_Agent_Harness_SPEC.md`, including fresh verification commands and any gap fixes found by the audit.
+- Branch integration decision: merge locally, push/create PR, keep branch as-is, or discard.
 
 
 ## lessons learned
@@ -20,4 +21,4 @@
 
 
 ## next steps
-- Run the final completion audit and use the finishing workflow to decide how to integrate the feature branch.
+- Choose a finishing workflow option for `feature/harness`.
