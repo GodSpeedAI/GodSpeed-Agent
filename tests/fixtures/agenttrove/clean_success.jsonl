@@ -1,0 +1,14 @@
+{
+  "trace_id": "at-test-clean-001",
+  "source": "test_source",
+  "teacher": "test_teacher",
+  "task_id": "task-001",
+  "reward": 1.0,
+  "metadata": {"original_source": "test_source", "original_teacher": "test_teacher"},
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Implement a function that adds two numbers."},
+    {"role": "assistant", "content": "I'll implement that.\n```python\ndef add(a, b):\n    return a + b\n```"},
+    {"role": "assistant", "content": "The answer is the function `add` above. In conclusion, this adds two numbers."}
+  ]
+}

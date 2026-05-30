@@ -4,3 +4,13 @@ __pycache__/
 .pytest_cache/
 *:Zone.Identifier
 tmp/
+data/agenttrove/raw_samples/*.jsonl
+data/agenttrove/normalized/*.jsonl
+data/agenttrove/profiles/*.jsonl
+data/agenttrove/profiles/*.csv
+data/agenttrove/settlements/*.jsonl
+data/agenttrove/settlements/*.sqlite
+data/agenttrove/evals/*.jsonl
+data/agenttrove/sft/*.jsonl
+policies/generated/*.yaml
+evals/agenttrove/*.jsonl

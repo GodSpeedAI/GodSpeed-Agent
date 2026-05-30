@@ -1,0 +1,235 @@
+desired_direction_keywords:
+  implementation:
+    - implement
+    - build
+    - create
+    - develop
+    - write
+    - add
+    - construct
+    - make
+    - set up
+    - configure
+    - install
+  diagnosis:
+    - debug
+    - fix
+    - resolve
+    - diagnose
+    - investigate
+    - troubleshoot
+    - error
+    - bug
+    - issue
+    - problem
+    - why does
+    - why is
+  action:
+    - run
+    - execute
+    - deploy
+    - start
+    - stop
+    - restart
+    - launch
+    - test
+    - check
+    - verify
+  artifact:
+    - generate
+    - produce
+    - output
+    - export
+    - compile
+    - render
+    - convert
+    - format
+  strategy:
+    - plan
+    - design
+    - architect
+    - refactor
+    - optimize
+    - improve
+    - migrate
+    - restructure
+  theory:
+    - explain
+    - describe
+    - analyze
+    - compare
+    - evaluate
+    - what is
+    - how does
+    - why
+
+path_shape_rules:
+  ga_to_sa_to_sc:
+    description: "General-abstract start, moves through specific-abstract, reaches specific-concrete."
+    indicators:
+      - starts_with_general_question: true
+      - has_intermediate_planning_turns: true
+      - ends_with_concrete_action: true
+  ga_to_gc_to_sc:
+    description: "General-abstract start, moves through general-concrete, reaches specific-concrete."
+    indicators:
+      - starts_with_general_question: true
+      - has_concrete_intermediate: true
+      - ends_with_specific_action: true
+  direct_jump:
+    description: "Jumps directly from general to specific without intermediate steps."
+    indicators:
+      - starts_broad: true
+      - first_action_is_concrete: true
+      - turn_count_less_than: 4
+  direct_action_with_feedback:
+    description: "Starts with concrete action, adjusts based on feedback."
+    indicators:
+      - first_assistant_is_action: true
+      - has_tool_output: true
+      - adjusts_after_feedback: true
+  thrash:
+    description: "Repetitive actions without progress toward resolution."
+    indicators:
+      - repeated_similar_actions: true
+      - error_count_gte: 3
+      - no_progress_indicators: true
+  loop:
+    description: "Returns to earlier state without advancement."
+    indicators:
+      - has_repeated_content: true
+      - returns_to_start: true
+
+settlement_quality_rules:
+  clean_success:
+    conditions:
+      - has_reward_gte: 1.0
+      - error_count_eq: 0
+      - has_final_answer: true
+  recovered_success:
+    conditions:
+      - has_reward_gte: 1.0
+      - error_count_gte: 1
+      - has_final_answer: true
+  partial_success:
+    conditions:
+      - has_reward_gt: 0.0
+      - has_reward_lt: 1.0
+  brittle_success:
+    conditions:
+      - has_reward_gte: 1.0
+      - turn_count_gt: 20
+      - error_count_gte: 3
+  failure_with_signal:
+    conditions:
+      - has_reward_eq: 0.0
+      - has_final_answer: false
+      - error_count_gte: 1
+  failure_without_signal:
+    conditions:
+      - has_reward_eq: 0.0
+      - has_final_answer: false
+      - error_count_eq: 0
+
+failure_mode_rules:
+  premature_closure:
+    description: "Agent provides final answer without adequate settlement evidence."
+    conditions:
+      - turn_count_lt: 3
+      - has_final_answer: true
+      - error_count_eq: 0
+  tool_thrashing:
+    description: "Repeated tool/command attempts without error reduction."
+    conditions:
+      - command_count_gte: 5
+      - error_count_gte: 3
+      - repeated_similar_actions: true
+  failed_recovery:
+    description: "Tool error occurs but the agent does not adjust strategy."
+    conditions:
+      - error_count_gte: 2
+      - same_action_after_error: true
+  representation_jump:
+    description: "Broad/general task jumps directly into concrete action without intermediate framing."
+    conditions:
+      - first_user_is_broad: true
+      - first_assistant_is_concrete: true
+      - turn_count_lt: 5
+  payment_spiral:
+    description: "High turn/tool/command count with poor or no outcome improvement."
+    conditions:
+      - turn_count_gt: 15
+      - command_count_gte: 5
+      - has_reward_lte: 0.0
+  context_loss:
+    description: "Later actions ignore earlier task constraints."
+    conditions:
+      - turn_count_gt: 10
+      - later_content_missing_earlier_keywords: true
+  over_abstraction:
+    description: "Agent explains instead of taking needed action."
+    conditions:
+      - assistant_turn_count_gt: 5
+      - command_count_eq: 0
+      - has_final_answer: false
+  premature_concretion:
+    description: "Agent executes before understanding constraints."
+    conditions:
+      - first_assistant_is_action: true
+      - error_on_first_action: true
+  missing_affordance:
+    description: "Agent sees destination but lacks spendable path."
+    conditions:
+      - user_mentions_goal: true
+      - assistant_acks_no_path: true
+      - has_final_answer: false
+  brittle_success:
+    description: "Reward/success occurs but path is fragile or poorly evidenced."
+    conditions:
+      - has_reward_gte: 1.0
+      - turn_count_gt: 20
+      - or:
+        - error_count_gte: 3
+        - command_count_gte: 10
+
+payment_complexity_rules:
+  low:
+    turn_count_lt: 5
+    command_count_lt: 2
+    error_count_lt: 1
+  medium:
+    turn_count_lt: 15
+    command_count_lt: 5
+    error_count_lt: 3
+  high:
+    turn_count_gte: 15
+    or:
+      - command_count_gte: 5
+      - error_count_gte: 3
+
+metabolization_candidate_rules:
+  repeated_success_pattern:
+    conditions:
+      - has_reward_gte: 1.0
+      - turn_count_lt: 10
+      - error_count_eq: 0
+      - has_final_answer: true
+  clean_recovery_pattern:
+    conditions:
+      - has_reward_gte: 1.0
+      - error_count_gte: 1
+      - recovery_evidenced: true
+
+harness_policy_signal_rules:
+  require_reflection_after_errors:
+    trigger: "error_count_gte: 2"
+    signal_type: "require_reflection"
+  block_premature_final_answer:
+    trigger: "failure_mode: premature_closure"
+    signal_type: "block_final_answer"
+  payment_spiral_reset:
+    trigger: "payment_pattern: high_payment_failure"
+    signal_type: "require_plan_reset"
+  force_intermediate_representation:
+    trigger: "failure_mode: representation_jump"
+    signal_type: "require_intermediate_state"
