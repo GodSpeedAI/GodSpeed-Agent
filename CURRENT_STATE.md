@@ -15,11 +15,12 @@
 - 2026-05-29: Started Phase 1 enterprise hardening by adding `NavigationRuntime`, a connected local orchestration service for desired directions, horizon review, affordance/payment recording, settlement, trajectory update, and runtime snapshots. Verification: wrote failing tests first in `tests/test_runtime_workflow.py` and a failing CLI snapshot test; initial runs failed on missing `godspeed_nav.runtime` and missing `runtime-snapshot`; after implementation, `uv run pytest -q` passed with 48 tests.
 - 2026-05-29: Added workflow-grade CLI commands over `NavigationRuntime`: `start-direction`, `review-horizon`, `record-settlement`, and `runtime-snapshot`. Verification: wrote failing CLI workflow test first; initial run failed because `start-direction` was not a valid command; after implementation, `uv run pytest -q` passed with 49 tests.
 - 2026-05-29: Started Phase 2 enterprise ledger durability by adding `StorageError`, strict ledger-name validation, event envelopes with schema version/sequence/timestamp/checksum, checksum quarantine, and backup export. Verification: wrote failing tests first in `tests/test_enterprise_storage.py`; initial run failed on missing `StorageError`; after implementation, `uv run pytest tests/test_enterprise_storage.py -q` passed with 4 tests and `uv run pytest -q` passed with 53 tests.
+- 2026-05-29: Extended ledger durability with per-ledger indexes, record-id lookup, storage manifest initialization, and migration/version checks. Verification: wrote failing tests first in `tests/test_enterprise_storage.py`; initial run failed on missing index files and `migration_status`; after implementation, `uv run pytest tests/test_enterprise_storage.py -q` passed with 7 tests and `uv run pytest -q` passed with 56 tests.
 
 
 ## what is still missing (what does each afford towards the overall project goals, and how will we know when it's done)
 
-- Additional ledger migration/index features, policy gates, observability reports, workflow-grade hooks/MCP, validation command, and enterprise runbooks.
+- Policy gates, observability reports, workflow-grade hooks/MCP, validation command, and enterprise runbooks.
 
 ## lessons learned (that will inform future work making this process more efficient, prune unnecessary steps, and avoid pitfalls)
 
@@ -29,4 +30,4 @@
 
 ## next steps (each step should unlock the next step and justifiably contribute to the overall project progress)
 
-- Continue Phase 2 with ledger index/read optimizations and migration/version checks, then move into policy gates.
+- Start policy gates with TDD: unaffordable action blocking, absorption/disintegration human-review enforcement, and explainable decisions.

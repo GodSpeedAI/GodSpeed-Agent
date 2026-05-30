@@ -50,3 +50,37 @@ def test_export_backup_contains_ledgers_and_manifest(tmp_path: Path):
     manifest = json.loads((backup / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["ledger_count"] == 1
     assert (backup / "ledgers" / "settlements.jsonl").exists()
+
+
+def test_append_event_maintains_index_for_record_id_reads(tmp_path: Path):
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+
+    store.append_event("settlements", {"id": "set-1", "status": "success"})
+    store.append_event("settlements", {"id": "set-2", "status": "failed"})
+
+    index = json.loads((store.root / "indexes" / "settlements.index.json").read_text(encoding="utf-8"))
+    assert index["schema_version"] == 1
+    assert index["records"]["set-1"]["sequence"] == 1
+    assert store.read_event_by_record_id("settlements", "set-2")["record"]["status"] == "failed"
+
+
+def test_storage_manifest_version_is_initialized_and_validated(tmp_path: Path):
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+
+    manifest = store.migration_status()
+
+    assert manifest["schema_version"] == 1
+    assert manifest["status"] == "current"
+
+
+def test_storage_manifest_version_mismatch_requires_migration(tmp_path: Path):
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+    manifest_path = store.root / "config" / "storage_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["schema_version"] = 999
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(StorageError) as error:
+        store.migration_status()
+
+    assert error.value.code == "storage_migration_required"

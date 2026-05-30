@@ -19,6 +19,8 @@ SECRET_KEYS = {
     "token",
 }
 
+STORAGE_SCHEMA_VERSION = 1
+
 
 class StorageError(ValueError):
     """Typed storage error for operator-visible failure surfaces."""
@@ -35,7 +37,10 @@ class LedgerStore:
         self.root = Path(root)
         self.redact_secrets = redact_secrets
         (self.root / "ledgers").mkdir(parents=True, exist_ok=True)
+        (self.root / "indexes").mkdir(parents=True, exist_ok=True)
+        (self.root / "config").mkdir(parents=True, exist_ok=True)
         (self.root / "cache" / "quarantine").mkdir(parents=True, exist_ok=True)
+        self._ensure_storage_manifest()
 
     def ledger_path(self, ledger_name: str) -> Path:
         if not ledger_name.replace("_", "").replace("-", "").isalnum():
@@ -94,6 +99,7 @@ class LedgerStore:
             handle.write(json.dumps(envelope, sort_keys=True) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
+        self._update_index(ledger_name, envelope)
         return envelope
 
     def read_events(self, ledger_name: str) -> list[dict[str, Any]]:
@@ -139,6 +145,26 @@ class LedgerStore:
         (destination / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
         return destination
 
+    def read_event_by_record_id(self, ledger_name: str, record_id: str) -> dict[str, Any] | None:
+        index = self._read_index(ledger_name)
+        entry = index.get("records", {}).get(record_id)
+        if not entry:
+            return None
+        for event in self.read_events(ledger_name):
+            if event.get("sequence") == entry["sequence"]:
+                return event
+        return None
+
+    def migration_status(self) -> dict[str, Any]:
+        manifest = self._read_storage_manifest()
+        version = manifest.get("schema_version")
+        if version != STORAGE_SCHEMA_VERSION:
+            raise StorageError(
+                "storage_migration_required",
+                f"Storage schema {version} must be migrated to {STORAGE_SCHEMA_VERSION}.",
+            )
+        return {**manifest, "status": "current"}
+
     def _redact(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {
@@ -159,3 +185,49 @@ class LedgerStore:
         payload = {key: value for key, value in envelope.items() if key != "checksum"}
         serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    def _index_path(self, ledger_name: str) -> Path:
+        self.ledger_path(ledger_name)
+        return self.root / "indexes" / f"{ledger_name}.index.json"
+
+    def _read_index(self, ledger_name: str) -> dict[str, Any]:
+        path = self._index_path(ledger_name)
+        if not path.exists():
+            return {
+                "schema_version": STORAGE_SCHEMA_VERSION,
+                "ledger": ledger_name,
+                "updated_at": now_iso(),
+                "records": {},
+            }
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def _update_index(self, ledger_name: str, envelope: dict[str, Any]) -> None:
+        index = self._read_index(ledger_name)
+        record_id = envelope.get("record", {}).get("id")
+        if record_id:
+            index["records"][record_id] = {
+                "sequence": envelope["sequence"],
+                "timestamp": envelope["timestamp"],
+                "checksum": envelope["checksum"],
+            }
+        index["updated_at"] = now_iso()
+        path = self._index_path(ledger_name)
+        path.write_text(json.dumps(index, indent=2, sort_keys=True), encoding="utf-8")
+
+    def _manifest_path(self) -> Path:
+        return self.root / "config" / "storage_manifest.json"
+
+    def _ensure_storage_manifest(self) -> None:
+        path = self._manifest_path()
+        if path.exists():
+            return
+        manifest = {
+            "schema_version": STORAGE_SCHEMA_VERSION,
+            "created_at": now_iso(),
+            "updated_at": now_iso(),
+            "storage_root": str(self.root),
+        }
+        path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+
+    def _read_storage_manifest(self) -> dict[str, Any]:
+        return json.loads(self._manifest_path().read_text(encoding="utf-8"))
