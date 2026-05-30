@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from godspeed_nav.config import load_config
+from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.storage import LedgerStore
@@ -33,10 +34,38 @@ def validate_enterprise_readiness(
     config = load_config(workspace)
     checks["config"] = _check(
         config.harness.primary_metric == "horizon_expansion"
-        and config.harness.outcome_as_terminal is False,
+        and config.harness.outcome_as_terminal is False
+        and bool(config.computation.model_provider),
         {
             "primary_metric": config.harness.primary_metric,
             "outcome_as_terminal": config.harness.outcome_as_terminal,
+            "model_provider": config.computation.model_provider,
+            "ml_event_threshold": config.computation.ml_event_threshold,
+            "simulation_threshold": config.computation.simulation_threshold,
+        },
+    )
+
+    predictive = run_predictive_extensions(
+        workspace_root=workspace,
+        storage_root=storage_root,
+        candidates=[
+            {
+                "id": "predictive-affordance",
+                "expected_horizon_delta": 1,
+                "risk": 0,
+                "costs": {"time": 1},
+                "capacities": {"time": 5},
+            }
+        ],
+    )
+    checks["predictive_extensions"] = _check(
+        predictive["provider"] == config.computation.model_provider
+        and predictive["thresholds"]["ml_event_threshold"] == config.computation.ml_event_threshold
+        and predictive["thresholds"]["simulation_threshold"] == config.computation.simulation_threshold,
+        {
+            "provider": predictive["provider"],
+            "stage": predictive["stage"],
+            "thresholds": predictive["thresholds"],
         },
     )
 
@@ -99,6 +128,7 @@ def validate_enterprise_readiness(
         "cybernetic_nav.record_settlement",
         "cybernetic_nav.runtime_snapshot",
         "cybernetic_nav.developmental_report",
+        "cybernetic_nav.predictive_extensions",
         "cybernetic_nav.validate_enterprise_readiness",
     }
     snapshot = call_tool("cybernetic_nav.runtime_snapshot", {"storage_root": str(storage_root)})

@@ -9,6 +9,7 @@ from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.disintegration import review_positive_disintegration
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import compute_error, estimate_payment, rank_affordances, score_settlement
+from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.storage import LedgerStore
@@ -34,6 +35,7 @@ TOOL_NAMES = [
     "cybernetic_nav.record_settlement",
     "cybernetic_nav.runtime_snapshot",
     "cybernetic_nav.developmental_report",
+    "cybernetic_nav.predictive_extensions",
     "cybernetic_nav.validate_enterprise_readiness",
 ]
 
@@ -111,6 +113,13 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             return _runtime(arguments).snapshot()
         if name == "cybernetic_nav.developmental_report":
             return generate_developmental_report(arguments.get("storage_root", ".godspeed-harness"))
+        if name == "cybernetic_nav.predictive_extensions":
+            return run_predictive_extensions(
+                workspace_root=arguments.get("workspace_root", "."),
+                storage_root=arguments.get("storage_root", ".godspeed-harness"),
+                candidates=arguments.get("candidates", []),
+                provider_name=arguments.get("provider"),
+            )
         if name == "cybernetic_nav.validate_enterprise_readiness":
             return validate_enterprise_readiness(
                 workspace_root=arguments.get("workspace_root", "."),

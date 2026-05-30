@@ -269,6 +269,85 @@ def test_cli_developmental_report_outputs_observability_summary(tmp_path: Path):
     assert "settlement_quality" in output
 
 
+def test_cli_predictive_extensions_respects_configured_provider_and_thresholds(tmp_path: Path):
+    workspace_root = tmp_path / "workspace"
+    workspace_root.mkdir()
+    (workspace_root / "HARNESS.md").write_text(
+        "---\n"
+        "computation:\n"
+        "  model_provider: testing\n"
+        "  ml_event_threshold: 2\n"
+        "  simulation_threshold: 3\n"
+        "---\n",
+        encoding="utf-8",
+    )
+    storage_root = tmp_path / ".godspeed-harness"
+
+    from godspeed_nav.storage import LedgerStore
+
+    store = LedgerStore(storage_root)
+    for index in range(3):
+        store.append_event("settlements", {"id": f"set-{index}", "status": "success"})
+
+    output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "predictive-extensions",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--candidates",
+            '[{"id":"aff-1","expected_horizon_delta":4,"risk":1,"costs":{"time":1},"capacities":{"time":5}}]',
+        ]
+    )
+
+    assert output["provider"] == "testing"
+    assert output["stage"] == "simulation_assisted"
+    assert output["active_extensions"] == ["ml_prediction", "simulation"]
+
+
+def test_mcp_wrapper_dispatches_predictive_extensions(tmp_path: Path):
+    from godspeed_nav.storage import LedgerStore
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    workspace_root = tmp_path / "workspace"
+    workspace_root.mkdir()
+    (workspace_root / "HARNESS.md").write_text(
+        "---\n"
+        "computation:\n"
+        "  model_provider: testing\n"
+        "  ml_event_threshold: 1\n"
+        "  simulation_threshold: 5\n"
+        "---\n",
+        encoding="utf-8",
+    )
+    storage_root = tmp_path / ".godspeed-harness"
+    LedgerStore(storage_root).append_event("settlements", {"id": "set-1", "status": "success"})
+
+    result = call_tool(
+        "cybernetic_nav.predictive_extensions",
+        {
+            "workspace_root": str(workspace_root),
+            "storage_root": str(storage_root),
+            "candidates": [
+                {
+                    "id": "mcp-aff",
+                    "expected_horizon_delta": 2,
+                    "risk": 0,
+                    "costs": {"time": 1},
+                    "capacities": {"time": 5},
+                }
+            ],
+        },
+    )
+
+    assert result["provider"] == "testing"
+    assert result["stage"] == "ml_assisted"
+    assert result["active_extensions"] == ["ml_prediction"]
+
+
 def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
     storage_root = tmp_path / ".godspeed-harness"
     output = run_python(
@@ -367,6 +446,7 @@ def test_mcp_wrapper_registers_required_tools():
         "cybernetic_nav.record_settlement",
         "cybernetic_nav.runtime_snapshot",
         "cybernetic_nav.developmental_report",
+        "cybernetic_nav.predictive_extensions",
         "cybernetic_nav.validate_enterprise_readiness",
     } <= set(TOOL_NAMES)
 

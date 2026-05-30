@@ -14,6 +14,7 @@ computation:
   use_pandas: true
   use_numpy: true
   use_sklearn: auto
+  model_provider: heuristic
   ml_event_threshold: 200
   simulation_threshold: 1000
 experiments:
@@ -40,3 +41,4 @@ safety:
 
 This repository uses local-first developmental memory. Outcomes are accepted as desired-direction language, but outcome completion is not terminal by default. The primary metric is horizon expansion through the next affordable affordance.
 
+Predictive extensions remain suggestion-only and activate only after the configured settlement thresholds are met.

@@ -6,7 +6,11 @@ from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.disintegration import review_positive_disintegration
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import compute_error, estimate_payment, rank_affordances, score_settlement
-from godspeed_nav.ml import ensure_ml_allowed
+from godspeed_nav.ml import (
+    TestingPredictiveModelAdapter,
+    build_predictive_extension_plan,
+    ensure_ml_allowed,
+)
 from godspeed_nav.trajectory import detect_circular_motion, update_trajectory
 
 
@@ -182,3 +186,62 @@ def test_positive_disintegration_reports_dissolution_and_body_candidates():
 def test_ml_training_refuses_below_configured_threshold():
     with pytest.raises(RuntimeError, match="insufficient_settlement_history"):
         ensure_ml_allowed(settlement_event_count=25, threshold=200)
+
+
+def test_predictive_extensions_remain_deterministic_before_ml_threshold():
+    result = build_predictive_extension_plan(
+        settlement_history=[{"id": f"set-{index}"} for index in range(199)],
+        candidates=[
+            {
+                "id": "aff-1",
+                "expected_horizon_delta": 4,
+                "risk": 1,
+                "costs": {"time": 1},
+                "capacities": {"time": 5},
+            }
+        ],
+        ml_event_threshold=200,
+        simulation_threshold=1000,
+        model_port=TestingPredictiveModelAdapter(),
+    )
+
+    assert result["stage"] == "deterministic_only"
+    assert result["active_extensions"] == []
+    assert result["ml_predictions"] == []
+    assert result["simulation_results"] == []
+
+
+def test_predictive_extensions_auto_activate_ml_and_simulation_at_thresholds():
+    candidates = [
+        {
+            "id": "aff-1",
+            "expected_horizon_delta": 5,
+            "risk": 1,
+            "costs": {"time": 1},
+            "capacities": {"time": 5},
+        }
+    ]
+
+    ml_ready = build_predictive_extension_plan(
+        settlement_history=[{"id": f"set-{index}"} for index in range(200)],
+        candidates=candidates,
+        ml_event_threshold=200,
+        simulation_threshold=1000,
+        model_port=TestingPredictiveModelAdapter(),
+    )
+    simulation_ready = build_predictive_extension_plan(
+        settlement_history=[{"id": f"set-{index}"} for index in range(1000)],
+        candidates=candidates,
+        ml_event_threshold=200,
+        simulation_threshold=1000,
+        model_port=TestingPredictiveModelAdapter(),
+    )
+
+    assert ml_ready["stage"] == "ml_assisted"
+    assert ml_ready["active_extensions"] == ["ml_prediction"]
+    assert ml_ready["ml_predictions"][0]["candidate_id"] == "aff-1"
+    assert ml_ready["simulation_results"] == []
+
+    assert simulation_ready["stage"] == "simulation_assisted"
+    assert simulation_ready["active_extensions"] == ["ml_prediction", "simulation"]
+    assert simulation_ready["simulation_results"][0]["candidate_id"] == "aff-1"

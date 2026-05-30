@@ -8,6 +8,7 @@ from godspeed_nav.absorption import review_absorbability
 from godspeed_nav.metabolization import compute_metabolization
 from godspeed_nav.metrics import compute_error, estimate_payment
 from godspeed_nav.metrics import rank_affordances, score_settlement
+from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
 from godspeed_nav.validation import validate_enterprise_readiness
@@ -96,6 +97,12 @@ def build_parser() -> argparse.ArgumentParser:
     developmental_report_parser = subcommands.add_parser("developmental-report")
     developmental_report_parser.add_argument("--storage-root", default=".godspeed-harness")
 
+    predictive_parser = subcommands.add_parser("predictive-extensions")
+    predictive_parser.add_argument("--workspace-root", default=".")
+    predictive_parser.add_argument("--storage-root", default=".godspeed-harness")
+    predictive_parser.add_argument("--candidates", type=_json_list_arg, default=[])
+    predictive_parser.add_argument("--provider", default=None)
+
     validate_parser = subcommands.add_parser("validate")
     validate_parser.add_argument("--workspace-root", default=".")
     validate_parser.add_argument("--storage-root", default=".godspeed-harness")
@@ -161,6 +168,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
     if args.command == "developmental-report":
         return generate_developmental_report(args.storage_root)
+    if args.command == "predictive-extensions":
+        return run_predictive_extensions(
+            workspace_root=args.workspace_root,
+            storage_root=args.storage_root,
+            candidates=args.candidates,
+            provider_name=args.provider,
+        )
     if args.command == "validate":
         return validate_enterprise_readiness(args.workspace_root, args.storage_root)
     raise SystemExit(f"Unknown command: {args.command}")

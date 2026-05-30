@@ -40,6 +40,7 @@ class ComputationSettings:
     use_pandas: bool = True
     use_numpy: bool = True
     use_sklearn: bool | str = "auto"
+    model_provider: str = "heuristic"
     ml_event_threshold: int = 200
     simulation_threshold: int = 1000
 
@@ -134,6 +135,7 @@ def load_config(workspace_root: str | Path, explicit_path: str | Path | None = N
             use_pandas=bool(computation_data.get("use_pandas", True)),
             use_numpy=bool(computation_data.get("use_numpy", True)),
             use_sklearn=computation_data.get("use_sklearn", "auto"),
+            model_provider=str(computation_data.get("model_provider", "heuristic")),
             ml_event_threshold=int(computation_data.get("ml_event_threshold", 200)),
             simulation_threshold=int(computation_data.get("simulation_threshold", 1000)),
         ),

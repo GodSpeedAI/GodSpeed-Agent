@@ -15,6 +15,7 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
     assert {
         "plugin_structure",
         "config",
+        "predictive_extensions",
         "storage",
         "runtime_workflow",
         "agents",
@@ -24,6 +25,7 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
     } <= set(result["checks"])
 
     assert result["checks"]["mcp"]["details"]["snapshot_counts"]["desired_directions"] >= 0
+    assert result["checks"]["predictive_extensions"]["details"]["provider"] == "heuristic"
 
 
 def test_cli_validate_outputs_pass_status(tmp_path: Path):

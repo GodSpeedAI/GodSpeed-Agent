@@ -90,3 +90,21 @@ def test_invalid_storage_format_is_rejected(tmp_path: Path):
         load_config(tmp_path)
 
     assert error.value.code == "unsupported_storage_format"
+
+
+def test_computation_settings_allow_provider_and_threshold_overrides(tmp_path: Path):
+    (tmp_path / "HARNESS.md").write_text(
+        "---\n"
+        "computation:\n"
+        "  model_provider: testing\n"
+        "  ml_event_threshold: 250\n"
+        "  simulation_threshold: 1250\n"
+        "---\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(tmp_path)
+
+    assert config.computation.model_provider == "testing"
+    assert config.computation.ml_event_threshold == 250
+    assert config.computation.simulation_threshold == 1250
