@@ -21,11 +21,12 @@
 - 2026-05-29: Upgraded hooks and MCP toward workflow-grade runtime surfaces. `PreToolUse` now records tool payment decisions with policy explanations, `PostToolUse` returns a runtime snapshot after settlement recording, `Stop` returns a developmental report, and MCP exposes `runtime_snapshot` plus `developmental_report`. Verification: wrote failing tests first in `tests/test_cli_hooks_mcp.py`; initial run failed on missing policy/report/snapshot outputs and missing MCP tools; after implementation, focused hook/MCP tests passed and `uv run pytest -q` passed with 64 tests.
 - 2026-05-29: Added enterprise readiness validation via `godspeed_nav.validation.validate_enterprise_readiness` and `godspeed-nav validate`, covering package structure, config invariants, storage migration status, runtime workflow, hooks, MCP, and reports. Verification: wrote failing tests first in `tests/test_validation.py`; initial run failed on missing `godspeed_nav.validation`; after implementation, `uv run pytest tests/test_validation.py -q` passed with 2 tests and `uv run pytest -q` passed with 66 tests.
 - 2026-05-29: Added enterprise runbooks for installation, configuration, backup/restore, incident recovery, and release readiness. Verification: wrote failing tests first in `tests/test_runbooks.py`; initial run failed on missing runbook files, then on missing release command wording; after implementation, `uv run pytest tests/test_runbooks.py -q` passed with 1 test and `uv run pytest -q` passed with 67 tests.
+- 2026-05-29: Ran completion audit against the PDF-derived understanding and enterprise hardening plan. Verification: `uv run pytest -q` passed with 67 tests; `uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .godspeed-harness/final-validation` returned `"status": "pass"`; artifact audit checked runtime, policy, storage, reports, validation, hooks, MCP, runbooks, understanding, and plan files with no missing paths.
 
 
 ## what is still missing (what does each afford towards the overall project goals, and how will we know when it's done)
 
-- Completion audit against the enterprise hardening plan and PDF-derived target outcomes.
+- No known gaps in the local-first enterprise hardening scope described by `docs/plans/2026-05-29-enterprise-hardening.md`. Future productization may add packaged distribution, hosted multi-user services, or richer ML once settlement history exists.
 
 ## lessons learned (that will inform future work making this process more efficient, prune unnecessary steps, and avoid pitfalls)
 
@@ -35,4 +36,4 @@
 
 ## next steps (each step should unlock the next step and justifiably contribute to the overall project progress)
 
-- Run a completion audit against `docs/plans/2026-05-29-enterprise-hardening.md`, `docs/understanding/2026-05-29-cognitive-operating-systems.md`, and fresh validation output.
+- Use the harness in real Claude Code work, collect settlement history, and revisit ML/simulation extensions only after the event thresholds in the spec are met.
