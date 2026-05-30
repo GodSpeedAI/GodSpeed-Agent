@@ -16,6 +16,10 @@ Implementation-defined defaults are documented in `HARNESS.md`. This implementat
 
 No external API calls by default. MCP tools and hook scripts operate on local input, local computation, and configured local storage.
 
+## Self-Critique
+
+The harness doctrine is not protected from review. Use the `framework-reconstruction` skill when doctrine, policy, skills, or navigation assumptions fail settlement. Failed structure should dissolve or be replaced, and repeated successful patterns should become substrate.
+
 ## Verification
 
 Run:

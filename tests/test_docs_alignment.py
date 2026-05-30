@@ -56,3 +56,4 @@ def test_readme_documents_implementation_defined_behavior_and_local_first_bounda
     assert "Implementation-defined" in readme
     assert "No external API calls by default" in readme
     assert "outcome completion is not terminal" in readme.lower()
+    assert "## Self-Critique" in readme
