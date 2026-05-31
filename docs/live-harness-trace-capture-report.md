@@ -118,3 +118,7 @@ external trace limit discovered
 ```
 
 This pass completes step 2. The next affordable step is capturing real live runs and evaluating whether the trigger fires early enough to matter.
+
+## Guarded Activation Experiment Follow-Up
+
+The guarded activation experiment (`reflection-guarded-001`) used the 13 baseline traces captured by this infrastructure. The experiment replayed all traces through guarded activation mode and produced 4 interventions (2 potentially helpful, 2 false positives, 0 harmful). See `docs/guarded-activation-experiment-report.md` for the full report.

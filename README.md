@@ -66,6 +66,44 @@ Or use the installed script entrypoint:
 uv run godspeed-nav runtime-snapshot
 ```
 
+## Using The Harness With A Project
+
+Keep this repository separate from the projects that use it. This repository is the harness implementation. A receiving project keeps its ordinary files in its own root, and the harness records that project's developmental memory inside that workspace.
+
+Recommended layout:
+
+```text
+/home/sprime01/projects/
+  godspeed_agent/        # harness source and runtime
+  my-project/            # receiving project
+    src/
+    tests/
+    HARNESS.md           # optional project policy
+    ingest/
+      absorption/
+    .godspeed-harness/   # local ledgers and reports for this project
+```
+
+When running storage-backed commands, point `--workspace-root` at the receiving project:
+
+```bash
+uv run godspeed-nav start-direction \
+  --workspace-root /home/sprime01/projects/my-project \
+  --storage-root .godspeed-harness \
+  --label "Initial project direction" \
+  --statement "Build the first usable slice"
+```
+
+The harness does not become the project, and the project does not need to live inside the harness repository. The project keeps its normal code, tests, docs, and tools at its own root. The harness keeps navigation evidence: desired directions, horizon reviews, affordance paths, payment, settlement, repetition, critiques, and capability state.
+
+## Project Learning And Absorption
+
+A project may absorb capabilities from another project, repository, library, agent, or skill. Stage those candidates under the receiving project's configured ingest root, usually `ingest/absorption/<candidate-name>/`. Use the absorption ingest runbook for the local folder contract, candidate notes, license summary, and settlement plan.
+
+Absorbed material remains `potential` until the receiving project has a spendable pathway. It becomes `absorbable` only when pathway, payment, license, policy, and settlement plan align. It becomes settled only through local consequence in the receiving project. It becomes metabolized only after repeated settlement lowers attention burden.
+
+This distinction matters: the project learns project-specific capabilities, while the harness learns from the project's navigation evidence. For example, a project may learn PDF ingestion. The harness records whether the path used to absorb that parser was affordable, what payment it required, what settled, what failed, and whether repeated use turned the capability into substrate.
+
 ## Core Workflow
 
 The harness operationalizes the same loop described in the doctrine:
@@ -133,7 +171,7 @@ No external API calls by default. MCP tools and hook scripts operate on local in
 - `AGENTS.md` defines how human and machine agents should work in this repository.
 - `HARNESS.md` documents the active policy defaults and implementation-defined behavior.
 - `docs/references/` contains the operator-facing ledger, schema, CLI, policy, report, and workflow references.
-- `docs/runbooks/` documents installation, configuration, backup and restore, incident recovery, and release readiness.
+- `docs/runbooks/` documents installation, configuration, absorption ingest, backup and restore, incident recovery, and release readiness.
 - `docs/plans/` captures implementation, hardening, and target-state bridge plans.
 - `docs/understanding/` captures the doctrine and enterprise framing that shaped the runtime.
 

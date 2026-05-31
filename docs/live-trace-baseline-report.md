@@ -205,6 +205,18 @@ simulated baseline (this pass)
 → possible metabolization later
 ```
 
+## Guarded Activation Experiment Follow-Up
+
+The guarded activation experiment (`reflection-guarded-001`) has been completed using these 13 baseline traces. Results:
+
+- 4 interventions across 13 runs
+- 2 potentially helpful (baseline-001, baseline-004 — both failures with same-path continuation)
+- 2 false positives (baseline-002, baseline-008 — both recovered without intervention)
+- 0 harmful
+- Status: `tested_needs_more_evidence`
+
+See `docs/guarded-activation-experiment-report.md` for the full experiment report.
+
 ## Artifacts
 
 - Collection script: `scripts/settlement_datasets/collect_baseline_traces.py`

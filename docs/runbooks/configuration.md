@@ -13,6 +13,7 @@ Configuration is read from `HARNESS.md` unless an explicit path is supplied by a
 - `primary_metric` should remain `horizon_expansion`.
 - `outcome_as_terminal` must stay false unless the operator explicitly documents why terminal outcome behavior is needed.
 - Storage root should remain inside the workspace.
+- Absorption candidates should use the configured `absorption.ingest_root`; see `docs/runbooks/absorption-ingest.md`.
 - Human review should remain enabled for absorption and positive disintegration in enterprise settings.
 - `computation.model_provider` should point at a local, explainable provider unless an operator has approved a different adapter.
 - `computation.ml_event_threshold` and `computation.simulation_threshold` should be adjusted in `HARNESS.md`, not hard-coded in scripts.

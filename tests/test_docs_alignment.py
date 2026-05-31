@@ -83,6 +83,10 @@ def test_readme_documents_implementation_defined_behavior_and_local_first_bounda
     assert "Implementation-defined" in readme
     assert "No external API calls by default" in readme
     assert "outcome completion is not terminal" in readme.lower()
+    assert "## Using The Harness With A Project" in readme
+    assert "## Project Learning And Absorption" in readme
+    assert "ingest/absorption" in readme
+    assert ".godspeed-harness" in readme
     assert "## Self-Critique" in readme
 
 

@@ -34,6 +34,8 @@ Scores whether consequence actually settled from before/after state and evidence
 
 Storage-backed commands (`start-direction`, `review-horizon`, `record-settlement`, `runtime-snapshot`, `developmental-report`, `predictive-extensions`, and `validate`) resolve `--storage-root` inside `--workspace-root`. The CLI rejects storage paths outside the workspace boundary.
 
+When this repository is used as a harness for another project, `--workspace-root` should point at the receiving project, not at the harness source repository. The receiving project owns its code, tests, optional `HARNESS.md`, `ingest/absorption/` candidates, and `.godspeed-harness/` developmental memory.
+
 The RuVector-backed command `search-developmental-memory` uses the local Node sidecar under `tools/ruvector/`. Install it once with `pushd tools/ruvector >/dev/null && npm install && popd >/dev/null`.
 
 ### `start-direction`
