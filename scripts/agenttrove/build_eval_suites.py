@@ -49,6 +49,7 @@ EVAL_SUITES = {
 def build_eval_suites(
     settlement_path: str | Path,
     output_dir: str | Path = "evals/agenttrove",
+    min_confidence: float = 0.65,
 ) -> dict[str, Path]:
     settlement_path = Path(settlement_path)
     output_dir = Path(output_dir)
@@ -69,6 +70,10 @@ def build_eval_suites(
         target_quality = suite_config.get("settlement_quality")
 
         for s in settlements:
+            confidence = s.get("outcome", {}).get("confidence", 0.0)
+            if confidence < min_confidence:
+                continue
+
             fm = s.get("cognitive_os_labels", {}).get("failure_mode")
             modes = fm if isinstance(fm, list) else [fm] if fm else []
             sq = s.get("outcome", {}).get("settlement_quality", "")
@@ -91,6 +96,7 @@ def build_eval_suites(
                         "expected_harness_behavior"
                     ],
                     "settlement_criteria": suite_config["settlement_criteria"],
+                    "confidence": confidence,
                     "evidence": {
                         "settlement_quality": sq,
                         "failure_modes": modes,
@@ -98,6 +104,7 @@ def build_eval_suites(
                         "path_shape": s.get("representational_state", {}).get(
                             "path_shape", ""
                         ),
+                        "label_evidence": s.get("label_evidence", {}),
                     },
                 }
             )
@@ -131,9 +138,15 @@ def main() -> None:
         default="data/agenttrove/settlements/settlement_traces.jsonl",
     )
     parser.add_argument("--output-dir", type=str, default="evals/agenttrove")
+    parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.65,
+        help="Minimum label confidence to include in eval suites.",
+    )
     args = parser.parse_args()
 
-    written = build_eval_suites(args.input, args.output_dir)
+    written = build_eval_suites(args.input, args.output_dir, args.min_confidence)
     for name, path in sorted(written.items()):
         count = sum(1 for _ in path.open("r"))
         print(f"  {name}: {count} items -> {path}")

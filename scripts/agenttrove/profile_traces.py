@@ -7,6 +7,13 @@ import re
 from pathlib import Path
 from typing import Any
 
+from scripts.agenttrove.parsing import (
+    count_json_commands,
+    detect_structural_errors,
+    detect_task_complete,
+    parse_assistant_content,
+)
+
 
 COMMAND_PATTERNS = [
     re.compile(r"`([^`]+)`"),
@@ -69,18 +76,25 @@ def is_error_like(content: str) -> bool:
 
 
 def count_command_like_actions(messages: list[dict[str, Any]]) -> int:
+    return count_regex_command_like_actions(messages) + count_json_commands(messages)
+
+
+def count_regex_command_like_actions(messages: list[dict[str, Any]]) -> int:
     count = 0
     for msg in messages:
         role = msg.get("role", "")
         content = msg.get("content", "")
-        if role == "assistant" and is_command_like(content):
-            count += 1
-        if role == "tool" and is_command_like(content):
+        if role in ("assistant", "tool") and is_command_like(content):
             count += 1
     return count
 
 
 def count_error_like_outputs(messages: list[dict[str, Any]]) -> int:
+    structural_errors = detect_structural_errors(messages)
+    return len(structural_errors)
+
+
+def count_regex_error_like_outputs(messages: list[dict[str, Any]]) -> int:
     count = 0
     for msg in messages:
         role = msg.get("role", "")
@@ -91,21 +105,29 @@ def count_error_like_outputs(messages: list[dict[str, Any]]) -> int:
 
 
 def find_first_error_turn(messages: list[dict[str, Any]]) -> int | None:
-    for index, msg in enumerate(messages):
-        role = msg.get("role", "")
-        content = msg.get("content", "")
-        if role in ("tool", "assistant") and is_error_like(content):
-            return index
+    structural_errors = detect_structural_errors(messages)
+    if structural_errors:
+        return structural_errors[0]["turn_index"]
     return None
 
 
 def has_final_answer(messages: list[dict[str, Any]]) -> bool:
     if not messages:
         return False
+
     last = messages[-1]
     content = last.get("content", "").lower()
     role = last.get("role", "")
     if role == "assistant":
+        try:
+            import json as _json
+
+            parsed = _json.loads(content.strip())
+            if isinstance(parsed, dict) and parsed.get("task_complete") is True:
+                return True
+        except (json.JSONDecodeError, ValueError):
+            pass
+
         answer_markers = [
             "final answer",
             "the answer is",
@@ -128,6 +150,10 @@ def profile_trace(trace: dict[str, Any]) -> dict[str, Any]:
     messages = trace.get("messages", [])
     roles = [msg.get("role", "unknown") for msg in messages]
 
+    json_cmd = count_json_commands(messages)
+    regex_cmd = count_regex_command_like_actions(messages)
+    task_info = detect_task_complete(messages)
+
     return {
         "trace_id": trace.get("trace_id", ""),
         "source": trace.get("source", ""),
@@ -138,11 +164,16 @@ def profile_trace(trace: dict[str, Any]) -> dict[str, Any]:
         "user_turn_count": roles.count("user"),
         "assistant_turn_count": roles.count("assistant"),
         "tool_turn_count": roles.count("tool"),
-        "command_like_action_count": count_command_like_actions(messages),
+        "regex_command_like_action_count": regex_cmd,
+        "json_command_count": json_cmd,
+        "command_like_action_count": regex_cmd + json_cmd,
         "error_like_output_count": count_error_like_outputs(messages),
         "first_error_turn": find_first_error_turn(messages),
         "final_turn_role": roles[-1] if roles else "",
         "has_final_answer": has_final_answer(messages),
+        "has_task_complete_marker": task_info["has_marker"],
+        "task_complete_value": task_info["value"],
+        "completion_source": task_info["source"],
     }
 
 

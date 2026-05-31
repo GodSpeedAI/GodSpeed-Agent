@@ -22,15 +22,28 @@ def load_settlements(path: str | Path) -> list[dict[str, Any]]:
     return settlements
 
 
-def mine_policies(settlements: list[dict[str, Any]]) -> list[dict[str, Any]]:
+DEFAULT_MIN_CONFIDENCE = 0.65
+DEFAULT_MIN_SUPPORTING_TRACES = 3
+
+
+def mine_policies(
+    settlements: list[dict[str, Any]],
+    min_confidence: float = DEFAULT_MIN_CONFIDENCE,
+    min_supporting_traces: int = DEFAULT_MIN_SUPPORTING_TRACES,
+) -> list[dict[str, Any]]:
     failure_mode_counts: Counter[str] = Counter()
     failure_mode_traces: dict[str, list[str]] = {}
+    failure_mode_confidences: dict[str, list[float]] = {}
     policy_signal_counts: Counter[str] = Counter()
     policy_signal_traces: dict[str, list[str]] = {}
     settlement_quality_counts: Counter[str] = Counter()
     path_shape_counts: Counter[str] = Counter()
 
     for s in settlements:
+        confidence = s.get("outcome", {}).get("confidence", 0.0)
+        if confidence < min_confidence:
+            continue
+
         sq = s.get("outcome", {}).get("settlement_quality", "unknown")
         settlement_quality_counts[sq] += 1
 
@@ -43,6 +56,7 @@ def mine_policies(settlements: list[dict[str, Any]]) -> list[dict[str, Any]]:
             for mode in modes:
                 failure_mode_counts[mode] += 1
                 failure_mode_traces.setdefault(mode, []).append(s.get("trace_id", ""))
+                failure_mode_confidences.setdefault(mode, []).append(confidence)
 
         signal = s.get("cognitive_os_labels", {}).get("harness_policy_signal")
         if signal:
@@ -262,7 +276,13 @@ def _build_policy(
     trace_count: int,
     example_traces: list[str],
     total_traces: int,
+    confidence_distribution: list[float] | None = None,
 ) -> dict[str, Any]:
+    avg_confidence = 0.0
+    if confidence_distribution:
+        avg_confidence = round(
+            sum(confidence_distribution) / len(confidence_distribution), 2
+        )
     return {
         "id": policy_id,
         "trigger": trigger,
@@ -274,6 +294,8 @@ def _build_policy(
             "example_trace_ids": example_traces,
             "observed_failure_pattern": failure_modes,
             "proportion": round(trace_count / max(total_traces, 1), 4),
+            "avg_label_confidence": avg_confidence,
+            "meets_min_supporting_count": trace_count >= DEFAULT_MIN_SUPPORTING_TRACES,
         },
         "risk": {
             "false_positive_concern": "Deterministic heuristics may misclassify some traces.",
