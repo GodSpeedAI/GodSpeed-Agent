@@ -1,0 +1,71 @@
+{
+  "pilot_id": "reflection-real-agent-003",
+  "mapping": {
+    "run-17": "Run-Eta",
+    "run-18": "Run-Delta",
+    "run-19": "Run-Gamma",
+    "run-20": "Run-Alpha",
+    "run-21": "Run-Beta",
+    "run-22": "Run-Mu",
+    "run-23": "Run-Kappa",
+    "run-24": "Run-Epsilon",
+    "run-25": "Run-Iota",
+    "run-26": "Run-Zeta",
+    "run-27": "Run-Lambda",
+    "run-28": "Run-Theta"
+  },
+  "conditions": {
+    "run-17": "baseline",
+    "run-18": "guarded",
+    "run-19": "guarded",
+    "run-20": "baseline",
+    "run-21": "baseline",
+    "run-22": "guarded",
+    "run-23": "guarded",
+    "run-24": "baseline",
+    "run-25": "baseline",
+    "run-26": "guarded",
+    "run-27": "guarded",
+    "run-28": "baseline"
+  },
+  "tasks": {
+    "run-17": "i",
+    "run-18": "i",
+    "run-19": "j",
+    "run-20": "j",
+    "run-21": "k",
+    "run-22": "k",
+    "run-23": "l",
+    "run-24": "l",
+    "run-25": "m",
+    "run-26": "m",
+    "run-27": "n",
+    "run-28": "n"
+  },
+  "pairs": {
+    "pair_I": {
+      "baseline": "run-17",
+      "guarded": "run-18"
+    },
+    "pair_J": {
+      "baseline": "run-20",
+      "guarded": "run-19"
+    },
+    "pair_K": {
+      "baseline": "run-21",
+      "guarded": "run-22"
+    },
+    "pair_L": {
+      "baseline": "run-24",
+      "guarded": "run-23"
+    },
+    "pair_M": {
+      "baseline": "run-25",
+      "guarded": "run-26"
+    },
+    "pair_N": {
+      "baseline": "run-28",
+      "guarded": "run-27"
+    }
+  }
+}

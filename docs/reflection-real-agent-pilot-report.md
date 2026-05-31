@@ -350,3 +350,160 @@ The combined evidence shows the adjusted format can be delivered without stoppin
 5. **Consider a pilot-003** with 5+ checkpoint-eligible tasks, repeated runs per task (to separate policy effects from stochastic variation), and multiple blinded evaluators.
 
 No policy was globally activated. No metabolization candidate was promoted. No thresholds were lowered.
+
+---
+
+# Real Agent Pilot Report (reflection-real-agent-003)
+
+## Scope
+
+- **Pilot ID**: `reflection-real-agent-003`
+- **Target Policy**: `require_reflection_before_continuing_after_second_unresolved_error`
+- **Intervention Format**: Adjusted (with continuation directive), delivered as pre-baked context (DEV-001)
+- **Agent**: Sub-agent (general type, not human-operated VS Code agent)
+- **Runs**: 12 (6 baseline + 6 guarded), organized as 6 matched pairs
+- **Constraints Held**: No global activation, no metabolization, no lowered thresholds.
+
+## Prior Settlement
+
+- `reflection-real-agent-001`: 6 runs, 3 matched pairs. Status: `needs_more_evidence`.
+- `reflection-real-agent-002`: 10 runs, 5 matched pairs. Status: `needs_more_evidence`.
+- This pilot extends to 6 matched pairs with harder tasks (3 bugs each) and sub-agent runners.
+
+## Protocol Deviation: DEV-001
+
+This pilot used sub-agents instead of a human operator. The guarded condition was implemented by including the checkpoint text in the initial prompt (pre-baked context) rather than injecting it mid-conversation. This is a **medium severity** deviation that changes the intervention mechanism. The skeptic must assess comparability with prior pilots.
+
+## Tasks
+
+| Task | Description | Bugs | Buggy Failing Tests |
+|---|---|---|---|
+| I | Event Logger | 3 | 4 |
+| J | LRU Cache | 3 | 4 |
+| K | Token Auth | 3 | 2 |
+| L | Priority Queue | 3 | 6 |
+| M | Config Validator | 3 | 6 |
+| N | Rate Limiter | 3 | 2 |
+
+## Results
+
+### Run-by-Run Summary
+
+| Run | Condition | Task | Outcome | Errors | Completed |
+|---|---|---|---|---|---|
+| run-17 | Baseline | I | Success | 3 | Yes |
+| run-18 | Guarded | I | Success | 3 | Yes |
+| run-19 | Guarded | J | Success | 3 | Yes |
+| run-20 | Baseline | J | Success | 3 | Yes |
+| run-21 | Baseline | K | Success | 2 | Yes |
+| run-22 | Guarded | K | Success | 2 | Yes |
+| run-23 | Guarded | L | Success | 3 | Yes |
+| run-24 | Baseline | L | Success | 3 | Yes |
+| run-25 | Baseline | M | Success | 3 | Yes |
+| run-26 | Guarded | M | Success | 3 | Yes |
+| run-27 | Guarded | N | Success | 2 | Yes |
+| run-28 | Baseline | N | Success | 2 | Yes |
+
+### Matched-Pair Comparisons
+
+All 6 pairs classified as **NEUTRAL**. No pair showed meaningful improvement from the guarded condition. Task K showed a slight guarded disadvantage (1 point on 2 dimensions, possibly noise).
+
+### Blinded Evaluator Scores
+
+| Dimension | Baseline Avg | Guarded Avg | Delta |
+|---|---|---|---|
+| Error Recovery Efficiency | 4.00 | 4.00 | 0.00 |
+| Edit Quality | 5.00 | 5.00 | 0.00 |
+| Diagnostic Accuracy | 4.00 | 4.00 | 0.00 |
+| Strategy Adaptation | 4.33 | 4.00 | -0.33 |
+| Scope Discipline | 5.00 | 5.00 | 0.00 |
+| Overall Execution | 4.33 | 4.17 | -0.17 |
+
+### Skeptic Review
+
+| Claim | Skeptic Rating |
+|---|---|
+| "Pre-baked reflection improves performance" | **NO EVIDENCE** |
+| "Pre-baked reflection is never harmful" | **WEAK EVIDENCE** |
+| "Pre-baked reflection adds cost without benefit" | **MODERATE EVIDENCE** |
+| "Results generalize to mid-conversation injection" | **EVIDENCE AGAINST** |
+
+Key skeptic objections:
+1. **[blocks_positive_status]** DEV-001 changes the intervention mechanism; results do not generalize.
+2. **[blocks_positive_status]** Baseline at ceiling; policy had no room to improve.
+3. **[requires_report_change]** Must not claim policy "does not work" — only that pre-baked instructions did not help on these tasks.
+
+## Key Findings
+
+### Finding 1: Pre-baked Reflection Does Not Improve Sub-Agent Performance
+
+Zero improvement on any dimension across 6 matched pairs. The intervention added 1 step per run without changing outcomes.
+
+### Finding 2: Baseline Performance at Ceiling
+
+All baseline runs scored 4-5 on every dimension. The sub-agent fixed bugs correctly on the first attempt. The policy had no room to improve.
+
+### Finding 3: Formulaic Compliance, Not Genuine Reflection
+
+The reflection content was generic and identical across all guarded runs, suggesting mechanical compliance rather than genuine reasoning.
+
+### Finding 4: DEV-001 Is a Different Intervention
+
+Pre-baked context is fundamentally different from mid-conversation injection. Results do not speak to the protocol's intended mechanism.
+
+## Status Gate
+
+| Criterion | Required | Actual | Met? |
+|---|---|---|---|
+| At least 6 matched pairs | ≥6 | 6 | Yes |
+| Checkpoint delivered in ≥4 pairs | ≥4 | 6 | Yes |
+| Majority of deliveries helpful | >50% | 0% | **No** |
+| Blinded evaluation | Done | Yes | Yes |
+| Skeptic review | Done | Yes | Yes |
+
+**Status**: `needs_more_evidence`
+
+**Not allowed**: `globally_active`, `metabolized`
+
+## Combined Evidence (All Three Pilots)
+
+| Metric | Pilot-001 | Pilot-002 | Pilot-003 | Combined |
+|---|---|---|---|---|
+| Total runs | 6 | 10 | 12 | 28 |
+| Matched pairs | 3 | 5 | 6 | 14 |
+| Checkpoint deliveries | 2 | 2 | 6* | 10 |
+| Helpful | 1 | 1 | 0 | 2 |
+| Neutral | 1 | 0 | 6 | 7 |
+| Unfavorable/Harmful | 0 | 1 | 0 | 1 |
+| Harmful (original format) | 1 | 0 | 0 | 1 |
+| No intervention | 0 | 6 | 0 | 6 |
+
+*Pilot-003 deliveries were pre-baked (DEV-001), not mid-conversation injection.
+
+The combined evidence shows the adjusted format can be delivered without stopping the agent (10/10 completions). Results are mixed: 2 helpful, 7 neutral, 1 unfavorable. Pilot-003's null result is narrow due to DEV-001 and ceiling effects.
+
+## Artifacts
+
+- Full report: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/pilot_report.md`
+- Events: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/events.jsonl`
+- Policy fires: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/policy_fires.jsonl`
+- Interventions: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/interventions.jsonl`
+- Runner responses: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/runner_responses.jsonl`
+- Run summaries: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/run_summaries.jsonl`
+- Blinded events: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/evaluator_blinded_events.jsonl`
+- Evaluator scores: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/evaluator_scores.jsonl`
+- Unblinding key: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/unblinding_key.json`
+- Skeptic review: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/skeptic_reviews.jsonl`
+- Pilot summary: `data/settlement_datasets/real_agent_pilot/protocols/reflection-real-agent-003/pilot_summary.json`
+- Task workspaces: `tmp/pilot_tasks/task_i/` through `tmp/pilot_tasks/task_n/`
+- Reset script: `tmp/pilot_tasks/reset_pilot3.sh`
+
+## Recommendations
+
+1. **Do not activate the policy globally.** The evidence does not support consistent benefit.
+2. **Test the intended mechanism.** A future pilot should use mid-conversation injection with harder tasks.
+3. **Design tasks that produce baseline struggle.** Baseline at ceiling means the policy cannot demonstrate value.
+4. **Investigate reflection content quality.** Formulaic compliance may not be the same as genuine reflection.
+5. **Do not conclude the policy "does not work."** This pilot tested pre-baked context, not mid-conversation injection.
+
+No policy was globally activated. No metabolization candidate was promoted. No thresholds were lowered.

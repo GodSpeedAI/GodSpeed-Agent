@@ -1,0 +1,112 @@
+{
+  "pilot_id": "reflection-real-agent-003",
+  "policy_id": "require_reflection_before_continuing_after_second_unresolved_error",
+  "total_runs": 12,
+  "baseline_runs": 6,
+  "guarded_runs": 6,
+  "status_recommendation": "needs_more_evidence",
+  "metabolized": false,
+  "globally_active": false,
+  "checkpoint_delivered_count": 6,
+  "deviation": "DEV-001: Sub-agent runner with pre-baked context instead of human operator with mid-conversation injection",
+  "results_by_pair": [
+    {
+      "task": "I",
+      "baseline_run": "run-17",
+      "guarded_run": "run-18",
+      "classification": "checkpoint_neutral",
+      "policy_fired": true,
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "delta_summary": "No difference on any dimension"
+    },
+    {
+      "task": "J",
+      "baseline_run": "run-20",
+      "guarded_run": "run-19",
+      "classification": "checkpoint_neutral",
+      "policy_fired": true,
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "delta_summary": "No difference on any dimension"
+    },
+    {
+      "task": "K",
+      "baseline_run": "run-21",
+      "guarded_run": "run-22",
+      "classification": "checkpoint_neutral",
+      "policy_fired": true,
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "delta_summary": "Guarded scored 1 point lower on strategy_adaptation and overall (possibly noise)"
+    },
+    {
+      "task": "L",
+      "baseline_run": "run-24",
+      "guarded_run": "run-23",
+      "classification": "checkpoint_neutral",
+      "policy_fired": true,
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "delta_summary": "No difference on any dimension"
+    },
+    {
+      "task": "M",
+      "baseline_run": "run-25",
+      "guarded_run": "run-26",
+      "classification": "checkpoint_neutral",
+      "policy_fired": true,
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "delta_summary": "No difference on any dimension"
+    },
+    {
+      "task": "N",
+      "baseline_run": "run-28",
+      "guarded_run": "run-27",
+      "classification": "checkpoint_neutral",
+      "policy_fired": true,
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "delta_summary": "Guarded scored 1 point lower on strategy_adaptation (possibly noise)"
+    }
+  ],
+  "evaluator_summary": {
+    "aggregate_baseline_avg": {
+      "error_recovery_efficiency": 4.0,
+      "edit_quality": 5.0,
+      "diagnostic_accuracy": 4.0,
+      "strategy_adaptation": 4.33,
+      "scope_discipline": 5.0,
+      "overall_execution": 4.33
+    },
+    "aggregate_guarded_avg": {
+      "error_recovery_efficiency": 4.0,
+      "edit_quality": 5.0,
+      "diagnostic_accuracy": 4.0,
+      "strategy_adaptation": 4.0,
+      "scope_discipline": 5.0,
+      "overall_execution": 4.17
+    },
+    "helpful_count": 0,
+    "harmful_count": 0,
+    "neutral_count": 6
+  },
+  "skeptic_verdict": {
+    "overall": "NULL_RESULT_WITH_SEVERE_QUALIFICATIONS",
+    "blocks_positive_status": true,
+    "key_objection": "DEV-001 changes the intervention mechanism; results do not generalize to mid-conversation injection"
+  },
+  "legitimate_conclusions": [
+    "Pre-baked reflection instructions did not improve sub-agent performance on 6 bug-fixing tasks where baseline was at ceiling",
+    "Pre-baked reflection added exactly 1 step per run without changing fix strategy or outcomes",
+    "The reflection content was formulaic and identical across runs, suggesting mechanical compliance",
+    "Results do not generalize to the protocol's intended mid-conversation injection mechanism",
+    "Baseline performance at ceiling (4-5 on all dimensions) means the policy had no room to improve"
+  ],
+  "protocol_errors": [
+    "DEV-001: Sub-agent runner instead of human operator; pre-baked context instead of mid-conversation injection"
+  ],
+  "status_evidence": "Zero improvement on any dimension across 6 matched pairs. Baseline at ceiling. DEV-001 changes intervention mechanism. Skeptic blocks positive status.",
+  "status_gate_version": "status_gate.yaml (reflection-real-agent-003)"
+}
