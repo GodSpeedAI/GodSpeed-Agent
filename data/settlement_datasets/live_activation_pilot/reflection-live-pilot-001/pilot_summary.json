@@ -1,0 +1,36 @@
+{
+  "activation_enabled": true,
+  "extra_steps_added": 54,
+  "false_positive_count": 0,
+  "globally_active": false,
+  "harmful_intervention_count": 0,
+  "helpful_intervention_count": 6,
+  "interventions_with_agent_response": 7,
+  "max_fires_per_run": 1,
+  "metabolized": false,
+  "operator_notes": [
+    "Pilot run under operator supervision.",
+    "Agent responses are simulated (not from a live LLM).",
+    "The pilot tests whether the policy trigger fires correctly and whether",
+    "simulated agent responses show strategy revision after the checkpoint.",
+    "This is NOT metabolization. Repeated live settlement with a real agent",
+    "is required before any broader activation."
+  ],
+  "pilot_id": "reflection-live-pilot-001",
+  "policy_id": "require_reflection_before_continuing_after_second_unresolved_error",
+  "policy_mode": "guarded",
+  "post_intervention_recovery_count": 6,
+  "repeated_error_loop_reduction": null,
+  "revised_plan_compliance_rate": 0.8571,
+  "settlement_quality_distribution": {
+    "clean_success": 1,
+    "failure_with_signal": 1,
+    "recovered_success": 8
+  },
+  "status_recommendation": "live_pilot_tested",
+  "strategy_revision_count": 6,
+  "total_interventions": 7,
+  "total_live_runs": 10,
+  "total_policy_fires": 7,
+  "uncertain_count": 1
+}

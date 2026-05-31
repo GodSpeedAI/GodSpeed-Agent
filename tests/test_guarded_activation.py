@@ -20,6 +20,12 @@ from scripts.settlement_datasets.run_guarded_activation_experiment import (
     write_experiment_artifacts,
     EXPERIMENT_ID,
 )
+from scripts.settlement_datasets.run_live_pilot import (
+    run_live_pilot,
+    write_pilot_artifacts,
+    PILOT_ID,
+    ALL_PILOT_SCENARIOS,
+)
 
 
 def _event(step_index: int, event_type: str, content: str, run_id: str = "run-1"):
@@ -835,14 +841,184 @@ def test_adaptive_actions_override_non_adaptive_message():
     assert result["post_error_behavior"] == "non_adaptive_continuation"
 
 
+# --- Live pilot tests ---
+
+
+def test_pilot_mode_disabled_by_default():
+    """Pilot mode requires explicit activation_enabled=True."""
+    config = config_from_env()
+    assert config.activation_enabled is False
+    assert config.mode == "shadow"
+
+
+def test_pilot_guarded_enabled_explicitly():
+    """Pilot config must be explicitly enabled."""
+    config = GuardedActivationConfig(
+        activation_enabled=True,
+        policy_id=REFINED_POLICY_ID,
+        mode="guarded",
+        max_fires_per_run=1,
+    )
+    assert config.activation_enabled is True
+    assert config.mode == "guarded"
+
+
+def test_pilot_runs_all_scenarios():
+    """Pilot should run all 10 scenarios."""
+    results = run_live_pilot()
+    assert results["pilot_summary"]["total_live_runs"] == 10
+
+
+def test_pilot_produces_expected_fires():
+    """Pilot should fire on scenarios designed to trigger the policy."""
+    results = run_live_pilot()
+    summary = results["pilot_summary"]
+    # 7 scenarios should fire (01-05, 08-09)
+    assert summary["total_policy_fires"] == 7
+
+
+def test_pilot_agent_response_captured():
+    """Agent responses should be captured for all interventions."""
+    results = run_live_pilot()
+    assert len(results["agent_responses"]) > 0
+    for response in results["agent_responses"]:
+        assert "run_id" in response
+        assert "intervention_step" in response
+        assert "agent_response_type" in response
+        assert "strategy_revised" in response
+        assert "recovery_occurred" in response
+
+
+def test_pilot_post_intervention_actions_captured():
+    """Post-intervention actions should be recorded."""
+    results = run_live_pilot()
+    assert len(results["post_intervention_actions"]) > 0
+    for action in results["post_intervention_actions"]:
+        assert "run_id" in action
+        assert "step_index" in action
+        assert "event_type" in action
+        assert "is_lower_payment" in action
+
+
+def test_pilot_max_one_intervention_per_run():
+    """No run should have more than one intervention."""
+    results = run_live_pilot()
+    for summary in results["run_summaries"]:
+        assert summary["intervention_count"] <= 1
+
+
+def test_pilot_no_global_activation():
+    """Pilot summary must show globally_active=False."""
+    results = run_live_pilot()
+    assert results["pilot_summary"]["globally_active"] is False
+
+
+def test_pilot_no_metabolization():
+    """Pilot summary must show metabolized=False."""
+    results = run_live_pilot()
+    assert results["pilot_summary"]["metabolized"] is False
+
+
+def test_pilot_summary_generation():
+    """Pilot summary should contain all required fields."""
+    results = run_live_pilot()
+    summary = results["pilot_summary"]
+    required_fields = [
+        "pilot_id",
+        "policy_id",
+        "policy_mode",
+        "activation_enabled",
+        "total_live_runs",
+        "total_policy_fires",
+        "total_interventions",
+        "interventions_with_agent_response",
+        "strategy_revision_count",
+        "post_intervention_recovery_count",
+        "revised_plan_compliance_rate",
+        "helpful_intervention_count",
+        "harmful_intervention_count",
+        "false_positive_count",
+        "status_recommendation",
+        "metabolized",
+        "globally_active",
+        "operator_notes",
+    ]
+    for field in required_fields:
+        assert field in summary, f"Missing field: {field}"
+
+
+def test_pilot_status_is_live_pilot_tested():
+    """With 7 fires, 0 harmful, and recoveries, status should be live_pilot_tested."""
+    results = run_live_pilot()
+    assert results["pilot_summary"]["status_recommendation"] == "live_pilot_tested"
+
+
+def test_pilot_zero_harmful_interventions():
+    """No interventions should be classified as harmful."""
+    results = run_live_pilot()
+    assert results["pilot_summary"]["harmful_intervention_count"] == 0
+
+
+def test_pilot_intervention_records_valid():
+    """All intervention records should pass schema validation."""
+    results = run_live_pilot()
+    for intervention in results["interventions"]:
+        errors = validate_intervention_record(intervention)
+        assert errors == [], f"Intervention schema errors: {errors}"
+
+
+def test_pilot_artifacts_written_to_disk():
+    """All pilot artifacts should be writable to disk."""
+    results = run_live_pilot()
+    with tempfile.TemporaryDirectory() as td:
+        from pathlib import Path
+
+        paths = write_pilot_artifacts(results, Path(td))
+        assert paths["events"].exists()
+        assert paths["policy_fires"].exists()
+        assert paths["interventions"].exists()
+        assert paths["agent_responses"].exists()
+        assert paths["post_intervention_actions"].exists()
+        assert paths["run_summaries"].exists()
+        assert paths["pilot_summary"].exists()
+
+        # Verify content
+        import json
+
+        summary = json.loads(paths["pilot_summary"].read_text())
+        assert summary["pilot_id"] == PILOT_ID
+        assert summary["globally_active"] is False
+        assert summary["metabolized"] is False
+
+
+def test_pilot_strategy_revision_compliance():
+    """Most interventions should show strategy revision."""
+    results = run_live_pilot()
+    summary = results["pilot_summary"]
+    # 6 of 7 interventions with response show strategy revision
+    assert summary["strategy_revision_count"] >= 5
+    assert summary["revised_plan_compliance_rate"] >= 0.7
+
+
+def test_pilot_recovery_evidence():
+    """Most interventions should show post-intervention recovery."""
+    results = run_live_pilot()
+    summary = results["pilot_summary"]
+    assert summary["post_intervention_recovery_count"] >= 5
+
+
 def test_expanded_experiment_summary_metrics():
     """Verify that expanded metrics are computed correctly in experiment summary."""
     traces = [
         _baseline_trace(
             "run-helpful",
             [
-                _event(0, "tool_result", "ImportError: auth failed", run_id="run-helpful"),
-                _event(1, "tool_result", "ImportError: db failed", run_id="run-helpful"),
+                _event(
+                    0, "tool_result", "ImportError: auth failed", run_id="run-helpful"
+                ),
+                _event(
+                    1, "tool_result", "ImportError: db failed", run_id="run-helpful"
+                ),
             ],
             outcome="failure",
             settlement_quality="failure_with_signal",
@@ -879,7 +1055,9 @@ def test_expanded_experiment_summary_metrics():
 
     assert summary["false_positive_rate"] == 0.0
     assert summary["suppression_accuracy"] == 1.0
-    assert summary["retained_helpful_cases_from_002"] == 0  # mock run-helpful is not baseline-001/004
+    assert (
+        summary["retained_helpful_cases_from_002"] == 0
+    )  # mock run-helpful is not baseline-001/004
     assert summary["payment_cost"] == 0.0
     assert summary["settlement_quality_distribution"]["recovered_success"] == 1
     assert summary["settlement_quality_distribution"]["failure_with_signal"] == 1
@@ -908,12 +1086,16 @@ def test_suppressions_output_file_checking():
 
     with tempfile.TemporaryDirectory() as td:
         from pathlib import Path
+
         paths = write_experiment_artifacts(results, Path(td))
-        
+
         assert paths["suppressions"].exists()
         suppressions = read_records_jsonl(paths["suppressions"])
         assert len(suppressions) == 1
-        assert suppressions[0]["suppression_reason"] == "adaptive_recovery_behavior_detected"
+        assert (
+            suppressions[0]["suppression_reason"]
+            == "adaptive_recovery_behavior_detected"
+        )
 
 
 def test_false_positive_rate_calculation():
@@ -964,7 +1146,10 @@ def test_candidate_for_activation_gate_logic():
     )
     results = run_guarded_experiment(traces_below_5, config)
     assert results["experiment_summary"]["gate_passed"] is False
-    assert results["experiment_summary"]["status_recommendation"] == "tested_needs_more_evidence"
+    assert (
+        results["experiment_summary"]["status_recommendation"]
+        == "tested_needs_more_evidence"
+    )
 
     # Condition B: Passes gate when >=5 interventions, 0 harmful, and <=10% FPR
     traces_passing = [
@@ -981,7 +1166,10 @@ def test_candidate_for_activation_gate_logic():
     ]
     results_passing = run_guarded_experiment(traces_passing, config)
     assert results_passing["experiment_summary"]["gate_passed"] is True
-    assert results_passing["experiment_summary"]["status_recommendation"] == "candidate_for_activation"
+    assert (
+        results_passing["experiment_summary"]["status_recommendation"]
+        == "candidate_for_activation"
+    )
 
 
 def test_payment_cost_reporting():
@@ -1026,7 +1214,6 @@ def test_no_global_activation_and_metabolization_protection():
     )
     results = run_guarded_experiment(traces, config)
     summary = results["experiment_summary"]
-    
+
     assert summary["metabolized"] is False
     assert summary["globally_active"] is False
-

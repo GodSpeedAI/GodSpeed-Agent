@@ -188,3 +188,15 @@ In accordance with **AGENTS.md** and **RULE[AGENTS.md]** rules, we do not confus
 2. **Horizon Invariants**: A capability is metabolized **only after repeated settlement survives reality**. Promotion to `candidate_for_activation` unlocks the next affordable affordance—conducting a narrow live guarded pilot run in production. Metabolization only occurs after that pilot survives repeated live runs.
 
 No policy was globally activated, no candidate was metabolized, and no thresholds were lowered.
+
+---
+
+## Live Pilot Follow-Up
+
+The Small Live Pilot (`reflection-live-pilot-001`) has been completed using this candidate policy. The pilot ran 10 live task scenarios with simulated agent responses to the reflection checkpoint. Results:
+
+- 7 interventions, 6 strategy revisions (85.7% compliance), 6 recoveries
+- 0 harmful, 0 false positives
+- Status: `live_pilot_tested`
+
+See `docs/reflection-live-pilot-report.md` for the full pilot report.
