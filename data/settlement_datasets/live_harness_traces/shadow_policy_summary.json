@@ -1,0 +1,12 @@
+{
+  "fires_before_settlement": 9,
+  "fires_by_timing": {
+    "early": 1,
+    "final_turn": 3,
+    "middle": 8
+  },
+  "fires_with_recovery_opportunity": 12,
+  "policy_activation_count": 0,
+  "total_fires": 12,
+  "total_runs": 13
+}

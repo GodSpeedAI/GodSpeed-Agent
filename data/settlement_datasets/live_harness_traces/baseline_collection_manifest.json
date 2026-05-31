@@ -1,0 +1,125 @@
+{
+  "activation_enabled": false,
+  "collected_at": "2026-05-31T13:18:27.624985+00:00",
+  "policy_mode": "shadow_only",
+  "runs": [
+    {
+      "domain": "code",
+      "error_count": 4,
+      "final_outcome": "failure",
+      "run_id": "baseline-001-coding-import-error-same-path",
+      "settlement_quality": "failure_with_signal",
+      "task_type": "coding",
+      "total_steps": 10
+    },
+    {
+      "domain": "code",
+      "error_count": 3,
+      "final_outcome": "success",
+      "run_id": "baseline-002-debugging-test-failures-revision",
+      "settlement_quality": "recovered_success",
+      "task_type": "debugging",
+      "total_steps": 14
+    },
+    {
+      "domain": "shell",
+      "error_count": 2,
+      "final_outcome": "success",
+      "run_id": "baseline-003-shell-permission-denied",
+      "settlement_quality": "recovered_success",
+      "task_type": "shell",
+      "total_steps": 12
+    },
+    {
+      "domain": "code",
+      "error_count": 6,
+      "final_outcome": "failure",
+      "run_id": "baseline-004-test-running-flaky-timeouts",
+      "settlement_quality": "failure_with_signal",
+      "task_type": "test_running",
+      "total_steps": 10
+    },
+    {
+      "domain": "code",
+      "error_count": 3,
+      "final_outcome": "success",
+      "run_id": "baseline-005-file-edit-syntax-error",
+      "settlement_quality": "recovered_success",
+      "task_type": "file_edit",
+      "total_steps": 14
+    },
+    {
+      "domain": "api",
+      "error_count": 0,
+      "final_outcome": "success",
+      "run_id": "baseline-006-api-rate-limiting",
+      "settlement_quality": "clean_success",
+      "task_type": "api_tool_use",
+      "total_steps": 10
+    },
+    {
+      "domain": "code",
+      "error_count": 2,
+      "final_outcome": "success",
+      "run_id": "baseline-007-coding-type-error-inspection",
+      "settlement_quality": "recovered_success",
+      "task_type": "coding",
+      "total_steps": 14
+    },
+    {
+      "domain": "code",
+      "error_count": 3,
+      "final_outcome": "success",
+      "run_id": "baseline-008-debugging-missing-dependency",
+      "settlement_quality": "recovered_success",
+      "task_type": "debugging",
+      "total_steps": 11
+    },
+    {
+      "domain": "shell",
+      "error_count": 2,
+      "final_outcome": "success",
+      "run_id": "baseline-009-shell-disk-full",
+      "settlement_quality": "recovered_success",
+      "task_type": "shell",
+      "total_steps": 12
+    },
+    {
+      "domain": "code",
+      "error_count": 0,
+      "final_outcome": "success",
+      "run_id": "baseline-010-coding-clean-success",
+      "settlement_quality": "clean_success",
+      "task_type": "coding",
+      "total_steps": 10
+    },
+    {
+      "domain": "code",
+      "error_count": 5,
+      "final_outcome": "success",
+      "run_id": "baseline-011-test-running-mixed-results",
+      "settlement_quality": "recovered_success",
+      "task_type": "test_running",
+      "total_steps": 13
+    },
+    {
+      "domain": "api",
+      "error_count": 0,
+      "final_outcome": "success",
+      "run_id": "baseline-012-api-connection-refused",
+      "settlement_quality": "clean_success",
+      "task_type": "api_tool_use",
+      "total_steps": 12
+    },
+    {
+      "domain": "code",
+      "error_count": 2,
+      "final_outcome": "failure",
+      "run_id": "baseline-013-coding-duplicate-error-no-recovery",
+      "settlement_quality": "failure_with_signal",
+      "task_type": "coding",
+      "total_steps": 7
+    }
+  ],
+  "total_runs": 13
+}

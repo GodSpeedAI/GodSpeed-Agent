@@ -1,0 +1,155 @@
+{
+  "affordance_path": {
+    "actions": [
+      {
+        "action_type": "model_message",
+        "content": "I need to refactor the data processing pipeline to handle None values.",
+        "tool_name": null,
+        "turn_index": 0
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pytest tests/test_pipeline.py -v",
+        "tool_name": "bash",
+        "turn_index": 1
+      },
+      {
+        "action_type": "model_message",
+        "content": "Let me inspect the pipeline code to understand the None handling.",
+        "tool_name": null,
+        "turn_index": 3
+      },
+      {
+        "action_type": "tool_call",
+        "content": "cat pipeline/processor.py | head -80",
+        "tool_name": "read",
+        "turn_index": 4
+      },
+      {
+        "action_type": "file_edit",
+        "content": "Added None guard: result = base_value + (optional_addend or 0)",
+        "tool_name": null,
+        "turn_index": 6
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pytest tests/test_pipeline.py -v",
+        "tool_name": "bash",
+        "turn_index": 7
+      },
+      {
+        "action_type": "file_edit",
+        "content": "Added None guard at line 67: multiplier = (scale_factor or 1.0)",
+        "tool_name": null,
+        "turn_index": 9
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pytest tests/test_pipeline.py -v",
+        "tool_name": "bash",
+        "turn_index": 10
+      }
+    ],
+    "observations": [
+      {
+        "content": "FAILED test_process_data - TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'",
+        "tool_name": "bash",
+        "turn_index": 2
+      },
+      {
+        "content": "Line 45: result = base_value + optional_addend  # optional_addend can be None",
+        "tool_name": "read",
+        "turn_index": 5
+      },
+      {
+        "content": "FAILED test_process_data - TypeError: unsupported operand type(s) for *: 'float' and 'NoneType' at line 67",
+        "tool_name": "bash",
+        "turn_index": 8
+      },
+      {
+        "content": "5 passed in 0.8s",
+        "tool_name": "bash",
+        "turn_index": 11
+      }
+    ]
+  },
+  "dataset": "live_harness_trace",
+  "desired_direction": {
+    "source": "live_capture",
+    "statement": "Refactor data processing pipeline for None handling"
+  },
+  "domain": "code",
+  "environment": {
+    "feedback_type": "tool_output",
+    "has_runnable_feedback": true,
+    "type": "harness"
+  },
+  "labels": {
+    "failure_mode": null,
+    "failure_mode_confidence": 0.0,
+    "failure_mode_evidence": [],
+    "harness_policy_signal": null,
+    "harness_policy_signal_confidence": 0.0,
+    "harness_policy_signal_evidence": [],
+    "metabolization_candidate": null,
+    "metabolization_candidate_confidence": 0.0,
+    "metabolization_candidate_evidence": []
+  },
+  "metadata": {
+    "duplicate_errors": false,
+    "error_steps": [
+      2,
+      8
+    ],
+    "low_cost_inspection_after_error": false,
+    "run_metadata": {
+      "activation_enabled": false,
+      "baseline_pass": true,
+      "desired_direction": "Refactor data processing pipeline for None handling",
+      "domain": "code",
+      "policy_mode": "shadow_only",
+      "task_id": "baseline-007-coding-type-error-inspection",
+      "task_type": "coding"
+    },
+    "same_path_continuation_after_second_error": true,
+    "strategy_revision_steps": [
+      3
+    ],
+    "task_complete_steps": [
+      13
+    ],
+    "test_failed_steps": [],
+    "test_passed_steps": [
+      11
+    ],
+    "trace_source": "live_harness_trace"
+  },
+  "outcome": {
+    "confidence": 0.0,
+    "evidence": [],
+    "reward": null,
+    "score": null,
+    "settlement_quality": "recovered_success",
+    "success": true
+  },
+  "payment": {
+    "api_calls": 0,
+    "commands": 0,
+    "elapsed_steps": 14,
+    "error_count": 2,
+    "estimated_complexity": "unknown",
+    "evidence": [],
+    "page_actions": 0,
+    "tool_calls": 4,
+    "turns": 14
+  },
+  "representational_state": {
+    "confidence": 0.0,
+    "desired": "unknown",
+    "evidence": [],
+    "path_shape": "unknown",
+    "start": "unknown"
+  },
+  "source_uri": "live_harness_trace://baseline-007-coding-type-error-inspection",
+  "task_id": "baseline-007-coding-type-error-inspection"
+}

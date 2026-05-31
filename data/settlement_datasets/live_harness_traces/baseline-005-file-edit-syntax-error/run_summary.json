@@ -1,0 +1,22 @@
+{
+  "ended_at": "2026-05-31T13:18:27.607795+00:00",
+  "error_count": 3,
+  "final_outcome": "success",
+  "run_id": "baseline-005-file-edit-syntax-error",
+  "run_metadata": {
+    "activation_enabled": false,
+    "baseline_pass": true,
+    "desired_direction": "Add input validation to user registration handler",
+    "domain": "code",
+    "policy_mode": "shadow_only",
+    "task_id": "baseline-005-file-edit-syntax-error",
+    "task_type": "file_edit"
+  },
+  "settlement_quality": "recovered_success",
+  "started_at": "2026-05-31T13:18:27.606259+00:00",
+  "strategy_revision_count": 1,
+  "task_complete_count": 1,
+  "test_event_count": 0,
+  "total_steps": 14,
+  "trace_capture_enabled": true
+}

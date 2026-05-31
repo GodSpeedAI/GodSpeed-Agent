@@ -1,0 +1,22 @@
+{
+  "ended_at": "2026-05-31T13:18:27.618682+00:00",
+  "error_count": 0,
+  "final_outcome": "success",
+  "run_id": "baseline-010-coding-clean-success",
+  "run_metadata": {
+    "activation_enabled": false,
+    "baseline_pass": true,
+    "desired_direction": "Add health check endpoint to API server",
+    "domain": "code",
+    "policy_mode": "shadow_only",
+    "task_id": "baseline-010-coding-clean-success",
+    "task_type": "coding"
+  },
+  "settlement_quality": "clean_success",
+  "started_at": "2026-05-31T13:18:27.617650+00:00",
+  "strategy_revision_count": 0,
+  "task_complete_count": 1,
+  "test_event_count": 1,
+  "total_steps": 10,
+  "trace_capture_enabled": true
+}

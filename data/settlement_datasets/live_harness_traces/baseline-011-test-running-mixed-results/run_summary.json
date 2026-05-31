@@ -1,0 +1,22 @@
+{
+  "ended_at": "2026-05-31T13:18:27.620292+00:00",
+  "error_count": 5,
+  "final_outcome": "success",
+  "run_id": "baseline-011-test-running-mixed-results",
+  "run_metadata": {
+    "activation_enabled": false,
+    "baseline_pass": true,
+    "desired_direction": "Run complete test suite before release",
+    "domain": "code",
+    "policy_mode": "shadow_only",
+    "task_id": "baseline-011-test-running-mixed-results",
+    "task_type": "test_running"
+  },
+  "settlement_quality": "recovered_success",
+  "started_at": "2026-05-31T13:18:27.619340+00:00",
+  "strategy_revision_count": 0,
+  "task_complete_count": 1,
+  "test_event_count": 2,
+  "total_steps": 13,
+  "trace_capture_enabled": true
+}

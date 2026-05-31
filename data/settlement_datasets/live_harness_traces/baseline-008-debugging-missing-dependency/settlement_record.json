@@ -1,0 +1,136 @@
+{
+  "affordance_path": {
+    "actions": [
+      {
+        "action_type": "model_message",
+        "content": "The CI build is failing. Let me reproduce the issue locally.",
+        "tool_name": null,
+        "turn_index": 0
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pip install -r requirements.txt",
+        "tool_name": "bash",
+        "turn_index": 1
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pip install numpy==1.26.4 --index-url https://pypi.org/simple/",
+        "tool_name": "bash",
+        "turn_index": 3
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pip install numpy --upgrade",
+        "tool_name": "bash",
+        "turn_index": 5
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pytest tests/ -x --timeout=30",
+        "tool_name": "bash",
+        "turn_index": 7
+      }
+    ],
+    "observations": [
+      {
+        "content": "ERROR: Could not find a version that satisfies the requirement numpy==1.26.4",
+        "tool_name": "bash",
+        "turn_index": 2
+      },
+      {
+        "content": "ERROR: No matching distribution found for numpy==1.26.4 (python 3.12)",
+        "tool_name": "bash",
+        "turn_index": 4
+      },
+      {
+        "content": "Successfully installed numpy-2.0.0",
+        "tool_name": "bash",
+        "turn_index": 6
+      },
+      {
+        "content": "42 passed in 12.3s",
+        "tool_name": "bash",
+        "turn_index": 8
+      }
+    ]
+  },
+  "dataset": "live_harness_trace",
+  "desired_direction": {
+    "source": "live_capture",
+    "statement": "Fix CI build failure due to missing numpy dependency"
+  },
+  "domain": "code",
+  "environment": {
+    "feedback_type": "tool_output",
+    "has_runnable_feedback": true,
+    "type": "harness"
+  },
+  "labels": {
+    "failure_mode": null,
+    "failure_mode_confidence": 0.0,
+    "failure_mode_evidence": [],
+    "harness_policy_signal": null,
+    "harness_policy_signal_confidence": 0.0,
+    "harness_policy_signal_evidence": [],
+    "metabolization_candidate": null,
+    "metabolization_candidate_confidence": 0.0,
+    "metabolization_candidate_evidence": []
+  },
+  "metadata": {
+    "duplicate_errors": false,
+    "error_steps": [
+      2,
+      4,
+      7
+    ],
+    "low_cost_inspection_after_error": false,
+    "run_metadata": {
+      "activation_enabled": false,
+      "baseline_pass": true,
+      "desired_direction": "Fix CI build failure due to missing numpy dependency",
+      "domain": "code",
+      "policy_mode": "shadow_only",
+      "task_id": "baseline-008-debugging-missing-dependency",
+      "task_type": "debugging"
+    },
+    "same_path_continuation_after_second_error": true,
+    "strategy_revision_steps": [],
+    "task_complete_steps": [
+      10
+    ],
+    "test_failed_steps": [],
+    "test_passed_steps": [
+      8
+    ],
+    "trace_source": "live_harness_trace"
+  },
+  "outcome": {
+    "confidence": 0.0,
+    "evidence": [],
+    "reward": null,
+    "score": null,
+    "settlement_quality": "recovered_success",
+    "success": true
+  },
+  "payment": {
+    "api_calls": 0,
+    "commands": 0,
+    "elapsed_steps": 11,
+    "error_count": 3,
+    "estimated_complexity": "unknown",
+    "evidence": [],
+    "page_actions": 0,
+    "tool_calls": 4,
+    "turns": 11
+  },
+  "representational_state": {
+    "confidence": 0.0,
+    "desired": "unknown",
+    "evidence": [],
+    "path_shape": "unknown",
+    "start": "unknown"
+  },
+  "source_uri": "live_harness_trace://baseline-008-debugging-missing-dependency",
+  "task_id": "baseline-008-debugging-missing-dependency"
+}

@@ -1,0 +1,1 @@
+{"activation_status": "shadow_only", "enforced": false, "fire_timing": "no_fire", "policy_id": "require_explicit_settlement_for_failure,require_reflection_after_repeated_errors", "post_fire_outcome": "no_fire", "recovery_opportunity": false, "shadow_action": "", "trigger_before_settlement": false, "trigger_evidence": [], "uncertainty_reasons": [], "would_fire": false}
