@@ -1,0 +1,90 @@
+{
+  "pilot_id": "reflection-real-agent-001",
+  "policy_id": "require_reflection_before_continuing_after_second_unresolved_error",
+  "policy_mode": "guarded",
+  "agent_model": "weaker-agent (VS Code)",
+  "total_runs": 6,
+  "baseline_runs": 3,
+  "guarded_runs": 3,
+  "intervention_format": "adjusted_with_continuation_directive",
+  "format_note": "Original format (questions only) caused agent to stop in run-02. Adjusted format adds 'Now continue fixing the code.' directive.",
+
+  "run_results": {
+    "run-01": {"condition": "baseline", "task": "A", "outcome": "success", "errors": 2, "test_runs": 2, "same_path_retries": 0, "completed": true},
+    "run-02": {"condition": "guarded", "task": "A", "outcome": "failure", "errors": 1, "test_runs": 1, "same_path_retries": 0, "completed": false, "note": "HARMFUL: original checkpoint format caused agent to stop after analysis"},
+    "run-03": {"condition": "baseline", "task": "B", "outcome": "success", "errors": 3, "test_runs": 4, "same_path_retries": 0, "completed": true},
+    "run-04": {"condition": "guarded", "task": "B", "outcome": "success", "errors": 5, "test_runs": 6, "same_path_retries": 1, "completed": true, "note": "Adjusted format. Agent continued but took more steps than baseline"},
+    "run-05": {"condition": "baseline", "task": "C", "outcome": "success", "errors": 3, "test_runs": 4, "same_path_retries": 1, "completed": true},
+    "run-06": {"condition": "guarded", "task": "C", "outcome": "success", "errors": 2, "test_runs": 3, "same_path_retries": 0, "completed": true, "note": "STRONGEST signal: fewer errors, fewer test runs, no same-path retry vs baseline"}
+  },
+
+  "matched_pair_comparisons": {
+    "task_a": {
+      "baseline_run": "run-01",
+      "guarded_run": "run-02",
+      "baseline_outcome": "success",
+      "guarded_outcome": "failure",
+      "verdict": "harmful_original_format",
+      "note": "Original checkpoint format caused agent to stop. Task not completed."
+    },
+    "task_b": {
+      "baseline_run": "run-03",
+      "guarded_run": "run-04",
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "baseline_test_runs": 4,
+      "guarded_test_runs": 6,
+      "baseline_errors": 3,
+      "guarded_errors": 5,
+      "verdict": "neutral_slightly_negative",
+      "note": "Adjusted format prevented stop but guarded run took more steps."
+    },
+    "task_c": {
+      "baseline_run": "run-05",
+      "guarded_run": "run-06",
+      "baseline_outcome": "success",
+      "guarded_outcome": "success",
+      "baseline_test_runs": 4,
+      "guarded_test_runs": 3,
+      "baseline_errors": 3,
+      "guarded_errors": 2,
+      "baseline_same_path_retries": 1,
+      "guarded_same_path_retries": 0,
+      "verdict": "helpful",
+      "note": "Guarded run outperformed baseline on all metrics."
+    }
+  },
+
+  "intervention_assessments": {
+    "run-02_original_format": "harmful",
+    "run-04_adjusted_format": "neutral",
+    "run-06_adjusted_format": "helpful"
+  },
+
+  "key_findings": [
+    "FINDING_1_FORMAT_CRITICAL: The original checkpoint format (questions only) caused the agent to stop working entirely (run-02). The adjusted format (adding 'Now continue fixing the code.') prevented this harmful behavior in runs 04 and 06.",
+    "FINDING_2_MIXED_HELPFULNESS: With the adjusted format, the checkpoint showed mixed results: neutral in run-04 (more steps than baseline) and helpful in run-06 (fewer steps, fewer errors, no same-path retry).",
+    "FINDING_3_AGENT_DEPENDENT: The policy's effect depends heavily on the agent model. Sophisticated agents (GitHub Copilot) adapt after 1 error and never trigger the policy. Weaker agents are more likely to benefit but also more likely to be harmed by poorly formatted interventions.",
+    "FINDING_4_SMALL_SAMPLE: 6 runs with 3 matched pairs is insufficient for statistical conclusions. The helpful signal from Task C could be noise.",
+    "FINDING_5_NO_METABOLIZATION: This pilot does not metabolize the policy. It provides real-agent evidence that must be combined with the existing replay and simulated pilot evidence."
+  ],
+
+  "status_recommendation": "needs_more_evidence",
+  "status_reasoning": "The pilot produced one harmful intervention (original format), one neutral (adjusted format), and one helpful (adjusted format). The format adjustment is a critical finding that changes the intervention's risk profile. More runs with the adjusted format are needed to determine whether the helpful signal from Task C is consistent.",
+
+  "metabolized": false,
+  "globally_active": false,
+
+  "forbidden_statuses": ["globally_active", "metabolized"],
+  "allowed_statuses": ["real_pilot_tested", "candidate_for_activation", "needs_more_evidence", "refine", "reject"],
+
+  "operator_notes": [
+    "Pilot run with real VS Code agents under operator supervision.",
+    "Agent model: weaker-agent (not GitHub Copilot).",
+    "Original checkpoint format caused agent to stop (run-02).",
+    "Adjusted format (with continuation directive) prevented stop in runs 04 and 06.",
+    "Task C showed the strongest positive signal for the adjusted format.",
+    "This is NOT metabolization. Repeated live settlement under variation is required.",
+    "The format adjustment finding should be fed back into the policy design."
+  ]
+}
