@@ -1,0 +1,12 @@
+{
+  "Run-Alpha": {"original_run_id": "run-07", "condition": "baseline", "task": "D"},
+  "Run-Beta": {"original_run_id": "run-08", "condition": "guarded", "task": "D"},
+  "Run-Gamma": {"original_run_id": "run-09", "condition": "baseline", "task": "E"},
+  "Run-Delta": {"original_run_id": "run-10", "condition": "guarded", "task": "E"},
+  "Run-Epsilon": {"original_run_id": "run-11", "condition": "baseline", "task": "F"},
+  "Run-Zeta": {"original_run_id": "run-12", "condition": "guarded", "task": "F"},
+  "Run-Eta": {"original_run_id": "run-13", "condition": "baseline", "task": "G"},
+  "Run-Theta": {"original_run_id": "run-14", "condition": "guarded", "task": "G"},
+  "Run-Iota": {"original_run_id": "run-15", "condition": "baseline", "task": "H"},
+  "Run-Kappa": {"original_run_id": "run-16", "condition": "guarded", "task": "H"}
+}

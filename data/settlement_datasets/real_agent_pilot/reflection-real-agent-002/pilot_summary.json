@@ -1,0 +1,144 @@
+{
+  "pilot_id": "reflection-real-agent-002",
+  "pilot_type": "real_agent_matched_pair",
+  "date": "2026-05-31",
+  "policy_id": "require_reflection_before_continuing_after_second_unresolved_error",
+  "intervention_format": "adjusted_with_continuation_directive",
+  "total_runs": 10,
+  "baseline_runs": 5,
+  "guarded_runs": 5,
+  "matched_pairs": 5,
+  "status_recommendation": "needs_more_evidence",
+  "metabolized": false,
+  "globally_active": false,
+  "tasks": [
+    "D",
+    "E",
+    "F",
+    "G",
+    "H"
+  ],
+  "checkpoint_delivered_count": 2,
+  "checkpoint_not_delivered_count": 3,
+  "checkpoint_not_delivered_reason": "task_too_easy_agent_completed_too_quickly",
+  "results_by_pair": [
+    {
+      "task": "D",
+      "baseline_run": "run-07",
+      "guarded_run": "run-08",
+      "checkpoint_delivered": false,
+      "baseline_errors": 1,
+      "guarded_errors": 1,
+      "baseline_evaluator_overall": 5,
+      "guarded_evaluator_overall": 5,
+      "baseline_notes": "Agent hit 1 error (KeyError in total_value), fixed it immediately by adding defaults in bulk_add. No",
+      "guarded_notes": "Checkpoint could not be injected \u2014 agent completed too quickly after single error. Same result as ba"
+    },
+    {
+      "task": "E",
+      "baseline_run": "run-09",
+      "guarded_run": "run-10",
+      "checkpoint_delivered": false,
+      "baseline_errors": 3,
+      "guarded_errors": 1,
+      "baseline_evaluator_overall": 2,
+      "guarded_evaluator_overall": 5,
+      "baseline_notes": "Agent hit 3 error events: (1) 4 test failures, (2) SyntaxError from agent's own catastrophic edit, (",
+      "guarded_notes": "Checkpoint could not be injected \u2014 agent completed too quickly. Agent went straight to csv module re"
+    },
+    {
+      "task": "F",
+      "baseline_run": "run-11",
+      "guarded_run": "run-12",
+      "checkpoint_delivered": true,
+      "baseline_errors": 4,
+      "guarded_errors": 2,
+      "baseline_evaluator_overall": 2,
+      "guarded_evaluator_overall": 4,
+      "baseline_notes": "Agent hit 4 error events across 5 test runs. Fixed bugs one at a time, introducing new errors along ",
+      "guarded_notes": "HELPFUL intervention. Guarded run outperformed baseline significantly: 3 test runs vs 5, 2 errors vs"
+    },
+    {
+      "task": "G",
+      "baseline_run": "run-13",
+      "guarded_run": "run-14",
+      "checkpoint_delivered": true,
+      "baseline_errors": 1,
+      "guarded_errors": 4,
+      "baseline_evaluator_overall": 4,
+      "guarded_evaluator_overall": 2,
+      "baseline_notes": "Agent fixed 2 test failures in 1 error event. Notable: agent modified config_loader.py (the validato",
+      "guarded_notes": "NEUTRAL intervention. Checkpoint delivered after 2nd error (IndentationError from agent's own edit)."
+    },
+    {
+      "task": "H",
+      "baseline_run": "run-15",
+      "guarded_run": "run-16",
+      "checkpoint_delivered": false,
+      "baseline_errors": 1,
+      "guarded_errors": 1,
+      "baseline_evaluator_overall": 5,
+      "guarded_evaluator_overall": 4,
+      "baseline_notes": "Agent fixed 1 test failure in 1 error event. Bug: http_client.py passed body dict directly to urllib",
+      "guarded_notes": "Checkpoint could not be injected \u2014 agent completed too quickly after single error. Same result as ba"
+    }
+  ],
+  "evaluator_summary": {
+    "all_pairs_guarded_advantage": {
+      "error_recovery_efficiency": 0.4,
+      "edit_quality": 0.2,
+      "diagnostic_accuracy": 0.4,
+      "strategy_adaptation": 0.0,
+      "overall_execution": 0.4
+    },
+    "intervention_only_guarded_vs_baseline": {
+      "error_recovery_efficiency": -0.5,
+      "edit_quality": -0.5,
+      "diagnostic_accuracy": 0.0,
+      "strategy_adaptation": -1.0,
+      "overall_execution": 0.0
+    }
+  },
+  "skeptic_verdict": {
+    "claim_1_never_harmful": "EVIDENCE AGAINST",
+    "claim_2_helpful_task_f": "WEAK EVIDENCE",
+    "claim_3_neutral_task_g": "EVIDENCE AGAINST",
+    "claim_4_aggregate_advantage": "WEAK EVIDENCE",
+    "claim_5_intervention_no_benefit": "WEAK EVIDENCE"
+  },
+  "legitimate_conclusions": [
+    "The adjusted checkpoint was delivered in only 2 of 5 guarded runs, so this pilot mostly evaluates feasibility and trigger reach, not efficacy.",
+    "The pilot produced one favorable delivered-intervention case, Task F, and one unfavorable delivered-intervention case, Task G.",
+    "The aggregate guarded advantage is descriptive only and is materially inflated by Task E, where no checkpoint was delivered.",
+    "The current evidence does not establish that the checkpoint is effective, safe, never harmful, or generally neutral.",
+    "The checkpoint format did not stop agents from continuing, since both delivered-checkpoint runs proceeded to completion.",
+    "Future studies need more checkpoint-eligible tasks, a pre-registered harm definition, more matched pairs, repeated seeds/runs per task, and preferably multiple blinded evaluators."
+  ],
+  "recommended_report_language": [
+    "In this pilot, the checkpoint was delivered in 2 of 5 guarded matched pairs; the remaining guarded pairs are not evidence about checkpoint efficacy.",
+    "Results are mixed: one delivered checkpoint case was associated with cleaner recovery, while the other was associated with worse run-level outcomes and an immediate post-checkpoint malformed edit.",
+    "Aggregate guarded scores were slightly higher, but this difference should not be interpreted causally because much of it came from runs where no checkpoint fired.",
+    "The pilot supports feasibility of continuing after the adjusted checkpoint, but it does not establish benefit or non-harm.",
+    "The next settlement target should be a larger, checkpoint-eligible task set with explicit harm criteria and enough repeated matched runs to separate policy effects from stochastic agent variation."
+  ],
+  "protocol_errors": [
+    {
+      "run_id": "run-14",
+      "error": "workspace_not_properly_reset",
+      "description": "Reset script only restored settings.json, not config_loader.py. Run-13's validator changes persisted. First attempt at run-14 was INVALID. Reset script was fixed and run-14 was re-run successfully.",
+      "resolution": "Fixed reset_pilot2.sh to also restore config_loader.py. Re-ran run-14."
+    }
+  ],
+  "combined_pilot_evidence": {
+    "pilot_001_runs": 6,
+    "pilot_002_runs": 10,
+    "total_runs": 16,
+    "total_checkpoint_deliveries": 4,
+    "helpful": 2,
+    "neutral": 1,
+    "harmful_adjusted_format": 0,
+    "harmful_original_format": 1,
+    "no_intervention": 8,
+    "note": "The one harmful result was with the ORIGINAL questions-only format (pilot-001 run-02). The adjusted format with continuation directive has 0 harmful results but only 3 delivered checkpoints across both pilots."
+  }
+}
