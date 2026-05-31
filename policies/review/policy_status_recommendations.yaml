@@ -1,0 +1,148 @@
+policy_status_recommendations:
+- policy_id: require_reflection_after_repeated_errors
+  current_status: proposed
+  recommended_status: keep_proposed
+  rationale: Helpful on 1 traces but below activation threshold (need 5+).
+  evidence:
+    would_fire_count: 2
+    likely_helpful_count: 1
+    likely_harmful_count: 0
+    uncertain_count: 1
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution:
+      medium: 1
+      high: 1
+    domains_observed:
+    - code
+    datasets_observed:
+    - agenttrove
+    - swegym
+- policy_id: search_before_patch
+  current_status: proposed
+  recommended_status: keep_proposed
+  rationale: Insufficient evidence for promotion.
+  evidence:
+    would_fire_count: 6
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 6
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution:
+      low: 3
+      medium: 3
+    domains_observed:
+    - code
+    datasets_observed:
+    - agenttrove
+    - swegym
+- policy_id: compare_constraints_before_selection
+  current_status: proposed
+  recommended_status: reject
+  rationale: Policy harms 2 successful traces.
+  evidence:
+    would_fire_count: 5
+    likely_helpful_count: 0
+    likely_harmful_count: 2
+    uncertain_count: 3
+    false_positive_rate_estimate: 0.4
+    payment_risk_distribution:
+      low: 5
+    domains_observed:
+    - shopping
+    datasets_observed:
+    - webshop
+- policy_id: inspect_api_schema_before_call
+  current_status: proposed
+  recommended_status: needs_more_evidence
+  rationale: Policy never fires on evaluated records.
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+- policy_id: reset_plan_after_payment_spiral
+  current_status: proposed
+  recommended_status: keep_proposed
+  rationale: Insufficient evidence for promotion.
+  evidence:
+    would_fire_count: 3
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 3
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution:
+      medium: 2
+      high: 1
+    domains_observed:
+    - code
+    datasets_observed:
+    - agenttrove
+    - swegym
+- policy_id: test_before_final_answer
+  current_status: proposed
+  recommended_status: reject
+  rationale: Policy harms 7 successful traces.
+  evidence:
+    would_fire_count: 13
+    likely_helpful_count: 0
+    likely_harmful_count: 7
+    uncertain_count: 6
+    false_positive_rate_estimate: 0.538
+    payment_risk_distribution:
+      low: 11
+      medium: 2
+    domains_observed:
+    - api
+    - code
+    - shopping
+    datasets_observed:
+    - agenttrove
+    - apibank
+    - swegym
+    - webshop
+- policy_id: require_explicit_settlement_for_failure
+  current_status: proposed
+  recommended_status: keep_proposed
+  rationale: Helpful on 2 traces but below activation threshold (need 5+).
+  evidence:
+    would_fire_count: 5
+    likely_helpful_count: 2
+    likely_harmful_count: 0
+    uncertain_count: 3
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution:
+      medium: 2
+      low: 2
+      high: 1
+    domains_observed:
+    - api
+    - code
+    datasets_observed:
+    - agenttrove
+    - apibank
+    - swegym
+- policy_id: prevent_premature_concretion
+  current_status: proposed
+  recommended_status: reject
+  rationale: Policy harms 3 successful traces.
+  evidence:
+    would_fire_count: 11
+    likely_helpful_count: 0
+    likely_harmful_count: 3
+    uncertain_count: 8
+    false_positive_rate_estimate: 0.273
+    payment_risk_distribution:
+      low: 5
+      medium: 5
+      high: 1
+    domains_observed:
+    - code
+    - shopping
+    datasets_observed:
+    - agenttrove
+    - swegym
+    - webshop

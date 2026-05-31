@@ -115,3 +115,13 @@ uv run python -m scripts.settlement_datasets.mine_metabolization_candidates --da
 ```
 
 Output: `data/settlement_datasets/metabolization_candidates/candidates.jsonl`
+
+## Updating Candidate Status
+
+```bash
+PYTHONPATH=. uv run python scripts/settlement_datasets/update_metabolization_status.py
+```
+
+Output: `data/settlement_datasets/metabolization_candidates/candidates_updated.jsonl`
+
+Candidates move from `candidate` to `repeated` based on cross-trace support (3+ traces). They can move from `repeated` to `tested` based on shadow-mode evaluation. They cannot move to `metabolized` without live harness validation. See `docs/policy-shadow-evaluation.md` for details.

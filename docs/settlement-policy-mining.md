@@ -117,4 +117,15 @@ uv run python -m scripts.settlement_datasets.mine_policies --dataset all
 uv run python -m scripts.settlement_datasets.mine_policies --dataset swegym --min-confidence 0.7
 ```
 
+## Shadow Evaluation
+
+Mined policies remain `proposed` until shadow-mode evaluation tests them against settlement records. See `docs/policy-shadow-evaluation.md` for details.
+
+```bash
+PYTHONPATH=. uv run python scripts/settlement_datasets/evaluate_policies_shadow.py --min-confidence 0.0
+PYTHONPATH=. uv run python scripts/settlement_datasets/update_policy_status.py
+```
+
+Policies can move from `proposed` to `candidate_for_activation` only after shadow evaluation shows they are helpful (5+ traces), not harmful (0 harmful traces), and have low false-positive risk (<=10%). No policy is activated automatically.
+
 Output: `data/settlement_datasets/policies.yaml`
