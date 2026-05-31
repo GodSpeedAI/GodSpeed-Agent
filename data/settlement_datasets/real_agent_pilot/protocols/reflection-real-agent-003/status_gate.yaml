@@ -1,0 +1,92 @@
+# Status Gate
+
+## Purpose
+
+The status gate defines what conclusions are permitted from this pilot. It prevents the pilot from claiming more than the evidence supports.
+
+## Allowed Statuses
+
+| Status | Meaning | Requirements |
+|---|---|---|
+| `reject` | The intervention is harmful or clearly not useful. | Majority of checkpoint deliveries show harm. |
+| `refine` | The intervention shows promise but needs design changes before further testing. | Mixed results with identifiable improvement opportunities. |
+| `needs_more_evidence` | Results are inconclusive. More data needed. | Insufficient checkpoint deliveries, mixed results, or high variance. |
+| `agent_class_specific_candidate` | Evidence supports further testing for a specific agent class only. | Consistent positive results for one agent type, clear scope limitation, no unresolved skeptic objection. |
+| `candidate_for_activation` | Evidence supports broader follow-up testing, not activation. | Near-unanimous positive settlement across delivered checkpoints and no contradictory guarded outcomes. |
+
+## Forbidden Statuses
+
+| Status | Why Forbidden |
+|---|---|
+| `globally_active` | No pilot can activate a policy globally. Requires repeated settlement under variation. |
+| `metabolized` | No pilot can claim metabolized capability. Requires time, repetition, and survival across contexts. |
+
+## Gate Criteria
+
+The status is determined by the following decision procedure:
+
+### Step 1: Count Valid Checkpoint Deliveries
+
+- How many matched pairs had the checkpoint actually delivered?
+- Minimum for any positive status: 4 deliveries.
+- If fewer than 4: status is `needs_more_evidence` (regardless of results).
+
+### Step 2: Classify Every Matched Pair
+
+For each matched pair, classify as one of:
+- **checkpoint_helpful**: Checkpoint was delivered, guarded run had better objective settlement than baseline, no new unresolved bug remained, and guarded score improvement exceeded the pre-registered minimum margin.
+- **checkpoint_neutral**: Checkpoint was delivered and guarded run was materially similar to baseline.
+- **checkpoint_harmful**: Checkpoint was delivered and guarded run performed worse than baseline, agent stopped after checkpoint, agent introduced a new unresolved bug, or the first post-checkpoint action was unsupported by the available evidence.
+- **no_fire_better**: Guarded run did not receive the checkpoint and performed better than baseline.
+- **no_fire_neutral**: Guarded run did not receive the checkpoint and performed materially similar to baseline.
+- **no_fire_worse**: Guarded run did not receive the checkpoint and performed worse than baseline.
+- **invalid**: Protocol deviation, compromised blinding, or fixture/reset problem invalidates the pair.
+- **incomplete**: Evidence is missing or uncertain enough that no settlement classification is defensible.
+
+Minimum margin for "better" or "worse":
+- Final task outcome must be objectively better or worse, OR
+- at least 2 evaluator dimensions improve or decline by 2 or more points, OR
+- at least 3 evaluator dimensions improve or decline by 1 or more points.
+
+Uncertain evaluator dimensions do not count toward positive or negative margins.
+
+### Step 3: Apply Decision Rules
+
+| Evidence Pattern | Status |
+|---|---|
+| At least 5 valid checkpoint deliveries, all delivered checkpoints are `checkpoint_helpful`, no `checkpoint_harmful`, no `no_fire_worse`, no invalid pair, no incomplete pair, and no unresolved skeptic objection | `candidate_for_activation` |
+| At least 4 valid checkpoint deliveries, at least 3 are `checkpoint_helpful`, none are `checkpoint_harmful`, no `no_fire_worse`, and scope is limited to the tested agent class | `agent_class_specific_candidate` |
+| Any helpful result with insufficient deliveries, any incomplete pair, mixed helpful/neutral results, or high variance | `needs_more_evidence` |
+| Any `checkpoint_harmful` or `no_fire_worse` that is not a majority of usable pairs | `refine` |
+| Harmful outcomes are a majority of usable pairs, or the intervention causes stopping/failure in multiple delivered checkpoints | `reject` |
+
+### Step 4: Override Conditions
+
+The status is overridden to `needs_more_evidence` if:
+- Fewer than 4 checkpoint deliveries occurred.
+- A protocol deviation affected blinding or condition assignment.
+- The skeptic identifies a critical methodological flaw.
+- The evaluator scores show internal inconsistency (same error profile, wildly different scores).
+- Any positive status depends on uncertain evaluator dimensions.
+- Raw transcripts, fixture validation evidence, or claim-to-evidence citations are missing.
+
+The status is overridden to `refine` or `reject` if the skeptic identifies unresolved evidence of harm. `NO EVIDENCE`, `EVIDENCE AGAINST`, or critical skeptic ratings for a positive claim block any positive status unless the final report rebuts them with cited evidence.
+
+### Step 5: Final Check
+
+Before recording the status:
+- [ ] Status is in the allowed set.
+- [ ] Status is NOT in the forbidden set.
+- [ ] Status is supported by the evidence cited.
+- [ ] The skeptic has reviewed the status assignment.
+- [ ] Each skeptic objection is accepted, rebutted with cited evidence, or reflected in a status downgrade.
+- [ ] No `globally_active` or `metabolized` claim is made anywhere in the report.
+
+## Status Assignment Record
+
+The final status must be recorded in `pilot_summary.json` with:
+- `status_recommendation`: the assigned status.
+- `status_evidence`: brief justification citing specific data.
+- `status_gate_version`: reference to this document.
+- `metabolized`: always `false`.
+- `globally_active`: always `false`.

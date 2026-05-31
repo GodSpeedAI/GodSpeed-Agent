@@ -1,0 +1,226 @@
+# Artifact Manifest
+
+## Purpose
+
+This document lists every artifact that must exist before the pilot is considered complete. The protocol verifier checks that all artifacts are present and conform to their expected schema.
+
+## Pre-Execution Artifacts (created before any runs)
+
+| Artifact | Path | Format | Description |
+|---|---|---|---|
+| Pilot protocol | `pilot_protocol.md` | Markdown | Master protocol document |
+| Task specs (6) | `task_specs/task_{i-n}_spec.md` | Markdown | Detailed task specifications |
+| Baseline runner prompt | `runner_prompts/baseline_runner_prompt.md` | Markdown | Prompt template for baseline runs |
+| Guarded runner prompt | `runner_prompts/guarded_runner_prompt.md` | Markdown | Prompt template for guarded runs |
+| Evaluator prompt | `evaluator_prompt.md` | Markdown | Blinded evaluation instructions |
+| Skeptic prompt | `skeptic_prompt.md` | Markdown | Bias review instructions |
+| Blinding plan | `blinding_plan.md` | Markdown | Blinding procedure and verification |
+| Status gate | `status_gate.yaml` | YAML | Allowed/forbidden statuses and decision rules |
+| Artifact manifest | `artifact_manifest.yaml` | YAML | This file |
+| Deviation log | `deviation_log.md` | Markdown | Protocol deviation records (initially empty) |
+| Protocol review checklist | `protocol_review_checklist.md` | Markdown | Verifier checklist |
+| Fixture validation record | `fixture_validation.md` | Markdown | Evidence that task workspaces fail/pass as specified before execution |
+
+## Execution Artifacts (created during/after runs)
+
+### Runner Phase
+
+| Artifact | Path | Format | Required | Description |
+|---|---|---|---|---|
+| Events | `events.jsonl` | JSONL | Yes | All events from all 12 runs |
+| Raw transcripts | `raw_transcripts/run-NN.md` | Markdown | Yes | Immutable full transcript for each run before parsing |
+| Transcript checksums | `raw_transcripts/checksums.txt` | Text | Yes | Checksum for each raw transcript |
+| Policy fires | `policy_fires.jsonl` | JSONL | Yes | Records of when policy fired (may be empty) |
+| Interventions | `interventions.jsonl` | JSONL | Yes | Records of checkpoint deliveries (may be empty) |
+| Runner responses | `runner_responses.jsonl` | JSONL | Yes | Agent responses to checkpoints (may be empty) |
+| Run summaries | `run_summaries.jsonl` | JSONL | Yes | Summary of each run (12 entries) |
+
+### Blinding Phase
+
+| Artifact | Path | Format | Required | Description |
+|---|---|---|---|---|
+| Blinded events | `evaluator_blinded_events.jsonl` | JSONL | Yes | Anonymized events for evaluator |
+| Unblinding key | `unblinding_key.json` | JSON | Yes | Maps anonymous IDs to conditions |
+
+### Evaluation Phase
+
+| Artifact | Path | Format | Required | Description |
+|---|---|---|---|---|
+| Evaluator scores | `evaluator_scores.jsonl` | JSONL | Yes | Scored runs from blinded evaluator |
+
+### Analysis Phase
+
+| Artifact | Path | Format | Required | Description |
+|---|---|---|---|---|
+| Matched pair analysis | (inline in report) | Markdown | Yes | Unblinded comparison of baseline vs guarded |
+
+### Skeptic Phase
+
+| Artifact | Path | Format | Required | Description |
+|---|---|---|---|---|
+| Skeptic review | `skeptic_reviews.jsonl` | JSONL | Yes | Structured skeptic assessment |
+
+### Report Phase
+
+| Artifact | Path | Format | Required | Description |
+|---|---|---|---|---|
+| Pilot summary | `pilot_summary.json` | JSON | Yes | Machine-readable summary with status |
+| Pilot report | `pilot_report.md` | Markdown | Yes | Pilot-specific immutable report |
+| Shared report excerpt | `docs/reflection-real-agent-pilot-report.md` | Markdown | Optional | Human-readable rollup; must cite `pilot_report.md` and not replace it |
+
+### Task Workspaces
+
+| Artifact | Path | Format | Required | Description |
+|---|---|---|---|---|
+| Task I workspace | `tmp/pilot_tasks/task_i/` | Directory | Yes | Module + tests |
+| Task J workspace | `tmp/pilot_tasks/task_j/` | Directory | Yes | Module + tests |
+| Task K workspace | `tmp/pilot_tasks/task_k/` | Directory | Yes | Module + tests |
+| Task L workspace | `tmp/pilot_tasks/task_l/` | Directory | Yes | Module + tests |
+| Task M workspace | `tmp/pilot_tasks/task_m/` | Directory | Yes | Module + tests |
+| Task N workspace | `tmp/pilot_tasks/task_n/` | Directory | Yes | Module + tests |
+| Reset script | `tmp/pilot_tasks/reset_pilot3.sh` | Bash | Yes | Resets all task workspaces |
+
+### Fixture Validation
+
+`fixture_validation.md` must include, for each task:
+- buggy-state test command and failing output summary;
+- corrected-state test command and passing output summary;
+- checksum of each frozen module and test file;
+- checksum or command evidence for the reset fixture;
+- evidence that baseline and guarded reset states are byte-identical.
+
+No runner execution may begin until fixture validation is reviewed after task workspace implementation.
+
+## Artifact Schemas
+
+### events.jsonl
+
+Each line:
+```json
+{
+  "run_id": "run-NN",
+  "step_index": 0,
+  "timestamp": "ISO-8601",
+  "event_type": "tool_call|tool_result|file_edit|model_message|user_message|operator_message|intervention|task_complete",
+  "content": "description",
+  "tool_name": "read|bash|edit|null",
+  "is_error": false,
+  "metadata": {}
+}
+```
+
+Event extraction rules:
+- Preserve raw transcripts before parsing.
+- Assign monotonically increasing `step_index` values in transcript order.
+- Record every user/operator message unless removed from blinded evaluator data by the blinding plan.
+- Record the source raw transcript path and transcript checksum in event metadata.
+- Do not infer success from agent claims alone; record `task_complete` only when the transcript contains the declaration and supporting test evidence is available.
+- Any parser ambiguity that affects policy fire timing, condition assignment, or outcome classification must be recorded in `deviation_log.md`.
+
+### run_summaries.jsonl
+
+Each line:
+```json
+{
+  "run_id": "run-NN",
+  "condition": "baseline|guarded",
+  "task_dir": "tmp/pilot_tasks/task_x",
+  "task_description": "...",
+  "total_steps": 10,
+  "error_count": 2,
+  "outcome": "success|failure|invalid",
+  "settlement_quality": "recovered_success|...",
+  "policy_would_have_fired": false,
+  "policy_fire_step": null,
+  "agent_revised_strategy": false,
+  "agent_model": "weaker-agent",
+  "same_path_after_error": false,
+  "checkpoint_injected": false,
+  "intervention_format": "adjusted_with_continuation|null",
+  "notes": "..."
+}
+```
+
+### evaluator_scores.jsonl
+
+Each line:
+```json
+{
+  "run_id": "Run-XXX",
+  "error_recovery_efficiency": 4,
+  "error_recovery_evidence": "step_index X: ...",
+  "error_recovery_missing_evidence_reason": null,
+  "edit_quality": 4,
+  "edit_quality_evidence": "...",
+  "edit_quality_missing_evidence_reason": null,
+  "diagnostic_accuracy": 4,
+  "diagnostic_accuracy_evidence": "...",
+  "diagnostic_accuracy_missing_evidence_reason": null,
+  "strategy_adaptation": 3,
+  "strategy_adaptation_evidence": "...",
+  "strategy_adaptation_missing_evidence_reason": null,
+  "scope_discipline": 5,
+  "scope_discipline_evidence": "...",
+  "scope_discipline_missing_evidence_reason": null,
+  "overall_execution": 4,
+  "overall_execution_evidence": "...",
+  "overall_execution_missing_evidence_reason": null,
+  "total_steps": 10,
+  "error_events": 2,
+  "test_runs": 3,
+  "file_edits": 2,
+  "file_reads": 3,
+  "agent_introduced_bugs": 0,
+  "same_path_retry": false,
+  "evaluator_notes": "..."
+}
+```
+
+### pilot_summary.json
+
+```json
+{
+  "pilot_id": "reflection-real-agent-003",
+  "policy_id": "require_reflection_before_continuing_after_second_unresolved_error",
+  "total_runs": 12,
+  "baseline_runs": 6,
+  "guarded_runs": 6,
+  "status_recommendation": "needs_more_evidence",
+  "metabolized": false,
+  "globally_active": false,
+  "checkpoint_delivered_count": 0,
+  "results_by_pair": [],
+  "evaluator_summary": {},
+  "skeptic_verdict": {},
+  "legitimate_conclusions": [],
+  "protocol_errors": []
+}
+```
+
+Numeric evaluator score fields may also be `"uncertain"` when evidence is missing. Any `"uncertain"` value must include a non-empty matching `*_missing_evidence_reason` field. Status calculations must explicitly exclude or handle uncertain dimensions.
+
+### pilot_report.md
+
+The pilot-specific report must include a claim-to-evidence table. Every interpretive claim must cite:
+- run ID;
+- task ID;
+- condition;
+- relevant step indices;
+- evaluator evidence;
+- skeptic disposition.
+
+Each skeptic objection must be accepted, rebutted with cited evidence, or reflected in a status downgrade.
+
+## Completeness Check
+
+Before the pilot is considered complete, verify:
+- [ ] All pre-execution artifacts exist.
+- [ ] Fixture validation has been completed and independently reviewed.
+- [ ] All execution artifacts exist.
+- [ ] Raw transcripts exist for all 12 runs and checksums match.
+- [ ] All task workspaces exist with correct files.
+- [ ] Reset script restores all mutable files.
+- [ ] `pilot_summary.json` has all required fields.
+- [ ] `status_recommendation` is in the allowed set.
+- [ ] `metabolized` is `false`.
+- [ ] `globally_active` is `false`.
