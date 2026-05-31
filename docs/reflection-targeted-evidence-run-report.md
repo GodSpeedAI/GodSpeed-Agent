@@ -94,3 +94,9 @@ So the current evidence does not justify a guarded experiment for this refined r
 - Policy row recommendation in the shadow summary: `keep_proposed`
 
 Reasoning: the policy now has real would-fire support, but that support is entirely late and non-intervenable on this slice. The result strengthens the case that the refined trigger is more precise than the earlier broad version, but it does not yet demonstrate spendable pre-settlement leverage.
+
+## Follow-Up: Live Harness Trace Capture
+
+The AgentTrove limitation identified in this report (all fires on `final_turn` with `0` recovery opportunity) led to the implementation of live harness trace capture (`godspeed_nav/trace_capture.py`). Live traces record step-level events with settlement signals preserved at each step, enabling evaluation of whether the reflection trigger could fire before settlement closes in real harness execution.
+
+See `docs/live-harness-trace-capture.md` and `docs/live-harness-trace-capture-report.md` for details.
