@@ -85,15 +85,6 @@
       7
     ],
     "low_cost_inspection_after_error": false,
-    "run_metadata": {
-      "activation_enabled": false,
-      "baseline_pass": true,
-      "desired_direction": "Fix CI build failure due to missing numpy dependency",
-      "domain": "code",
-      "policy_mode": "shadow_only",
-      "task_id": "baseline-008-debugging-missing-dependency",
-      "task_type": "debugging"
-    },
     "same_path_continuation_after_second_error": true,
     "strategy_revision_steps": [],
     "task_complete_steps": [
@@ -103,7 +94,7 @@
     "test_passed_steps": [
       8
     ],
-    "trace_source": "live_harness_trace"
+    "trace_source": "live_harness_capture"
   },
   "outcome": {
     "confidence": 0.0,
@@ -131,6 +122,7 @@
     "path_shape": "unknown",
     "start": "unknown"
   },
+  "run_id": "baseline-008-debugging-missing-dependency",
   "source_uri": "live_harness_trace://baseline-008-debugging-missing-dependency",
   "task_id": "baseline-008-debugging-missing-dependency"
 }

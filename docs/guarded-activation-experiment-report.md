@@ -32,18 +32,18 @@ PYTHONPATH=. uv run python scripts/settlement_datasets/run_guarded_activation_ex
 
 ### Summary
 
-| Metric | Value |
-|---|---|
-| Total guarded runs | 13 |
-| Total policy fires | 4 |
-| Total interventions | 4 |
-| Fires before settlement | 4 |
-| Potentially helpful | 2 |
-| False positives | 2 |
-| Harmful interventions | 0 |
-| Uncertain | 0 |
-| Neutral (no fire) | 9 |
-| Status recommendation | `tested_needs_more_evidence` |
+| Metric | reflection-guarded-001 | reflection-guarded-002 | reflection-guarded-003 (Expanded) |
+|---|---|---|---|
+| Total guarded runs | 13 | 13 | 22 |
+| Total policy fires | 4 | 2 | 5 |
+| Total interventions | 4 | 2 | 5 |
+| Fires before settlement | 4 | 2 | 5 |
+| Potentially helpful | 2 | 2 | 5 |
+| False positives | 2 | 0 | 0 |
+| Harmful interventions | 0 | 0 | 0 |
+| Uncertain | 0 | 0 | 0 |
+| Neutral (no fire) | 9 | 9 | 15 |
+| Status recommendation | `tested_needs_more_evidence` | `tested_needs_more_evidence` | `candidate_for_activation` |
 
 ### Per-Run Comparison
 

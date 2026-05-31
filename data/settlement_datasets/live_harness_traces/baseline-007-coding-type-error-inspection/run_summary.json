@@ -1,5 +1,5 @@
 {
-  "ended_at": "2026-05-31T13:18:27.610381+00:00",
+  "ended_at": "2026-05-31T14:16:47.307148+00:00",
   "error_count": 2,
   "final_outcome": "success",
   "run_id": "baseline-007-coding-type-error-inspection",
@@ -13,7 +13,7 @@
     "task_type": "coding"
   },
   "settlement_quality": "recovered_success",
-  "started_at": "2026-05-31T13:18:27.609468+00:00",
+  "started_at": "2026-05-31T14:16:47.305468+00:00",
   "strategy_revision_count": 1,
   "task_complete_count": 1,
   "test_event_count": 1,

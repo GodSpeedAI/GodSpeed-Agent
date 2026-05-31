@@ -62,15 +62,6 @@
       4
     ],
     "low_cost_inspection_after_error": false,
-    "run_metadata": {
-      "activation_enabled": false,
-      "baseline_pass": true,
-      "desired_direction": "Fix failing unit tests for calculator module",
-      "domain": "code",
-      "policy_mode": "shadow_only",
-      "task_id": "baseline-013-coding-duplicate-error-no-recovery",
-      "task_type": "coding"
-    },
     "same_path_continuation_after_second_error": false,
     "strategy_revision_steps": [],
     "task_complete_steps": [
@@ -78,7 +69,7 @@
     ],
     "test_failed_steps": [],
     "test_passed_steps": [],
-    "trace_source": "live_harness_trace"
+    "trace_source": "live_harness_capture"
   },
   "outcome": {
     "confidence": 0.0,
@@ -86,7 +77,7 @@
     "reward": null,
     "score": null,
     "settlement_quality": "failure_with_signal",
-    "success": true
+    "success": false
   },
   "payment": {
     "api_calls": 0,
@@ -106,6 +97,7 @@
     "path_shape": "unknown",
     "start": "unknown"
   },
+  "run_id": "baseline-013-coding-duplicate-error-no-recovery",
   "source_uri": "live_harness_trace://baseline-013-coding-duplicate-error-no-recovery",
   "task_id": "baseline-013-coding-duplicate-error-no-recovery"
 }

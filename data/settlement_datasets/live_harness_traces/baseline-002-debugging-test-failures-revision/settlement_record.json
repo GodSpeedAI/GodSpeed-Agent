@@ -103,15 +103,6 @@
       8
     ],
     "low_cost_inspection_after_error": false,
-    "run_metadata": {
-      "activation_enabled": false,
-      "baseline_pass": true,
-      "desired_direction": "Debug payment processing test failures",
-      "domain": "code",
-      "policy_mode": "shadow_only",
-      "task_id": "baseline-002-debugging-test-failures-revision",
-      "task_type": "debugging"
-    },
     "same_path_continuation_after_second_error": true,
     "strategy_revision_steps": [
       6
@@ -123,7 +114,7 @@
     "test_passed_steps": [
       11
     ],
-    "trace_source": "live_harness_trace"
+    "trace_source": "live_harness_capture"
   },
   "outcome": {
     "confidence": 0.0,
@@ -151,6 +142,7 @@
     "path_shape": "unknown",
     "start": "unknown"
   },
+  "run_id": "baseline-002-debugging-test-failures-revision",
   "source_uri": "live_harness_trace://baseline-002-debugging-test-failures-revision",
   "task_id": "baseline-002-debugging-test-failures-revision"
 }

@@ -1,0 +1,22 @@
+{
+  "ended_at": "2026-05-31T14:16:47.332804+00:00",
+  "error_count": 1,
+  "final_outcome": "success",
+  "run_id": "baseline-018-shell-error-diagnostic-recovery",
+  "run_metadata": {
+    "activation_enabled": false,
+    "baseline_pass": true,
+    "desired_direction": "Diagnose permissions and start system app script",
+    "domain": "shell",
+    "policy_mode": "shadow_only",
+    "task_id": "baseline-018-shell-error-diagnostic-recovery",
+    "task_type": "shell"
+  },
+  "settlement_quality": "recovered_success",
+  "started_at": "2026-05-31T14:16:47.331401+00:00",
+  "strategy_revision_count": 0,
+  "task_complete_count": 1,
+  "test_event_count": 0,
+  "total_steps": 11,
+  "trace_capture_enabled": true
+}

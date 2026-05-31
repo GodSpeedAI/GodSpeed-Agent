@@ -744,6 +744,402 @@ def run_coding_duplicate_error_no_recovery(capture: HarnessTraceCapture) -> str:
     return "failure"
 
 
+def run_coding_final_turn_only_error(capture: HarnessTraceCapture) -> str:
+    """Coding task: success, but last-second error on final turn during cleanup."""
+    capture.record_model_message(
+        "I need to refactor the calculator module and then clean up.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "cat api/server.py",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "def index(): ...",
+        tool_name="bash",
+        timestamp=_ts(2),
+    )
+    capture.record_tool_call(
+        "pytest tests/test_calculator.py",
+        tool_name="bash",
+        timestamp=_ts(3),
+    )
+    capture.record_tool_result(
+        "2 passed in 0.1s",
+        tool_name="bash",
+        timestamp=_ts(4),
+    )
+    capture.record_model_message(
+        "All tests pass. Now I'll clean up the temporary directory.",
+        timestamp=_ts(5),
+    )
+    capture.record_tool_call(
+        "rm -rf tmp_test_dir/",
+        tool_name="bash",
+        timestamp=_ts(6),
+    )
+    capture.record_tool_result(
+        "bash: rm: command not found",
+        tool_name="bash",
+        timestamp=_ts(7),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_final_answer(
+        "Refactored successfully, but cleanup command failed.",
+        timestamp=_ts(8),
+    )
+    capture.record_task_complete(timestamp=_ts(9))
+    return "success"
+
+
+def run_debugging_test_failure_with_changed_strategy(capture: HarnessTraceCapture) -> str:
+    """Debugging task: test fails, agent revises strategy, second failure occurs under revision."""
+    capture.record_model_message(
+        "Let me run the database tests.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "pytest tests/test_db.py",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "FAILED tests/test_db.py - ConnectionError: could not connect to server",
+        tool_name="bash",
+        timestamp=_ts(2),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_strategy_revision(
+        "Revised plan: The connection is failing. Let me check the environment config to see if PORT is wrong.",
+        timestamp=_ts(3),
+    )
+    capture.record_tool_call(
+        "cat config/settings.py",
+        tool_name="bash",
+        timestamp=_ts(4),
+    )
+    capture.record_tool_result(
+        "DB_PORT = 5432",
+        tool_name="bash",
+        timestamp=_ts(5),
+    )
+    capture.record_tool_call(
+        "pytest tests/test_db.py",
+        tool_name="bash",
+        timestamp=_ts(6),
+    )
+    capture.record_tool_result(
+        "FAILED tests/test_db.py - ConnectionError: database settings failed",
+        tool_name="bash",
+        timestamp=_ts(7),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_final_answer(
+        "Database tests failed consistently due to settings error.",
+        timestamp=_ts(8),
+    )
+    capture.record_task_complete(timestamp=_ts(9))
+    return "failure"
+
+
+def run_api_tool_error_changed_arguments(capture: HarnessTraceCapture) -> str:
+    """API task: invalid args fail, model retries with fixed arguments (adaptive recovery)."""
+    capture.record_model_message(
+        "Let's fetch payment records.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "curl http://api.payments.com/records",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "HTTP 401 Unauthorized: missing API Key",
+        tool_name="bash",
+        timestamp=_ts(2),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_model_message(
+        "Ah, I missed the header. Retrying with auth header.",
+        timestamp=_ts(3),
+    )
+    capture.record_tool_call(
+        "curl -H 'Authorization: Bearer secret' http://api.payments.com/records",
+        tool_name="bash",
+        timestamp=_ts(4),
+    )
+    capture.record_tool_result(
+        "HTTP 400 Bad Request: missing required query parameter 'limit'",
+        tool_name="bash",
+        timestamp=_ts(5),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_model_message(
+        "Now I need to add query parameters.",
+        timestamp=_ts(6),
+    )
+    capture.record_tool_call(
+        "curl -H 'Authorization: Bearer secret' http://api.payments.com/records?limit=10",
+        tool_name="bash",
+        timestamp=_ts(7),
+    )
+    capture.record_tool_result(
+        "HTTP 200 OK: fetched 10 records",
+        tool_name="bash",
+        timestamp=_ts(8),
+        settlement_signals={"success_signal": True},
+    )
+    capture.record_final_answer(
+        "Successfully fetched payment records after fixing headers and arguments.",
+        timestamp=_ts(9),
+    )
+    capture.record_task_complete(timestamp=_ts(10))
+    return "success"
+
+
+def run_file_edit_error_same_path(capture: HarnessTraceCapture) -> str:
+    """File edit task: edit syntax error, same non-adaptive retry -> fire!"""
+    capture.record_model_message(
+        "I need to edit the server file.",
+        timestamp=_ts(0),
+    )
+    capture.record_file_edit(
+        "Add print inside server.py",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_call(
+        "python server.py",
+        tool_name="bash",
+        timestamp=_ts(2),
+    )
+    capture.record_tool_result(
+        "SyntaxError: invalid syntax inside print statement",
+        tool_name="bash",
+        timestamp=_ts(3),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_model_message(
+        "Let me run it again to make sure it's consistent.",
+        timestamp=_ts(4),
+    )
+    capture.record_tool_call(
+        "python server.py",
+        tool_name="bash",
+        timestamp=_ts(5),
+    )
+    capture.record_tool_result(
+        "SyntaxError: unmatched parenthesis inside format string",
+        tool_name="bash",
+        timestamp=_ts(6),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_final_answer(
+        "Failed to edit server.py successfully.",
+        timestamp=_ts(7),
+    )
+    capture.record_task_complete(timestamp=_ts(8))
+    return "failure"
+
+
+def run_coding_repeated_error_same_path_3(capture: HarnessTraceCapture) -> str:
+    """Coding task: distinct C linking errors, non-adaptive same-path continuation -> fire!"""
+    capture.record_model_message(
+        "Let's link the binary.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "gcc -o app main.o utils.o",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "LinkError: undefined reference to 'helper_func'",
+        tool_name="bash",
+        timestamp=_ts(2),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_model_message(
+        "Let me try linking again with basic helper library.",
+        timestamp=_ts(3),
+    )
+    capture.record_tool_call(
+        "gcc -o app main.o utils.o -lhelper",
+        tool_name="bash",
+        timestamp=_ts(4),
+    )
+    capture.record_tool_result(
+        "LinkError: cannot find -lhelper",
+        tool_name="bash",
+        timestamp=_ts(5),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_final_answer(
+        "Linking failed completely.",
+        timestamp=_ts(6),
+    )
+    capture.record_task_complete(timestamp=_ts(7))
+    return "failure"
+
+
+def run_shell_error_diagnostic_recovery(capture: HarnessTraceCapture) -> str:
+    """Shell command fails, model runs diagnostic command, then fixes it."""
+    capture.record_model_message(
+        "Starting the application service.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "./start.sh",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "Permission denied: ./start.sh",
+        tool_name="bash",
+        timestamp=_ts(2),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_model_message(
+        "Let me check the permissions on the startup script.",
+        timestamp=_ts(3),
+    )
+    capture.record_tool_call(
+        "ls -la ./start.sh",
+        tool_name="bash",
+        timestamp=_ts(4),
+    )
+    capture.record_tool_result(
+        "-rw-r--r-- 1 user group 123 May 31 10:00 ./start.sh",
+        tool_name="bash",
+        timestamp=_ts(5),
+    )
+    capture.record_model_message(
+        "Ah, it needs executable permissions. Let me chmod and retry.",
+        timestamp=_ts(6),
+    )
+    capture.record_tool_call(
+        "chmod +x ./start.sh && ./start.sh",
+        tool_name="bash",
+        timestamp=_ts(7),
+    )
+    capture.record_tool_result(
+        "Service started on port 8080",
+        tool_name="bash",
+        timestamp=_ts(8),
+        settlement_signals={"success_signal": True},
+    )
+    capture.record_final_answer(
+        "Successfully started application service after diagnosing and correcting permissions.",
+        timestamp=_ts(9),
+    )
+    capture.record_task_complete(timestamp=_ts(10))
+    return "success"
+
+
+def run_coding_repeated_error_same_path(capture: HarnessTraceCapture) -> str:
+    """Coding task: repeated compilation error, non-adaptive same-path continuation -> fire!"""
+    capture.record_model_message(
+        "I need to compile the C module.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "gcc -o app main.c",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "main.c:1:10: fatal error: foo.h: No such file or directory",
+        tool_name="bash",
+        timestamp=_ts(2),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_model_message(
+        "Let me just try compiling again with basic flags.",
+        timestamp=_ts(3),
+    )
+    capture.record_tool_call(
+        "gcc -o app main.c -I.",
+        tool_name="bash",
+        timestamp=_ts(4),
+    )
+    capture.record_tool_result(
+        "main.c:4:12: error: unknown type name 'bar_t'",
+        tool_name="bash",
+        timestamp=_ts(5),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_final_answer(
+        "Compilation failed due to missing foo.h header.",
+        timestamp=_ts(6),
+    )
+    capture.record_task_complete(timestamp=_ts(7))
+    return "failure"
+
+
+def run_coding_clean_success_2(capture: HarnessTraceCapture) -> str:
+    """Coding task: second clean success, zero errors."""
+    capture.record_model_message(
+        "Let's list the workspace directory structure.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "ls -F",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "app/  config/  tests/  README.md",
+        tool_name="bash",
+        timestamp=_ts(2),
+    )
+    capture.record_final_answer(
+        "Workspace listed successfully with no errors.",
+        timestamp=_ts(3),
+    )
+    capture.record_task_complete(timestamp=_ts(4))
+    return "success"
+
+
+def run_debugging_single_error_recovery(capture: HarnessTraceCapture) -> str:
+    """Debugging task: single connection refused error, model starts DB and succeeds."""
+    capture.record_model_message(
+        "I need to run the app DB check.",
+        timestamp=_ts(0),
+    )
+    capture.record_tool_call(
+        "pg_isready",
+        tool_name="bash",
+        timestamp=_ts(1),
+    )
+    capture.record_tool_result(
+        "no response -- connection refused",
+        tool_name="bash",
+        timestamp=_ts(2),
+        settlement_signals={"error_detected": True},
+    )
+    capture.record_model_message(
+        "Postgres is not running. Let me start it using systemctl.",
+        timestamp=_ts(3),
+    )
+    capture.record_tool_call(
+        "systemctl start postgresql && pg_isready",
+        tool_name="bash",
+        timestamp=_ts(4),
+    )
+    capture.record_tool_result(
+        "accepting connections on port 5432",
+        tool_name="bash",
+        timestamp=_ts(5),
+        settlement_signals={"success_signal": True},
+    )
+    capture.record_final_answer(
+        "Postgres was started and verified successfully.",
+        timestamp=_ts(6),
+    )
+    capture.record_task_complete(timestamp=_ts(7))
+    return "success"
+
+
 # ── Scenario Registry ──
 
 SCENARIOS: list[dict[str, Any]] = [
@@ -837,6 +1233,69 @@ SCENARIOS: list[dict[str, Any]] = [
         "domain": "code",
         "task_type": "coding",
         "runner": run_coding_duplicate_error_no_recovery,
+    },
+    {
+        "run_id": "baseline-014-coding-final-turn-only-error",
+        "task_description": "Verify calculator and clean up temporary directory",
+        "domain": "code",
+        "task_type": "coding",
+        "runner": run_coding_final_turn_only_error,
+    },
+    {
+        "run_id": "baseline-015-debugging-test-failure-changed-strategy",
+        "task_description": "Run and debug database connection tests",
+        "domain": "code",
+        "task_type": "debugging",
+        "runner": run_debugging_test_failure_with_changed_strategy,
+    },
+    {
+        "run_id": "baseline-016-api-tool-changed-arguments",
+        "task_description": "Fetch payment records from internal API endpoint",
+        "domain": "api",
+        "task_type": "api_tool_use",
+        "runner": run_api_tool_error_changed_arguments,
+    },
+    {
+        "run_id": "baseline-017-file-edit-error-same-path",
+        "task_description": "Edit server configuration print statements",
+        "domain": "code",
+        "task_type": "file_edit",
+        "runner": run_file_edit_error_same_path,
+    },
+    {
+        "run_id": "baseline-018-shell-error-diagnostic-recovery",
+        "task_description": "Diagnose permissions and start system app script",
+        "domain": "shell",
+        "task_type": "shell",
+        "runner": run_shell_error_diagnostic_recovery,
+    },
+    {
+        "run_id": "baseline-019-coding-repeated-error-same-path",
+        "task_description": "Compile high-performance C extension module",
+        "domain": "code",
+        "task_type": "coding",
+        "runner": run_coding_repeated_error_same_path,
+    },
+    {
+        "run_id": "baseline-020-coding-clean-success-2",
+        "task_description": "Verify workspace structure without errors",
+        "domain": "code",
+        "task_type": "coding",
+        "runner": run_coding_clean_success_2,
+    },
+    {
+        "run_id": "baseline-021-debugging-single-error-recovery",
+        "task_description": "Check database status and ensure postgres is running",
+        "domain": "code",
+        "task_type": "debugging",
+        "runner": run_debugging_single_error_recovery,
+    },
+    {
+        "run_id": "baseline-022-coding-repeated-error-same-path-3",
+        "task_description": "Link executable application binary",
+        "domain": "code",
+        "task_type": "coding",
+        "runner": run_coding_repeated_error_same_path_3,
     },
 ]
 

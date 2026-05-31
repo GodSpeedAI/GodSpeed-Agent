@@ -1,0 +1,125 @@
+{
+  "affordance_path": {
+    "actions": [
+      {
+        "action_type": "model_message",
+        "content": "Let me run the database tests.",
+        "tool_name": null,
+        "turn_index": 0
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pytest tests/test_db.py",
+        "tool_name": "bash",
+        "turn_index": 1
+      },
+      {
+        "action_type": "strategy_revision",
+        "content": "Revised plan: The connection is failing. Let me check the environment config to see if PORT is wrong.",
+        "tool_name": null,
+        "turn_index": 3
+      },
+      {
+        "action_type": "tool_call",
+        "content": "cat config/settings.py",
+        "tool_name": "bash",
+        "turn_index": 4
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pytest tests/test_db.py",
+        "tool_name": "bash",
+        "turn_index": 6
+      }
+    ],
+    "observations": [
+      {
+        "content": "FAILED tests/test_db.py - ConnectionError: could not connect to server",
+        "tool_name": "bash",
+        "turn_index": 2
+      },
+      {
+        "content": "DB_PORT = 5432",
+        "tool_name": "bash",
+        "turn_index": 5
+      },
+      {
+        "content": "FAILED tests/test_db.py - ConnectionError: database settings failed",
+        "tool_name": "bash",
+        "turn_index": 7
+      }
+    ]
+  },
+  "dataset": "live_harness_trace",
+  "desired_direction": {
+    "source": "live_capture",
+    "statement": "Run and debug database connection tests"
+  },
+  "domain": "code",
+  "environment": {
+    "feedback_type": "tool_output",
+    "has_runnable_feedback": true,
+    "type": "harness"
+  },
+  "labels": {
+    "failure_mode": null,
+    "failure_mode_confidence": 0.0,
+    "failure_mode_evidence": [],
+    "harness_policy_signal": null,
+    "harness_policy_signal_confidence": 0.0,
+    "harness_policy_signal_evidence": [],
+    "metabolization_candidate": null,
+    "metabolization_candidate_confidence": 0.0,
+    "metabolization_candidate_evidence": []
+  },
+  "metadata": {
+    "duplicate_errors": false,
+    "error_steps": [
+      2,
+      7,
+      8
+    ],
+    "low_cost_inspection_after_error": false,
+    "same_path_continuation_after_second_error": false,
+    "strategy_revision_steps": [
+      3
+    ],
+    "task_complete_steps": [
+      9
+    ],
+    "test_failed_steps": [
+      8
+    ],
+    "test_passed_steps": [],
+    "trace_source": "live_harness_capture"
+  },
+  "outcome": {
+    "confidence": 0.0,
+    "evidence": [],
+    "reward": null,
+    "score": null,
+    "settlement_quality": "failure_with_signal",
+    "success": false
+  },
+  "payment": {
+    "api_calls": 0,
+    "commands": 0,
+    "elapsed_steps": 10,
+    "error_count": 3,
+    "estimated_complexity": "unknown",
+    "evidence": [],
+    "page_actions": 0,
+    "tool_calls": 3,
+    "turns": 10
+  },
+  "representational_state": {
+    "confidence": 0.0,
+    "desired": "unknown",
+    "evidence": [],
+    "path_shape": "unknown",
+    "start": "unknown"
+  },
+  "run_id": "baseline-015-debugging-test-failure-changed-strategy",
+  "source_uri": "live_harness_trace://baseline-015-debugging-test-failure-changed-strategy",
+  "task_id": "baseline-015-debugging-test-failure-changed-strategy"
+}

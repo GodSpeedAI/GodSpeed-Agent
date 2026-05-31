@@ -1,0 +1,116 @@
+{
+  "affordance_path": {
+    "actions": [
+      {
+        "action_type": "model_message",
+        "content": "I need to edit the server file.",
+        "tool_name": null,
+        "turn_index": 0
+      },
+      {
+        "action_type": "file_edit",
+        "content": "Add print inside server.py",
+        "tool_name": null,
+        "turn_index": 1
+      },
+      {
+        "action_type": "tool_call",
+        "content": "python server.py",
+        "tool_name": "bash",
+        "turn_index": 2
+      },
+      {
+        "action_type": "model_message",
+        "content": "Let me run it again to make sure it's consistent.",
+        "tool_name": null,
+        "turn_index": 4
+      },
+      {
+        "action_type": "tool_call",
+        "content": "python server.py",
+        "tool_name": "bash",
+        "turn_index": 5
+      }
+    ],
+    "observations": [
+      {
+        "content": "SyntaxError: invalid syntax inside print statement",
+        "tool_name": "bash",
+        "turn_index": 3
+      },
+      {
+        "content": "SyntaxError: unmatched parenthesis inside format string",
+        "tool_name": "bash",
+        "turn_index": 6
+      }
+    ]
+  },
+  "dataset": "live_harness_trace",
+  "desired_direction": {
+    "source": "live_capture",
+    "statement": "Edit server configuration print statements"
+  },
+  "domain": "code",
+  "environment": {
+    "feedback_type": "tool_output",
+    "has_runnable_feedback": true,
+    "type": "harness"
+  },
+  "labels": {
+    "failure_mode": null,
+    "failure_mode_confidence": 0.0,
+    "failure_mode_evidence": [],
+    "harness_policy_signal": null,
+    "harness_policy_signal_confidence": 0.0,
+    "harness_policy_signal_evidence": [],
+    "metabolization_candidate": null,
+    "metabolization_candidate_confidence": 0.0,
+    "metabolization_candidate_evidence": []
+  },
+  "metadata": {
+    "duplicate_errors": false,
+    "error_steps": [
+      3,
+      6,
+      7
+    ],
+    "low_cost_inspection_after_error": false,
+    "same_path_continuation_after_second_error": false,
+    "strategy_revision_steps": [],
+    "task_complete_steps": [
+      8
+    ],
+    "test_failed_steps": [],
+    "test_passed_steps": [],
+    "trace_source": "live_harness_capture"
+  },
+  "outcome": {
+    "confidence": 0.0,
+    "evidence": [],
+    "reward": null,
+    "score": null,
+    "settlement_quality": "failure_with_signal",
+    "success": false
+  },
+  "payment": {
+    "api_calls": 0,
+    "commands": 0,
+    "elapsed_steps": 9,
+    "error_count": 3,
+    "estimated_complexity": "unknown",
+    "evidence": [],
+    "page_actions": 0,
+    "tool_calls": 2,
+    "turns": 9
+  },
+  "representational_state": {
+    "confidence": 0.0,
+    "desired": "unknown",
+    "evidence": [],
+    "path_shape": "unknown",
+    "start": "unknown"
+  },
+  "run_id": "baseline-017-file-edit-error-same-path",
+  "source_uri": "live_harness_trace://baseline-017-file-edit-error-same-path",
+  "task_id": "baseline-017-file-edit-error-same-path"
+}

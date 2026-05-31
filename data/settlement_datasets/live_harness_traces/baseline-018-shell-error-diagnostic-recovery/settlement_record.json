@@ -1,0 +1,125 @@
+{
+  "affordance_path": {
+    "actions": [
+      {
+        "action_type": "model_message",
+        "content": "Starting the application service.",
+        "tool_name": null,
+        "turn_index": 0
+      },
+      {
+        "action_type": "tool_call",
+        "content": "./start.sh",
+        "tool_name": "bash",
+        "turn_index": 1
+      },
+      {
+        "action_type": "model_message",
+        "content": "Let me check the permissions on the startup script.",
+        "tool_name": null,
+        "turn_index": 3
+      },
+      {
+        "action_type": "tool_call",
+        "content": "ls -la ./start.sh",
+        "tool_name": "bash",
+        "turn_index": 4
+      },
+      {
+        "action_type": "model_message",
+        "content": "Ah, it needs executable permissions. Let me chmod and retry.",
+        "tool_name": null,
+        "turn_index": 6
+      },
+      {
+        "action_type": "tool_call",
+        "content": "chmod +x ./start.sh && ./start.sh",
+        "tool_name": "bash",
+        "turn_index": 7
+      }
+    ],
+    "observations": [
+      {
+        "content": "Permission denied: ./start.sh",
+        "tool_name": "bash",
+        "turn_index": 2
+      },
+      {
+        "content": "-rw-r--r-- 1 user group 123 May 31 10:00 ./start.sh",
+        "tool_name": "bash",
+        "turn_index": 5
+      },
+      {
+        "content": "Service started on port 8080",
+        "tool_name": "bash",
+        "turn_index": 8
+      }
+    ]
+  },
+  "dataset": "live_harness_trace",
+  "desired_direction": {
+    "source": "live_capture",
+    "statement": "Diagnose permissions and start system app script"
+  },
+  "domain": "shell",
+  "environment": {
+    "feedback_type": "tool_output",
+    "has_runnable_feedback": true,
+    "type": "harness"
+  },
+  "labels": {
+    "failure_mode": null,
+    "failure_mode_confidence": 0.0,
+    "failure_mode_evidence": [],
+    "harness_policy_signal": null,
+    "harness_policy_signal_confidence": 0.0,
+    "harness_policy_signal_evidence": [],
+    "metabolization_candidate": null,
+    "metabolization_candidate_confidence": 0.0,
+    "metabolization_candidate_evidence": []
+  },
+  "metadata": {
+    "duplicate_errors": false,
+    "error_steps": [
+      2
+    ],
+    "low_cost_inspection_after_error": true,
+    "same_path_continuation_after_second_error": false,
+    "strategy_revision_steps": [],
+    "task_complete_steps": [
+      10
+    ],
+    "test_failed_steps": [],
+    "test_passed_steps": [],
+    "trace_source": "live_harness_capture"
+  },
+  "outcome": {
+    "confidence": 0.0,
+    "evidence": [],
+    "reward": null,
+    "score": null,
+    "settlement_quality": "recovered_success",
+    "success": true
+  },
+  "payment": {
+    "api_calls": 0,
+    "commands": 0,
+    "elapsed_steps": 11,
+    "error_count": 1,
+    "estimated_complexity": "unknown",
+    "evidence": [],
+    "page_actions": 0,
+    "tool_calls": 3,
+    "turns": 11
+  },
+  "representational_state": {
+    "confidence": 0.0,
+    "desired": "unknown",
+    "evidence": [],
+    "path_shape": "unknown",
+    "start": "unknown"
+  },
+  "run_id": "baseline-018-shell-error-diagnostic-recovery",
+  "source_uri": "live_harness_trace://baseline-018-shell-error-diagnostic-recovery",
+  "task_id": "baseline-018-shell-error-diagnostic-recovery"
+}

@@ -1,5 +1,5 @@
 {
-  "ended_at": "2026-05-31T13:18:27.624049+00:00",
+  "ended_at": "2026-05-31T14:16:47.320215+00:00",
   "error_count": 2,
   "final_outcome": "failure",
   "run_id": "baseline-013-coding-duplicate-error-no-recovery",
@@ -13,7 +13,7 @@
     "task_type": "coding"
   },
   "settlement_quality": "failure_with_signal",
-  "started_at": "2026-05-31T13:18:27.623440+00:00",
+  "started_at": "2026-05-31T14:16:47.319549+00:00",
   "strategy_revision_count": 0,
   "task_complete_count": 1,
   "test_event_count": 0,

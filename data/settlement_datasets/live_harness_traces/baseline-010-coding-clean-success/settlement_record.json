@@ -76,15 +76,6 @@
     "duplicate_errors": false,
     "error_steps": [],
     "low_cost_inspection_after_error": false,
-    "run_metadata": {
-      "activation_enabled": false,
-      "baseline_pass": true,
-      "desired_direction": "Add health check endpoint to API server",
-      "domain": "code",
-      "policy_mode": "shadow_only",
-      "task_id": "baseline-010-coding-clean-success",
-      "task_type": "coding"
-    },
     "same_path_continuation_after_second_error": false,
     "strategy_revision_steps": [],
     "task_complete_steps": [
@@ -94,7 +85,7 @@
     "test_passed_steps": [
       5
     ],
-    "trace_source": "live_harness_trace"
+    "trace_source": "live_harness_capture"
   },
   "outcome": {
     "confidence": 0.0,
@@ -122,6 +113,7 @@
     "path_shape": "unknown",
     "start": "unknown"
   },
+  "run_id": "baseline-010-coding-clean-success",
   "source_uri": "live_harness_trace://baseline-010-coding-clean-success",
   "task_id": "baseline-010-coding-clean-success"
 }

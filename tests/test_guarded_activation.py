@@ -833,3 +833,200 @@ def test_adaptive_actions_override_non_adaptive_message():
     result = detect_adaptive_recovery(events_between, current)
     # Current event has non-adaptive "retry" -> non-adaptive wins
     assert result["post_error_behavior"] == "non_adaptive_continuation"
+
+
+def test_expanded_experiment_summary_metrics():
+    """Verify that expanded metrics are computed correctly in experiment summary."""
+    traces = [
+        _baseline_trace(
+            "run-helpful",
+            [
+                _event(0, "tool_result", "ImportError: auth failed", run_id="run-helpful"),
+                _event(1, "tool_result", "ImportError: db failed", run_id="run-helpful"),
+            ],
+            outcome="failure",
+            settlement_quality="failure_with_signal",
+        ),
+        _baseline_trace(
+            "run-suppressed",
+            [
+                _event(0, "tool_result", "Error: first", run_id="run-suppressed"),
+                _event(1, "tool_call", "cat config.py", run_id="run-suppressed"),
+                _event(2, "tool_result", "Error: second", run_id="run-suppressed"),
+            ],
+            outcome="success",
+            settlement_quality="recovered_success",
+        ),
+    ]
+    config = GuardedActivationConfig(
+        activation_enabled=True,
+        policy_id=REFINED_POLICY_ID,
+        mode="guarded",
+    )
+    results = run_guarded_experiment(traces, config)
+    summary = results["experiment_summary"]
+
+    assert "false_positive_rate" in summary
+    assert "suppression_accuracy" in summary
+    assert "retained_helpful_cases_from_002" in summary
+    assert "lost_helpful_cases" in summary
+    assert "repeated_error_loop_reduction" in summary
+    assert "payment_cost" in summary
+    assert "settlement_quality_distribution" in summary
+    assert "task_type_distribution" in summary
+    assert "gate_passed" in summary
+    assert "gate_criteria" in summary
+
+    assert summary["false_positive_rate"] == 0.0
+    assert summary["suppression_accuracy"] == 1.0
+    assert summary["retained_helpful_cases_from_002"] == 0  # mock run-helpful is not baseline-001/004
+    assert summary["payment_cost"] == 0.0
+    assert summary["settlement_quality_distribution"]["recovered_success"] == 1
+    assert summary["settlement_quality_distribution"]["failure_with_signal"] == 1
+
+
+def test_suppressions_output_file_checking():
+    """Verify write_experiment_artifacts writes suppressions output file."""
+    traces = [
+        _baseline_trace(
+            "run-suppressed",
+            [
+                _event(0, "tool_result", "Error: first", run_id="run-suppressed"),
+                _event(1, "tool_call", "cat config.py", run_id="run-suppressed"),
+                _event(2, "tool_result", "Error: second", run_id="run-suppressed"),
+            ],
+            outcome="success",
+            settlement_quality="recovered_success",
+        ),
+    ]
+    config = GuardedActivationConfig(
+        activation_enabled=True,
+        policy_id=REFINED_POLICY_ID,
+        mode="guarded",
+    )
+    results = run_guarded_experiment(traces, config)
+
+    with tempfile.TemporaryDirectory() as td:
+        from pathlib import Path
+        paths = write_experiment_artifacts(results, Path(td))
+        
+        assert paths["suppressions"].exists()
+        suppressions = read_records_jsonl(paths["suppressions"])
+        assert len(suppressions) == 1
+        assert suppressions[0]["suppression_reason"] == "adaptive_recovery_behavior_detected"
+
+
+def test_false_positive_rate_calculation():
+    """Verify false-positive rate is correctly computed."""
+    traces = [
+        _baseline_trace(
+            "run-fp",
+            [
+                _event(0, "tool_result", "ImportError: first", run_id="run-fp"),
+                _event(1, "tool_result", "ImportError: second", run_id="run-fp"),
+            ],
+            outcome="success",
+            settlement_quality="recovered_success",
+        ),
+    ]
+    config = GuardedActivationConfig(
+        activation_enabled=True,
+        policy_id=REFINED_POLICY_ID,
+        mode="guarded",
+    )
+    results = run_guarded_experiment(traces, config)
+    summary = results["experiment_summary"]
+
+    assert summary["total_policy_fires"] == 1
+    assert summary["false_positive_count"] == 1
+    assert summary["false_positive_rate"] == 1.0
+
+
+def test_candidate_for_activation_gate_logic():
+    """Verify candidate_for_activation gate check passes and fails under proper conditions."""
+    # Condition A: Fails gate because we have only 4 interventions (<5)
+    traces_below_5 = [
+        _baseline_trace(
+            f"run-{i}",
+            [
+                _event(0, "tool_result", f"Error: first_{i}", run_id=f"run-{i}"),
+                _event(1, "tool_result", f"Error: second_{i}", run_id=f"run-{i}"),
+            ],
+            outcome="failure",
+            settlement_quality="failure_with_signal",
+        )
+        for i in range(4)
+    ]
+    config = GuardedActivationConfig(
+        activation_enabled=True,
+        policy_id=REFINED_POLICY_ID,
+        mode="guarded",
+    )
+    results = run_guarded_experiment(traces_below_5, config)
+    assert results["experiment_summary"]["gate_passed"] is False
+    assert results["experiment_summary"]["status_recommendation"] == "tested_needs_more_evidence"
+
+    # Condition B: Passes gate when >=5 interventions, 0 harmful, and <=10% FPR
+    traces_passing = [
+        _baseline_trace(
+            f"run-{i}",
+            [
+                _event(0, "tool_result", f"Error: first_{i}", run_id=f"run-{i}"),
+                _event(1, "tool_result", f"Error: second_{i}", run_id=f"run-{i}"),
+            ],
+            outcome="failure",
+            settlement_quality="failure_with_signal",
+        )
+        for i in range(5)
+    ]
+    results_passing = run_guarded_experiment(traces_passing, config)
+    assert results_passing["experiment_summary"]["gate_passed"] is True
+    assert results_passing["experiment_summary"]["status_recommendation"] == "candidate_for_activation"
+
+
+def test_payment_cost_reporting():
+    """Verify that payment cost is reported as 0.0 inside experiment summary."""
+    traces = [
+        _baseline_trace(
+            "run-1",
+            [
+                _event(0, "tool_result", "Error: first", run_id="run-1"),
+                _event(1, "tool_result", "Error: second", run_id="run-1"),
+            ],
+            outcome="failure",
+            settlement_quality="failure_with_signal",
+        ),
+    ]
+    config = GuardedActivationConfig(
+        activation_enabled=True,
+        policy_id=REFINED_POLICY_ID,
+        mode="guarded",
+    )
+    results = run_guarded_experiment(traces, config)
+    assert results["experiment_summary"]["payment_cost"] == 0.0
+
+
+def test_no_global_activation_and_metabolization_protection():
+    """Ensure that metabolized and globally_active are strictly false in expanded runs."""
+    traces = [
+        _baseline_trace(
+            "run-1",
+            [
+                _event(0, "tool_result", "Error: first", run_id="run-1"),
+                _event(1, "tool_result", "Error: second", run_id="run-1"),
+            ],
+            outcome="failure",
+            settlement_quality="failure_with_signal",
+        ),
+    ]
+    config = GuardedActivationConfig(
+        activation_enabled=True,
+        policy_id=REFINED_POLICY_ID,
+        mode="guarded",
+    )
+    results = run_guarded_experiment(traces, config)
+    summary = results["experiment_summary"]
+    
+    assert summary["metabolized"] is False
+    assert summary["globally_active"] is False
+

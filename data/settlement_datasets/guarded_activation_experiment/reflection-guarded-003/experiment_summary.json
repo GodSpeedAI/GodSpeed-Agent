@@ -1,0 +1,610 @@
+{
+  "activation_enabled": true,
+  "baseline_comparison": [
+    {
+      "assessment_evidence": [
+        "agent_failed_after_repeated_errors",
+        "no_strategy_revision_detected",
+        "same_path_continuation_observed"
+      ],
+      "baseline_error_count": 4,
+      "baseline_outcome": "failure",
+      "baseline_settlement_quality": "failure_with_signal",
+      "baseline_tool_calls": 3,
+      "baseline_total_steps": 10,
+      "error_count_delta": 0,
+      "guarded_error_count": 4,
+      "guarded_intervention_count": 1,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 3,
+      "guarded_total_steps": 10,
+      "helpfulness_assessment": "potentially_helpful",
+      "intervention_fired": true,
+      "intervention_step": 5,
+      "intervention_text": "Repeated unresolved errors detected.\n\nBefore continuing, revise the plan using the latest settlement feedback:\n\n1. What failed?\n2. What assumption may be wrong?\n3. What lower-payment action should happen next?\n4. What evidence would show the next step worked?",
+      "run_id": "baseline-001-coding-import-error-same-path",
+      "suppression_fired": false,
+      "tool_call_delta": 0,
+      "trigger_evidence": {
+        "continued_same_path_evidence": [
+          "multiple_distinct_unresolved_errors_before_revision",
+          "latest_event_type=tool_result"
+        ],
+        "error_events": [
+          {
+            "content": "ImportError: cannot import name 'UserModel' from 'app.models'",
+            "fingerprint": "importerror: cannot import name 'usermodel' from 'app.models'",
+            "step_index": 2
+          },
+          {
+            "content": "ImportError: cannot import name 'AuthToken' from 'app.auth'",
+            "fingerprint": "importerror: cannot import name 'authtoken' from 'app.auth'",
+            "step_index": 5
+          }
+        ],
+        "missing_revision_evidence": [
+          "no_strategy_revision_after_latest_error",
+          "last_strategy_revision_step=None"
+        ],
+        "recovery_opportunity_evidence": [
+          "run_not_task_complete",
+          "final_answer_not_emitted"
+        ]
+      }
+    },
+    {
+      "baseline_error_count": 3,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 4,
+      "baseline_total_steps": 14,
+      "error_count_delta": 0,
+      "guarded_error_count": 3,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 2,
+      "guarded_tool_calls": 4,
+      "guarded_total_steps": 14,
+      "intervention_fired": false,
+      "run_id": "baseline-002-debugging-test-failures-revision",
+      "suppression_evidence": [
+        "tool_call_inspection:cat /var/log/app/server.log | tail -50",
+        "tool_call_diagnostic:cat /var/log/app/server.log | tail -50",
+        "model_message_contains:check",
+        "model_message_diagnostic_intent"
+      ],
+      "suppression_fired": true,
+      "suppression_reason": "adaptive_recovery_behavior_detected",
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 2,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 4,
+      "baseline_total_steps": 12,
+      "error_count_delta": 0,
+      "guarded_error_count": 2,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 4,
+      "guarded_total_steps": 12,
+      "intervention_fired": false,
+      "run_id": "baseline-003-shell-permission-denied",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "assessment_evidence": [
+        "agent_failed_after_repeated_errors",
+        "no_strategy_revision_detected",
+        "same_path_continuation_observed"
+      ],
+      "baseline_error_count": 6,
+      "baseline_outcome": "failure",
+      "baseline_settlement_quality": "failure_with_signal",
+      "baseline_tool_calls": 3,
+      "baseline_total_steps": 10,
+      "error_count_delta": 0,
+      "guarded_error_count": 6,
+      "guarded_intervention_count": 1,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 3,
+      "guarded_total_steps": 10,
+      "helpfulness_assessment": "potentially_helpful",
+      "intervention_fired": true,
+      "intervention_step": 2,
+      "intervention_text": "Repeated unresolved errors detected.\n\nBefore continuing, revise the plan using the latest settlement feedback:\n\n1. What failed?\n2. What assumption may be wrong?\n3. What lower-payment action should happen next?\n4. What evidence would show the next step worked?",
+      "run_id": "baseline-004-test-running-flaky-timeouts",
+      "suppression_fired": false,
+      "tool_call_delta": 0,
+      "trigger_evidence": {
+        "continued_same_path_evidence": [
+          "multiple_distinct_unresolved_errors_before_revision",
+          "latest_event_type=tool_result"
+        ],
+        "error_events": [
+          {
+            "content": "pytest tests/integration/ -v --timeout=60",
+            "fingerprint": "pytest tests/integration/ -v --timeout=60",
+            "step_index": 1
+          },
+          {
+            "content": "FAILED tests/integration/test_api.py::test_concurrent_requests - TimeoutError: request timed out after 30s",
+            "fingerprint": "failed tests/integration/test_api.py::test_concurrent_requests - timeouterror: request timed out after 30s",
+            "step_index": 2
+          }
+        ],
+        "missing_revision_evidence": [
+          "no_strategy_revision_after_latest_error",
+          "last_strategy_revision_step=None"
+        ],
+        "recovery_opportunity_evidence": [
+          "run_not_task_complete",
+          "final_answer_not_emitted"
+        ]
+      }
+    },
+    {
+      "baseline_error_count": 3,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 4,
+      "baseline_total_steps": 14,
+      "error_count_delta": 0,
+      "guarded_error_count": 3,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 4,
+      "guarded_total_steps": 14,
+      "intervention_fired": false,
+      "run_id": "baseline-005-file-edit-syntax-error",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 0,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "clean_success",
+      "baseline_tool_calls": 2,
+      "baseline_total_steps": 10,
+      "error_count_delta": 0,
+      "guarded_error_count": 0,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 2,
+      "guarded_total_steps": 10,
+      "intervention_fired": false,
+      "run_id": "baseline-006-api-rate-limiting",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 2,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 4,
+      "baseline_total_steps": 14,
+      "error_count_delta": 0,
+      "guarded_error_count": 2,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 4,
+      "guarded_total_steps": 14,
+      "intervention_fired": false,
+      "run_id": "baseline-007-coding-type-error-inspection",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 3,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 4,
+      "baseline_total_steps": 11,
+      "error_count_delta": 0,
+      "guarded_error_count": 3,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 3,
+      "guarded_tool_calls": 4,
+      "guarded_total_steps": 11,
+      "intervention_fired": false,
+      "run_id": "baseline-008-debugging-missing-dependency",
+      "suppression_evidence": [
+        "tool_call_parameter_variation:pip install numpy==1.26.4 --index-url https://pypi.org/simpl"
+      ],
+      "suppression_fired": true,
+      "suppression_reason": "adaptive_recovery_behavior_detected",
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 2,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 0,
+      "baseline_total_steps": 12,
+      "error_count_delta": 0,
+      "guarded_error_count": 2,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 0,
+      "guarded_total_steps": 12,
+      "intervention_fired": false,
+      "run_id": "baseline-009-shell-disk-full",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 0,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "clean_success",
+      "baseline_tool_calls": 3,
+      "baseline_total_steps": 10,
+      "error_count_delta": 0,
+      "guarded_error_count": 0,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 3,
+      "guarded_total_steps": 10,
+      "intervention_fired": false,
+      "run_id": "baseline-010-coding-clean-success",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 5,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 4,
+      "baseline_total_steps": 13,
+      "error_count_delta": 0,
+      "guarded_error_count": 5,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 4,
+      "guarded_total_steps": 13,
+      "intervention_fired": false,
+      "run_id": "baseline-011-test-running-mixed-results",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 0,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "clean_success",
+      "baseline_tool_calls": 2,
+      "baseline_total_steps": 12,
+      "error_count_delta": 0,
+      "guarded_error_count": 0,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 2,
+      "guarded_total_steps": 12,
+      "intervention_fired": false,
+      "run_id": "baseline-012-api-connection-refused",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 2,
+      "baseline_outcome": "failure",
+      "baseline_settlement_quality": "failure_with_signal",
+      "baseline_tool_calls": 2,
+      "baseline_total_steps": 7,
+      "error_count_delta": 0,
+      "guarded_error_count": 2,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 2,
+      "guarded_total_steps": 7,
+      "intervention_fired": false,
+      "run_id": "baseline-013-coding-duplicate-error-no-recovery",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 2,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 3,
+      "baseline_total_steps": 10,
+      "error_count_delta": -1,
+      "guarded_error_count": 1,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 3,
+      "guarded_total_steps": 10,
+      "intervention_fired": false,
+      "run_id": "baseline-014-coding-final-turn-only-error",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 3,
+      "baseline_outcome": "failure",
+      "baseline_settlement_quality": "failure_with_signal",
+      "baseline_tool_calls": 3,
+      "baseline_total_steps": 10,
+      "error_count_delta": 0,
+      "guarded_error_count": 3,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 3,
+      "guarded_total_steps": 10,
+      "intervention_fired": false,
+      "run_id": "baseline-015-debugging-test-failure-changed-strategy",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 2,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 3,
+      "baseline_total_steps": 11,
+      "error_count_delta": -2,
+      "guarded_error_count": 0,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 3,
+      "guarded_total_steps": 11,
+      "intervention_fired": false,
+      "run_id": "baseline-016-api-tool-changed-arguments",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "assessment_evidence": [
+        "agent_failed_after_repeated_errors",
+        "no_strategy_revision_detected",
+        "same_path_continuation_observed"
+      ],
+      "baseline_error_count": 3,
+      "baseline_outcome": "failure",
+      "baseline_settlement_quality": "failure_with_signal",
+      "baseline_tool_calls": 2,
+      "baseline_total_steps": 9,
+      "error_count_delta": 0,
+      "guarded_error_count": 3,
+      "guarded_intervention_count": 1,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 2,
+      "guarded_total_steps": 9,
+      "helpfulness_assessment": "potentially_helpful",
+      "intervention_fired": true,
+      "intervention_step": 6,
+      "intervention_text": "Repeated unresolved errors detected.\n\nBefore continuing, revise the plan using the latest settlement feedback:\n\n1. What failed?\n2. What assumption may be wrong?\n3. What lower-payment action should happen next?\n4. What evidence would show the next step worked?",
+      "run_id": "baseline-017-file-edit-error-same-path",
+      "suppression_fired": false,
+      "tool_call_delta": 0,
+      "trigger_evidence": {
+        "continued_same_path_evidence": [
+          "multiple_distinct_unresolved_errors_before_revision",
+          "latest_event_type=tool_result"
+        ],
+        "error_events": [
+          {
+            "content": "SyntaxError: invalid syntax inside print statement",
+            "fingerprint": "syntaxerror: invalid syntax inside print statement",
+            "step_index": 3
+          },
+          {
+            "content": "SyntaxError: unmatched parenthesis inside format string",
+            "fingerprint": "syntaxerror: unmatched parenthesis inside format string",
+            "step_index": 6
+          }
+        ],
+        "missing_revision_evidence": [
+          "no_strategy_revision_after_latest_error",
+          "last_strategy_revision_step=None"
+        ],
+        "recovery_opportunity_evidence": [
+          "run_not_task_complete",
+          "final_answer_not_emitted"
+        ]
+      }
+    },
+    {
+      "baseline_error_count": 1,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 3,
+      "baseline_total_steps": 11,
+      "error_count_delta": 0,
+      "guarded_error_count": 1,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 3,
+      "guarded_total_steps": 11,
+      "intervention_fired": false,
+      "run_id": "baseline-018-shell-error-diagnostic-recovery",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "assessment_evidence": [
+        "agent_failed_after_repeated_errors",
+        "no_strategy_revision_detected",
+        "same_path_continuation_observed"
+      ],
+      "baseline_error_count": 3,
+      "baseline_outcome": "failure",
+      "baseline_settlement_quality": "failure_with_signal",
+      "baseline_tool_calls": 2,
+      "baseline_total_steps": 8,
+      "error_count_delta": 0,
+      "guarded_error_count": 3,
+      "guarded_intervention_count": 1,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 2,
+      "guarded_total_steps": 8,
+      "helpfulness_assessment": "potentially_helpful",
+      "intervention_fired": true,
+      "intervention_step": 5,
+      "intervention_text": "Repeated unresolved errors detected.\n\nBefore continuing, revise the plan using the latest settlement feedback:\n\n1. What failed?\n2. What assumption may be wrong?\n3. What lower-payment action should happen next?\n4. What evidence would show the next step worked?",
+      "run_id": "baseline-019-coding-repeated-error-same-path",
+      "suppression_fired": false,
+      "tool_call_delta": 0,
+      "trigger_evidence": {
+        "continued_same_path_evidence": [
+          "multiple_distinct_unresolved_errors_before_revision",
+          "latest_event_type=tool_result"
+        ],
+        "error_events": [
+          {
+            "content": "main.c:1:10: fatal error: foo.h: No such file or directory",
+            "fingerprint": "main.c:1:10: fatal error: foo.h: no such file or directory",
+            "step_index": 2
+          },
+          {
+            "content": "main.c:4:12: error: unknown type name 'bar_t'",
+            "fingerprint": "main.c:4:12: error: unknown type name 'bar_t'",
+            "step_index": 5
+          }
+        ],
+        "missing_revision_evidence": [
+          "no_strategy_revision_after_latest_error",
+          "last_strategy_revision_step=None"
+        ],
+        "recovery_opportunity_evidence": [
+          "run_not_task_complete",
+          "final_answer_not_emitted"
+        ]
+      }
+    },
+    {
+      "baseline_error_count": 1,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 1,
+      "baseline_total_steps": 5,
+      "error_count_delta": 0,
+      "guarded_error_count": 1,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 1,
+      "guarded_total_steps": 5,
+      "intervention_fired": false,
+      "run_id": "baseline-020-coding-clean-success-2",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "baseline_error_count": 1,
+      "baseline_outcome": "success",
+      "baseline_settlement_quality": "recovered_success",
+      "baseline_tool_calls": 2,
+      "baseline_total_steps": 8,
+      "error_count_delta": -1,
+      "guarded_error_count": 0,
+      "guarded_intervention_count": 0,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 2,
+      "guarded_total_steps": 8,
+      "intervention_fired": false,
+      "run_id": "baseline-021-debugging-single-error-recovery",
+      "suppression_fired": false,
+      "tool_call_delta": 0
+    },
+    {
+      "assessment_evidence": [
+        "agent_failed_after_repeated_errors",
+        "no_strategy_revision_detected",
+        "same_path_continuation_observed"
+      ],
+      "baseline_error_count": 3,
+      "baseline_outcome": "failure",
+      "baseline_settlement_quality": "failure_with_signal",
+      "baseline_tool_calls": 2,
+      "baseline_total_steps": 8,
+      "error_count_delta": 0,
+      "guarded_error_count": 3,
+      "guarded_intervention_count": 1,
+      "guarded_suppression_count": 0,
+      "guarded_tool_calls": 2,
+      "guarded_total_steps": 8,
+      "helpfulness_assessment": "potentially_helpful",
+      "intervention_fired": true,
+      "intervention_step": 5,
+      "intervention_text": "Repeated unresolved errors detected.\n\nBefore continuing, revise the plan using the latest settlement feedback:\n\n1. What failed?\n2. What assumption may be wrong?\n3. What lower-payment action should happen next?\n4. What evidence would show the next step worked?",
+      "run_id": "baseline-022-coding-repeated-error-same-path-3",
+      "suppression_fired": false,
+      "tool_call_delta": 0,
+      "trigger_evidence": {
+        "continued_same_path_evidence": [
+          "multiple_distinct_unresolved_errors_before_revision",
+          "latest_event_type=tool_result"
+        ],
+        "error_events": [
+          {
+            "content": "LinkError: undefined reference to 'helper_func'",
+            "fingerprint": "linkerror: undefined reference to 'helper_func'",
+            "step_index": 2
+          },
+          {
+            "content": "LinkError: cannot find -lhelper",
+            "fingerprint": "linkerror: cannot find -lhelper",
+            "step_index": 5
+          }
+        ],
+        "missing_revision_evidence": [
+          "no_strategy_revision_after_latest_error",
+          "last_strategy_revision_step=None"
+        ],
+        "recovery_opportunity_evidence": [
+          "run_not_task_complete",
+          "final_answer_not_emitted"
+        ]
+      }
+    }
+  ],
+  "error_count_delta_total": -4,
+  "experiment_id": "reflection-guarded-003",
+  "false_positive_count": 0,
+  "false_positive_rate": 0.0,
+  "fires_before_settlement": 5,
+  "gate_criteria": {
+    "at_least_5_interventions": true,
+    "evidence_reduced_loops_or_improved_recovery": true,
+    "false_positive_rate_lte_10pct": true,
+    "payment_increase_acceptable_and_documented": true,
+    "trigger_suppression_evidence_preserved": true,
+    "zero_harmful_interventions": true
+  },
+  "gate_passed": true,
+  "globally_active": false,
+  "harmful_intervention_count": 0,
+  "interventions_completed": 0,
+  "lost_helpful_cases": 0,
+  "max_fires_per_run": 1,
+  "metabolized": false,
+  "neutral_count": 12,
+  "payment_cost": 0.0,
+  "policy_id": "require_reflection_before_continuing_after_second_unresolved_error",
+  "policy_mode": "guarded",
+  "post_intervention_recovery_count": 0,
+  "potentially_helpful_count": 5,
+  "repeated_error_loop_reduction": 9,
+  "retained_helpful_cases_from_002": 2,
+  "settlement_quality_distribution": {
+    "clean_success": 3,
+    "failure_with_signal": 7,
+    "recovered_success": 12
+  },
+  "status_recommendation": "candidate_for_activation",
+  "suppressed_count": 2,
+  "suppression_accuracy": 1.0,
+  "task_type_distribution": {
+    "api_tool_use": 3,
+    "coding": 8,
+    "debugging": 4,
+    "file_edit": 2,
+    "shell": 3,
+    "test_running": 2
+  },
+  "tool_call_delta_total": 0,
+  "total_guarded_runs": 22,
+  "total_interventions": 5,
+  "total_policy_fires": 5,
+  "total_suppressions": 5,
+  "uncertain_count": 0
+}

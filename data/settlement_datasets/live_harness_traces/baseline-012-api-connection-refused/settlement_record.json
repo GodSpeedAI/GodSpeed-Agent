@@ -87,15 +87,6 @@
     "duplicate_errors": false,
     "error_steps": [],
     "low_cost_inspection_after_error": false,
-    "run_metadata": {
-      "activation_enabled": false,
-      "baseline_pass": true,
-      "desired_direction": "Verify payment gateway integration",
-      "domain": "api",
-      "policy_mode": "shadow_only",
-      "task_id": "baseline-012-api-connection-refused",
-      "task_type": "api_tool_use"
-    },
     "same_path_continuation_after_second_error": false,
     "strategy_revision_steps": [],
     "task_complete_steps": [
@@ -103,7 +94,7 @@
     ],
     "test_failed_steps": [],
     "test_passed_steps": [],
-    "trace_source": "live_harness_trace"
+    "trace_source": "live_harness_capture"
   },
   "outcome": {
     "confidence": 0.0,
@@ -131,6 +122,7 @@
     "path_shape": "unknown",
     "start": "unknown"
   },
+  "run_id": "baseline-012-api-connection-refused",
   "source_uri": "live_harness_trace://baseline-012-api-connection-refused",
   "task_id": "baseline-012-api-connection-refused"
 }

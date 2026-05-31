@@ -60,18 +60,18 @@ PYTHONPATH=. uv run python scripts/settlement_datasets/run_guarded_activation_ex
 
 ### Summary
 
-| Metric | reflection-guarded-001 (Before) | reflection-guarded-002 (After) | Change |
-|---|---|---|---|
-| Total guarded runs | 13 | 13 | — |
-| Total interventions | 4 | 2 | -2 |
-| Total suppressions | 0 | 5 | +5 |
-| Potentially helpful | 2 | 2 | 0 |
-| False positives | 2 | 0 | -2 |
-| Harmful | 0 | 0 | — |
-| Uncertain | 0 | 0 | — |
-| Neutral | 9 | 9 | — |
-| Suppressed runs | 0 | 2 | +2 |
-| Status | `tested_needs_more_evidence` | `tested_needs_more_evidence` | — |
+| Metric | reflection-guarded-001 (Before) | reflection-guarded-002 (After) | reflection-guarded-003 (Expanded) | Change (001 -> 003) |
+|---|---|---|---|---|
+| Total guarded runs | 13 | 13 | 22 | +9 |
+| Total interventions | 4 | 2 | 5 | +1 |
+| Total suppressions | 0 | 5 | 5 | +5 |
+| Potentially helpful | 2 | 2 | 5 | +3 |
+| False positives | 2 | 0 | 0 | -2 |
+| Harmful | 0 | 0 | 0 | — |
+| Uncertain | 0 | 0 | 0 | — |
+| Neutral | 9 | 9 | 15 | +6 |
+| Suppressed runs | 0 | 2 | 2 | +2 |
+| Status | `tested_needs_more_evidence` | `tested_needs_more_evidence` | `candidate_for_activation` | Promoted |
 
 ### Per-Run Comparison
 

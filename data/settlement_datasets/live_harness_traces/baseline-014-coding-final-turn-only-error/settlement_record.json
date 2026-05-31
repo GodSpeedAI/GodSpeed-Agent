@@ -1,0 +1,123 @@
+{
+  "affordance_path": {
+    "actions": [
+      {
+        "action_type": "model_message",
+        "content": "I need to refactor the calculator module and then clean up.",
+        "tool_name": null,
+        "turn_index": 0
+      },
+      {
+        "action_type": "tool_call",
+        "content": "cat api/server.py",
+        "tool_name": "bash",
+        "turn_index": 1
+      },
+      {
+        "action_type": "tool_call",
+        "content": "pytest tests/test_calculator.py",
+        "tool_name": "bash",
+        "turn_index": 3
+      },
+      {
+        "action_type": "model_message",
+        "content": "All tests pass. Now I'll clean up the temporary directory.",
+        "tool_name": null,
+        "turn_index": 5
+      },
+      {
+        "action_type": "tool_call",
+        "content": "rm -rf tmp_test_dir/",
+        "tool_name": "bash",
+        "turn_index": 6
+      }
+    ],
+    "observations": [
+      {
+        "content": "def index(): ...",
+        "tool_name": "bash",
+        "turn_index": 2
+      },
+      {
+        "content": "2 passed in 0.1s",
+        "tool_name": "bash",
+        "turn_index": 4
+      },
+      {
+        "content": "bash: rm: command not found",
+        "tool_name": "bash",
+        "turn_index": 7
+      }
+    ]
+  },
+  "dataset": "live_harness_trace",
+  "desired_direction": {
+    "source": "live_capture",
+    "statement": "Verify calculator and clean up temporary directory"
+  },
+  "domain": "code",
+  "environment": {
+    "feedback_type": "tool_output",
+    "has_runnable_feedback": true,
+    "type": "harness"
+  },
+  "labels": {
+    "failure_mode": null,
+    "failure_mode_confidence": 0.0,
+    "failure_mode_evidence": [],
+    "harness_policy_signal": null,
+    "harness_policy_signal_confidence": 0.0,
+    "harness_policy_signal_evidence": [],
+    "metabolization_candidate": null,
+    "metabolization_candidate_confidence": 0.0,
+    "metabolization_candidate_evidence": []
+  },
+  "metadata": {
+    "duplicate_errors": false,
+    "error_steps": [
+      7,
+      8
+    ],
+    "low_cost_inspection_after_error": false,
+    "same_path_continuation_after_second_error": false,
+    "strategy_revision_steps": [],
+    "task_complete_steps": [
+      9
+    ],
+    "test_failed_steps": [],
+    "test_passed_steps": [
+      4,
+      5
+    ],
+    "trace_source": "live_harness_capture"
+  },
+  "outcome": {
+    "confidence": 0.0,
+    "evidence": [],
+    "reward": null,
+    "score": null,
+    "settlement_quality": "recovered_success",
+    "success": true
+  },
+  "payment": {
+    "api_calls": 0,
+    "commands": 0,
+    "elapsed_steps": 10,
+    "error_count": 2,
+    "estimated_complexity": "unknown",
+    "evidence": [],
+    "page_actions": 0,
+    "tool_calls": 3,
+    "turns": 10
+  },
+  "representational_state": {
+    "confidence": 0.0,
+    "desired": "unknown",
+    "evidence": [],
+    "path_shape": "unknown",
+    "start": "unknown"
+  },
+  "run_id": "baseline-014-coding-final-turn-only-error",
+  "source_uri": "live_harness_trace://baseline-014-coding-final-turn-only-error",
+  "task_id": "baseline-014-coding-final-turn-only-error"
+}

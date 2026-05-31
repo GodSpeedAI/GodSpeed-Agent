@@ -1,5 +1,5 @@
 {
-  "ended_at": "2026-05-31T13:18:27.601364+00:00",
+  "ended_at": "2026-05-31T14:16:47.295909+00:00",
   "error_count": 3,
   "final_outcome": "success",
   "run_id": "baseline-002-debugging-test-failures-revision",
@@ -13,7 +13,7 @@
     "task_type": "debugging"
   },
   "settlement_quality": "recovered_success",
-  "started_at": "2026-05-31T13:18:27.599985+00:00",
+  "started_at": "2026-05-31T14:16:47.294974+00:00",
   "strategy_revision_count": 1,
   "task_complete_count": 1,
   "test_event_count": 1,

@@ -1,6 +1,6 @@
 {
   "activation_enabled": false,
-  "collected_at": "2026-05-31T13:18:27.624985+00:00",
+  "collected_at": "2026-05-31T14:16:47.339497+00:00",
   "policy_mode": "shadow_only",
   "runs": [
     {
@@ -119,7 +119,88 @@
       "settlement_quality": "failure_with_signal",
       "task_type": "coding",
       "total_steps": 7
+    },
+    {
+      "domain": "code",
+      "error_count": 2,
+      "final_outcome": "success",
+      "run_id": "baseline-014-coding-final-turn-only-error",
+      "settlement_quality": "recovered_success",
+      "task_type": "coding",
+      "total_steps": 10
+    },
+    {
+      "domain": "code",
+      "error_count": 3,
+      "final_outcome": "failure",
+      "run_id": "baseline-015-debugging-test-failure-changed-strategy",
+      "settlement_quality": "failure_with_signal",
+      "task_type": "debugging",
+      "total_steps": 10
+    },
+    {
+      "domain": "api",
+      "error_count": 2,
+      "final_outcome": "success",
+      "run_id": "baseline-016-api-tool-changed-arguments",
+      "settlement_quality": "recovered_success",
+      "task_type": "api_tool_use",
+      "total_steps": 11
+    },
+    {
+      "domain": "code",
+      "error_count": 3,
+      "final_outcome": "failure",
+      "run_id": "baseline-017-file-edit-error-same-path",
+      "settlement_quality": "failure_with_signal",
+      "task_type": "file_edit",
+      "total_steps": 9
+    },
+    {
+      "domain": "shell",
+      "error_count": 1,
+      "final_outcome": "success",
+      "run_id": "baseline-018-shell-error-diagnostic-recovery",
+      "settlement_quality": "recovered_success",
+      "task_type": "shell",
+      "total_steps": 11
+    },
+    {
+      "domain": "code",
+      "error_count": 3,
+      "final_outcome": "failure",
+      "run_id": "baseline-019-coding-repeated-error-same-path",
+      "settlement_quality": "failure_with_signal",
+      "task_type": "coding",
+      "total_steps": 8
+    },
+    {
+      "domain": "code",
+      "error_count": 1,
+      "final_outcome": "success",
+      "run_id": "baseline-020-coding-clean-success-2",
+      "settlement_quality": "recovered_success",
+      "task_type": "coding",
+      "total_steps": 5
+    },
+    {
+      "domain": "code",
+      "error_count": 1,
+      "final_outcome": "success",
+      "run_id": "baseline-021-debugging-single-error-recovery",
+      "settlement_quality": "recovered_success",
+      "task_type": "debugging",
+      "total_steps": 8
+    },
+    {
+      "domain": "code",
+      "error_count": 3,
+      "final_outcome": "failure",
+      "run_id": "baseline-022-coding-repeated-error-same-path-3",
+      "settlement_quality": "failure_with_signal",
+      "task_type": "coding",
+      "total_steps": 8
     }
   ],
-  "total_runs": 13
+  "total_runs": 22
 }

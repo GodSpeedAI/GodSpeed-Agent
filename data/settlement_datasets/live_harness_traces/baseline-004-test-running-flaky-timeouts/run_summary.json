@@ -1,5 +1,5 @@
 {
-  "ended_at": "2026-05-31T13:18:27.605680+00:00",
+  "ended_at": "2026-05-31T14:16:47.300149+00:00",
   "error_count": 6,
   "final_outcome": "failure",
   "run_id": "baseline-004-test-running-flaky-timeouts",
@@ -13,7 +13,7 @@
     "task_type": "test_running"
   },
   "settlement_quality": "failure_with_signal",
-  "started_at": "2026-05-31T13:18:27.604142+00:00",
+  "started_at": "2026-05-31T14:16:47.298353+00:00",
   "strategy_revision_count": 0,
   "task_complete_count": 1,
   "test_event_count": 0,
