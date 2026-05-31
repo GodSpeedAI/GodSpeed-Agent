@@ -7,11 +7,11 @@ trigger:
   settlement_quality: failure_with_signal
   has_failure_condition_evidence: true
 negative_conditions:
-- settlement_quality_is_not_failure_with_signal
-- no_failure_condition_evidence_available
+  - settlement_quality_is_not_failure_with_signal
+  - no_failure_condition_evidence_available
 required_evidence:
-- settlement_quality_is_failure_with_signal
-- failure_condition_has_observable_evidence_test_output_error_message_or_tool_feedback
+  - settlement_quality_is_failure_with_signal
+  - failure_condition_has_observable_evidence_test_output_error_message_or_tool_feedback
 action:
   require_operator: failure_analysis
   record: error_correction_signal

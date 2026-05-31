@@ -21,31 +21,31 @@ PY
 
 The pass evaluated `332` high-confidence policy-record pairs per target policy from the evidence accumulation settlement surface. It produced `664` target-policy shadow results and `5` would-fire events.
 
-| Policy | Mined Support | Would Fire | Helpful | Harmful | Uncertain | Recommendation |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| `require_reflection_after_repeated_errors` | 31 | 2 | 0 | 0 | 2 | `refine` |
-| `require_explicit_settlement_for_failure` | 8 | 3 | 2 | 0 | 1 | `refine` |
+| Policy                                     | Mined Support | Would Fire | Helpful | Harmful | Uncertain | Recommendation |
+| ------------------------------------------ | ------------: | ---------: | ------: | ------: | --------: | -------------- |
+| `require_reflection_after_repeated_errors` |            31 |          2 |       0 |       0 |         2 | `refine`       |
+| `require_explicit_settlement_for_failure`  |             8 |          3 |       2 |       0 |         1 | `refine`       |
 
 ## Uncertainty Reason Distribution
 
-| Policy | Distribution |
-| --- | --- |
-| `require_reflection_after_repeated_errors` | `{"no_recovery_opportunity": 2}` |
-| `require_explicit_settlement_for_failure` | `{"policy_would_fire_too_late": 1}` |
+| Policy                                     | Distribution                        |
+| ------------------------------------------ | ----------------------------------- |
+| `require_reflection_after_repeated_errors` | `{"no_recovery_opportunity": 2}`    |
+| `require_explicit_settlement_for_failure`  | `{"policy_would_fire_too_late": 1}` |
 
 ## Fire Timing Distribution
 
-| Policy | Distribution |
-| --- | --- |
-| `require_reflection_after_repeated_errors` | `{"final_turn": 2}` |
-| `require_explicit_settlement_for_failure` | `{"after_failure_already_settled": 3}` |
+| Policy                                     | Distribution                           |
+| ------------------------------------------ | -------------------------------------- |
+| `require_reflection_after_repeated_errors` | `{"final_turn": 2}`                    |
+| `require_explicit_settlement_for_failure`  | `{"after_failure_already_settled": 3}` |
 
 ## Recovery Opportunity Distribution
 
-| Policy | Recovery Opportunity Count | Helpful With Recovery | Uncertain With Recovery | Fires After Failure Settled |
-| --- | ---: | ---: | ---: | ---: |
-| `require_reflection_after_repeated_errors` | 0 | 0 | 0 | 0 |
-| `require_explicit_settlement_for_failure` | 0 | 0 | 0 | 3 |
+| Policy                                     | Recovery Opportunity Count | Helpful With Recovery | Uncertain With Recovery | Fires After Failure Settled |
+| ------------------------------------------ | -------------------------: | --------------------: | ----------------------: | --------------------------: |
+| `require_reflection_after_repeated_errors` |                          0 |                     0 |                       0 |                           0 |
+| `require_explicit_settlement_for_failure`  |                          0 |                     0 |                       0 |                           3 |
 
 ## Evidence Packs
 

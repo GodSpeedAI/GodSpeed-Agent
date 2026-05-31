@@ -7,11 +7,11 @@ trigger:
   error_count_gte: 3
   errors_are_unresolved: true
 negative_conditions:
-- errors_are_resolved_in_subsequent_turns
-- error_count_is_only_analysis_mentions
+  - errors_are_resolved_in_subsequent_turns
+  - error_count_is_only_analysis_mentions
 required_evidence:
-- at_least_3_error_outputs_from_environment_or_tool
-- errors_remain_unresolved_at_trace_end_or_last_3_turns
+  - at_least_3_error_outputs_from_environment_or_tool
+  - errors_remain_unresolved_at_trace_end_or_last_3_turns
 action:
   require_operator: reflection
   block_next_action_until: revised_plan_exists
