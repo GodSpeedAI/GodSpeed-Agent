@@ -123,6 +123,7 @@ def validate_enterprise_readiness(
         "cybernetic_nav.review_positive_disintegration",
         "cybernetic_nav.write_ledger_event",
         "cybernetic_nav.read_developmental_memory",
+        "cybernetic_nav.search_developmental_memory",
         "cybernetic_nav.start_direction",
         "cybernetic_nav.review_horizon",
         "cybernetic_nav.record_settlement",
@@ -135,10 +136,14 @@ def validate_enterprise_readiness(
     cli_commands = set(build_parser()._subparsers._group_actions[0].choices.keys())
     checks["public_cognitive_surfaces"] = _check(
         "cognitive-surfaces" in cli_commands
-        and "cybernetic_nav.cognitive_surfaces" in set(TOOL_NAMES),
+        and "cybernetic_nav.cognitive_surfaces" in set(TOOL_NAMES)
+        and "search-developmental-memory" in cli_commands
+        and "cybernetic_nav.search_developmental_memory" in set(TOOL_NAMES),
         {
             "cli_command_available": "cognitive-surfaces" in cli_commands,
             "mcp_tool_available": "cybernetic_nav.cognitive_surfaces" in set(TOOL_NAMES),
+            "developmental_memory_search_cli_available": "search-developmental-memory" in cli_commands,
+            "developmental_memory_search_mcp_available": "cybernetic_nav.search_developmental_memory" in set(TOOL_NAMES),
         },
     )
 
@@ -203,10 +208,31 @@ def validate_enterprise_readiness(
             {"id": "sim-cap", "lifecycle_state": "metabolized", "evidence_source": "simulation"},
         )
         critique = runtime.review_self_critique()
+        semantic_search = LedgerStore(scratch_root).search_developmental_memory(
+            "validation affordable",
+            limit=1,
+        )
         checks["runtime_workflow"] = _check(
             review["next_affordance"]["id"] == "validation-affordance"
             and settlement["status"] == "success",
             {"direction_id": direction["id"], "settlement_status": settlement["status"]},
+        )
+
+        checks["developmental_memory"] = _check(
+            set(lineage) == {
+                "paid_paths",
+                "failed_settlements",
+                "substrate_capabilities",
+                "revised_critique_findings",
+            }
+            and semantic_search["provider"] == "ruvector",
+            {
+                "lineage_query_available": True,
+                "lineage_keys": sorted(lineage),
+                "semantic_search_available": True,
+                "semantic_search_provider": semantic_search["provider"],
+                "semantic_search_result_count": semantic_search["result_count"],
+            },
         )
 
         snapshot = call_tool(

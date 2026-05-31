@@ -1,0 +1,27 @@
+{
+  "command_count": 15431,
+  "error_count": 868,
+  "expanded_total_traces": 600,
+  "labeled_record_count": 321,
+  "normalized_record_count": 600,
+  "null_reward_count": 600,
+  "parse_failure_trace_count": 208,
+  "parse_failure_turn_count": 650,
+  "processed_additional_traces": 500,
+  "requested_additional_traces": 500,
+  "source_distribution": {
+    "code_contests": 120,
+    "codeforces": 120,
+    "freelancer": 120,
+    "nl2bash": 120,
+    "staqc": 120
+  },
+  "task_complete_marker_count": 595,
+  "task_complete_true_count": 231,
+  "teacher_distribution": {
+    "GLM-4.6": 120,
+    "GPT 5.1 Nano": 360,
+    "GPT-5-mini": 120
+  },
+  "unknown_label_count": 264
+}

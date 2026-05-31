@@ -16,6 +16,7 @@ from scripts.settlement_datasets.evaluate_policies_shadow import (
     _check_trigger,
     compute_promotion_scores,
     evaluate_policies_shadow,
+    generate_policy_evidence_packs,
 )
 from scripts.settlement_datasets.replay_policy_evals import (
     compute_replay_summary,
@@ -167,8 +168,9 @@ class TestWouldHaveFiredResultGeneration:
         records = _load_records()
         policies = _load_policies()
         results = evaluate_policies_shadow(records, policies, min_confidence=0.0)
+        active_policies = [p for p in policies if p.get("status") != "superseded"]
         assert len(results) > 0
-        assert len(results) == len(records) * len(policies)
+        assert len(results) == len(records) * len(active_policies)
 
     def test_each_result_has_required_fields(self):
         records = _load_records()
@@ -182,6 +184,92 @@ class TestWouldHaveFiredResultGeneration:
             assert "false_positive_risk" in r
             assert "payment_risk" in r
 
+    def test_would_fire_result_includes_timing_and_recovery_fields(self):
+        policy = _make_policy(
+            policy_id="late_edit_policy",
+            trigger={"early_specific_action": True, "turn_index_lt": 4},
+        )
+        record = _make_record(turns=4)
+        record["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 3, "content": "edit file"},
+        ]
+
+        results = evaluate_policies_shadow([record], [policy], min_confidence=0.0)
+
+        assert results[0]["would_fire"] is True
+        assert results[0]["fire_turn_index"] == 3
+        assert results[0]["fire_timing"] == "final_turn"
+        assert results[0]["remaining_turns_after_fire"] == 0
+        assert results[0]["recovery_opportunity"] is False
+        assert results[0]["recovery_opportunity_evidence"]
+
+    def test_uncertain_result_includes_reason_and_evidence(self):
+        policy = _make_policy(
+            policy_id="reflection_policy",
+            trigger={"error_count_gte": 3},
+            failure_modes=["tool_thrashing"],
+        )
+        record = _make_record(
+            error_count=4,
+            settlement_quality="partial_success",
+            failure_mode="tool_thrashing",
+            turns=6,
+        )
+        record["affordance_path"]["observations"] = [
+            {"turn_index": 1, "role": "user", "content": "Traceback: fail 1"},
+            {"turn_index": 2, "role": "user", "content": "Error: fail 2"},
+            {"turn_index": 3, "role": "user", "content": "Exception: fail 3"},
+        ]
+        record["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 4, "content": "retry command"},
+            {"action_type": "analysis", "turn_index": 5, "content": "inspect failure"},
+        ]
+
+        results = evaluate_policies_shadow([record], [policy], min_confidence=0.0)
+
+        assert results[0]["counterfactual_assessment"] == "uncertain"
+        assert results[0]["uncertainty_reason"] == "conflicting_settlement_evidence"
+        assert results[0]["uncertainty_evidence"]
+
+    def test_settlement_quality_trigger_marks_failure_already_settled(self):
+        policy = _make_policy(
+            policy_id="failure_policy",
+            trigger={
+                "settlement_quality": "failure_with_signal",
+                "has_failure_condition_evidence": True,
+            },
+            failure_modes=["failed_recovery"],
+        )
+        record = _make_record(
+            error_count=2,
+            settlement_quality="failure_with_signal",
+            failure_mode="failed_recovery",
+            turns=5,
+        )
+
+        results = evaluate_policies_shadow([record], [policy], min_confidence=0.0)
+
+        assert results[0]["would_fire"] is True
+        assert results[0]["fire_timing"] == "after_failure_already_settled"
+        assert results[0]["recovery_opportunity"] is False
+
+    def test_target_policy_filter_limits_shadow_results(self):
+        records = [_make_record(error_count=4), _make_record(error_count=1)]
+        policies = [
+            _make_policy(policy_id="target_policy", trigger={"error_count_gte": 3}),
+            _make_policy(policy_id="other_policy", trigger={"error_count_gte": 1}),
+        ]
+
+        results = evaluate_policies_shadow(
+            records,
+            policies,
+            min_confidence=0.0,
+            target_policy_ids={"target_policy"},
+        )
+
+        assert {r["policy_id"] for r in results} == {"target_policy"}
+        assert len(results) == len(records)
+
 
 class TestCounterfactualAssessment:
     def test_helpful_on_failure_with_matching_mode(self):
@@ -189,13 +277,13 @@ class TestCounterfactualAssessment:
         rec = _make_record(
             settlement_quality="failure_with_signal", failure_mode="tool_thrashing"
         )
-        assessment, _, _, _ = _assess_counterfactual(policy, rec, fired=True)
+        assessment, *_ = _assess_counterfactual(policy, rec, fired=True)
         assert assessment == "likely_helpful"
 
     def test_harmful_on_clean_success_no_failure(self):
         policy = _make_policy(failure_modes=["tool_thrashing"])
         rec = _make_record(settlement_quality="clean_success", failure_mode=None)
-        assessment, _, payment_risk, fp_risk = _assess_counterfactual(
+        assessment, _, payment_risk, fp_risk, *_ = _assess_counterfactual(
             policy, rec, fired=True
         )
         assert assessment == "likely_harmful"
@@ -206,13 +294,13 @@ class TestCounterfactualAssessment:
         rec = _make_record(
             settlement_quality="partial_success", failure_mode="tool_thrashing"
         )
-        assessment, _, _, _ = _assess_counterfactual(policy, rec, fired=True)
+        assessment, *_ = _assess_counterfactual(policy, rec, fired=True)
         assert assessment == "uncertain"
 
     def test_no_effect_when_not_fired(self):
         policy = _make_policy()
         rec = _make_record()
-        assessment, rationale, _, _ = _assess_counterfactual(policy, rec, fired=False)
+        assessment, rationale, *_ = _assess_counterfactual(policy, rec, fired=False)
         assert assessment == "no_effect"
         assert "not met" in rationale
 
@@ -235,6 +323,12 @@ class TestPromotionScoring:
             assert "would_fire_count" in s
             assert "likely_helpful_count" in s
             assert "likely_harmful_count" in s
+            assert "uncertainty_reason_distribution" in s
+            assert "fire_timing_distribution" in s
+            assert "recovery_opportunity_count" in s
+            assert "helpful_with_recovery_opportunity_count" in s
+            assert "uncertain_with_recovery_opportunity_count" in s
+            assert "fires_after_failure_settled_count" in s
             assert "recommendation" in s
             assert s["recommendation"] in (
                 "keep_proposed",
@@ -280,12 +374,76 @@ class TestPromotionScoring:
         scores = compute_promotion_scores(results, [policy])
         assert scores[0]["recommendation"] in ("reject", "refine")
 
+    def test_summary_rolls_up_uncertainty_timing_and_recovery(self):
+        policy = _make_policy(
+            policy_id="summary_policy",
+            trigger={"error_count_gte": 3},
+            failure_modes=["tool_thrashing"],
+        )
+        uncertain_record = _make_record(
+            error_count=3,
+            settlement_quality="partial_success",
+            failure_mode="tool_thrashing",
+            turns=6,
+        )
+        uncertain_record["affordance_path"]["observations"] = [
+            {"turn_index": 1, "role": "user", "content": "Error: fail 1"},
+            {"turn_index": 2, "role": "user", "content": "Error: fail 2"},
+            {"turn_index": 3, "role": "user", "content": "Error: fail 3"},
+        ]
+        uncertain_record["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 4, "content": "retry"},
+        ]
+
+        settled_failure_policy = _make_policy(
+            policy_id="settled_failure_policy",
+            trigger={
+                "settlement_quality": "failure_with_signal",
+                "has_failure_condition_evidence": True,
+            },
+            failure_modes=["failed_recovery"],
+        )
+        settled_failure_record = _make_record(
+            error_count=2,
+            settlement_quality="failure_with_signal",
+            failure_mode="failed_recovery",
+            turns=5,
+        )
+
+        uncertain_results = evaluate_policies_shadow(
+            [uncertain_record], [policy], min_confidence=0.0
+        )
+        settled_failure_results = evaluate_policies_shadow(
+            [settled_failure_record], [settled_failure_policy], min_confidence=0.0
+        )
+        scores = compute_promotion_scores(
+            uncertain_results + settled_failure_results,
+            [policy, settled_failure_policy],
+        )
+
+        summary_policy_score = next(
+            score for score in scores if score["policy_id"] == "summary_policy"
+        )
+        assert summary_policy_score["uncertainty_reason_distribution"] == {
+            "conflicting_settlement_evidence": 1
+        }
+        assert summary_policy_score["fire_timing_distribution"] == {"late": 1}
+        assert summary_policy_score["recovery_opportunity_count"] == 1
+        assert summary_policy_score["uncertain_with_recovery_opportunity_count"] == 1
+
+        settled_failure_score = next(
+            score
+            for score in scores
+            if score["policy_id"] == "settled_failure_policy"
+        )
+        assert settled_failure_score["fires_after_failure_settled_count"] == 1
+
 
 class TestFalsePositiveRiskEstimation:
     def test_fp_risk_high_on_clean_success_firing(self):
         policy = _make_policy(failure_modes=["tool_thrashing"])
         rec = _make_record(settlement_quality="clean_success", failure_mode=None)
-        _, _, _, fp_risk = _assess_counterfactual(policy, rec, fired=True)
+        _, _, _, fp_risk, *_ = _assess_counterfactual(policy, rec, fired=True)
         assert fp_risk == "high"
 
     def test_fp_risk_low_on_failure_firing(self):
@@ -295,8 +453,76 @@ class TestFalsePositiveRiskEstimation:
             failure_mode="tool_thrashing",
             error_count=5,
         )
-        _, _, _, fp_risk = _assess_counterfactual(policy, rec, fired=True)
+        _, _, _, fp_risk, *_ = _assess_counterfactual(policy, rec, fired=True)
         assert fp_risk == "low"
+
+
+class TestPolicyEvidencePacks:
+    def test_evidence_pack_generation_writes_target_policy_markdown(self):
+        policy = _make_policy(
+            policy_id="require_reflection_after_repeated_errors",
+            trigger={"error_count_gte": 3, "errors_are_unresolved": True},
+            failure_modes=["tool_thrashing"],
+        )
+        record = _make_record(
+            error_count=3,
+            settlement_quality="partial_success",
+            failure_mode="tool_thrashing",
+            turns=6,
+        )
+        record["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "Error: first failure"},
+            {"turn_index": 2, "content": "Error: second failure"},
+            {"turn_index": 3, "content": "Error: third failure"},
+        ]
+        record["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 4, "content": "retry command"},
+        ]
+        results = evaluate_policies_shadow(
+            [record],
+            [policy],
+            min_confidence=0.0,
+            target_policy_ids={policy["id"]},
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            written = generate_policy_evidence_packs(
+                results,
+                [policy],
+                td,
+                target_policy_ids={policy["id"]},
+            )
+
+            assert len(written) == 1
+            body = written[0].read_text()
+            assert "# require_reflection_after_repeated_errors" in body
+            assert "Policy Definition" in body
+            assert "Uncertain Examples By Reason" in body
+            assert "Fire Timing Distribution" in body
+            assert "Recovery Opportunity Distribution" in body
+            assert "Recommendation" in body
+
+    def test_evidence_pack_generation_only_writes_target_policies(self):
+        target = _make_policy(policy_id="require_explicit_settlement_for_failure")
+        other = _make_policy(policy_id="unrelated_policy")
+        results = evaluate_policies_shadow(
+            [_make_record(error_count=4)],
+            [target, other],
+            min_confidence=0.0,
+            target_policy_ids={target["id"]},
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            written = generate_policy_evidence_packs(
+                results,
+                [target, other],
+                td,
+                target_policy_ids={target["id"]},
+            )
+
+            assert [path.name for path in written] == [
+                "require_explicit_settlement_for_failure.md"
+            ]
 
 
 class TestEvalReplayMatching:
@@ -315,11 +541,17 @@ class TestEvalReplayMatching:
         for r in results:
             assert "policy_id" in r
             assert "match_result" in r
+            assert "policy_canonical_action" in r
+            assert "eval_canonical_action" in r
+            assert "semantic_match" in r
+            assert "match_confidence" in r
             assert r["match_result"] in (
-                "match",
+                "exact_semantic_match",
+                "partial_semantic_match",
                 "mismatch",
-                "uncertain",
-                "no_expected_behavior",
+                "unknown_policy_action",
+                "unknown_eval_behavior",
+                "insufficient_evidence",
             )
 
     def test_replay_summary_computation(self):
@@ -331,7 +563,12 @@ class TestEvalReplayMatching:
             summary = compute_replay_summary(results)
             assert len(summary) > 0
             for s in summary:
-                assert "match_rate" in s
+                assert "raw_match_rate" in s
+                assert "semantic_match_rate" in s
+                assert "partial_match_rate" in s
+                assert "unknown_policy_action_count" in s
+                assert "unknown_eval_behavior_count" in s
+                assert "excluded_unknown_count" in s
 
 
 class TestPolicyStatusRecommendation:
@@ -355,6 +592,7 @@ class TestPolicyStatusRecommendation:
             for rec in recs:
                 assert "policy_id" in rec
                 assert "recommended_status" in rec
+                assert "semantic_replay" in rec["evidence"]
                 assert rec["recommended_status"] in (
                     "proposed",
                     "keep_proposed",
@@ -362,6 +600,7 @@ class TestPolicyStatusRecommendation:
                     "refine",
                     "reject",
                     "needs_more_evidence",
+                    "superseded",
                 )
 
 
@@ -425,3 +664,299 @@ class TestMetabolizationStatusUpdate:
             update_metabolization_status(str(cand_path), output_path=str(output_path))
             updated = read_records_jsonl(str(output_path))
             assert updated[0]["metabolization_status"] == "repeated"
+
+
+class TestRefinedPolicyTriggers:
+    def test_code_patch_trigger_fires_on_code_edit_without_test(self):
+        policy = {
+            "id": "require_test_or_settlement_evidence_before_final_for_code_patch",
+            "trigger": {
+                "domain_is_code": True,
+                "action_history_includes_edit": True,
+                "final_answer_attempted": True,
+                "no_settlement_evidence": True,
+            },
+        }
+        rec = _make_record(
+            domain="code", settlement_quality="brittle_success", confidence=0.6
+        )
+        rec["affordance_path"]["actions"] = [
+            {
+                "action_type": "command",
+                "content": "sed -i 's/old/new/' file.py",
+                "turn_index": 1,
+            },
+            {"action_type": "command", "content": "submit answer", "turn_index": 2},
+        ]
+        fired, evidence = _check_trigger(policy["trigger"], rec)
+        assert fired is True
+        assert any("domain_is_code" in e for e in evidence)
+
+    def test_code_patch_trigger_does_not_fire_on_api_domain(self):
+        policy = {
+            "id": "require_test_or_settlement_evidence_before_final_for_code_patch",
+            "trigger": {
+                "domain_is_code": True,
+                "action_history_includes_edit": True,
+                "final_answer_attempted": True,
+                "no_settlement_evidence": True,
+            },
+        }
+        rec = _make_record(domain="api", settlement_quality="clean_success")
+        rec["affordance_path"]["actions"] = [
+            {
+                "action_type": "api_call",
+                "content": "get_weather(city='Paris')",
+                "turn_index": 1,
+            },
+        ]
+        fired, _ = _check_trigger(policy["trigger"], rec)
+        assert fired is False
+
+    def test_code_patch_trigger_does_not_fire_with_test_output(self):
+        policy = {
+            "id": "require_test_or_settlement_evidence_before_final_for_code_patch",
+            "trigger": {
+                "domain_is_code": True,
+                "action_history_includes_edit": True,
+                "final_answer_attempted": True,
+                "no_settlement_evidence": True,
+            },
+        }
+        rec = _make_record(
+            domain="code", settlement_quality="clean_success", confidence=0.9
+        )
+        rec["affordance_path"]["actions"] = [
+            {
+                "action_type": "command",
+                "content": "sed -i 's/old/new/' file.py",
+                "turn_index": 1,
+            },
+            {
+                "action_type": "observation",
+                "content": "2 passed in 0.1s",
+                "turn_index": 2,
+                "role": "tool",
+            },
+        ]
+        fired, _ = _check_trigger(policy["trigger"], rec)
+        assert fired is False
+
+    def test_high_payment_trigger_fires_on_unknown_constraints(self):
+        policy = {
+            "id": "prevent_high_payment_action_when_constraints_unknown",
+            "trigger": {
+                "constraints_missing_or_ambiguous": True,
+                "high_payment_or_irreversible_action": True,
+                "no_intermediate_representation": True,
+                "no_user_feedback_resolved_ambiguity": True,
+            },
+        }
+        rec = _make_record(domain="code", settlement_quality="failure_with_signal")
+        rec["desired_direction"] = {"type": "action", "description": "fix the bug"}
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "command", "content": "rm -rf /tmp/test", "turn_index": 0},
+        ]
+        rec["affordance_path"]["observations"] = []
+        fired, evidence = _check_trigger(policy["trigger"], rec)
+        assert fired is True
+
+    def test_high_payment_trigger_does_not_fire_with_analysis(self):
+        policy = {
+            "id": "prevent_high_payment_action_when_constraints_unknown",
+            "trigger": {
+                "constraints_missing_or_ambiguous": True,
+                "high_payment_or_irreversible_action": True,
+                "no_intermediate_representation": True,
+                "no_user_feedback_resolved_ambiguity": True,
+            },
+        }
+        rec = _make_record(domain="code")
+        rec["desired_direction"] = {"type": "action", "description": "fix the bug"}
+        rec["affordance_path"]["actions"] = [
+            {
+                "action_type": "analysis",
+                "content": "Let me inspect the issue",
+                "turn_index": 0,
+            },
+            {"action_type": "command", "content": "rm -rf /tmp/test", "turn_index": 1},
+        ]
+        fired, _ = _check_trigger(policy["trigger"], rec)
+        assert fired is False
+
+    def test_constraint_match_trigger_requires_explicit_constraints(self):
+        policy = {
+            "id": "require_constraint_match_before_multi_option_selection",
+            "trigger": {
+                "selection_action": True,
+                "multiple_viable_options_present": True,
+                "explicit_constraints_exist": True,
+                "no_constraint_match_evidence": True,
+            },
+        }
+        rec = _make_record(domain="shopping")
+        rec["desired_direction"] = {
+            "type": "action",
+            "description": "Find a red laptop under $800",
+        }
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "search", "content": "laptop", "turn_index": 0},
+            {
+                "action_type": "observation",
+                "content": "Found 5 results",
+                "turn_index": 1,
+            },
+            {"action_type": "buy", "content": "buy item 1", "turn_index": 2},
+        ]
+        rec["affordance_path"]["observations"] = [
+            {
+                "content": "Found 5 results: laptop1, laptop2, laptop3, laptop4, laptop5",
+                "turn_index": 1,
+            },
+        ]
+        fired, evidence = _check_trigger(policy["trigger"], rec)
+        assert fired is True
+
+    def test_constraint_match_trigger_does_not_fire_without_constraints(self):
+        policy = {
+            "id": "require_constraint_match_before_multi_option_selection",
+            "trigger": {
+                "selection_action": True,
+                "multiple_viable_options_present": True,
+                "explicit_constraints_exist": True,
+                "no_constraint_match_evidence": True,
+            },
+        }
+        rec = _make_record(domain="shopping")
+        rec["desired_direction"] = {"type": "action", "description": "Buy a laptop"}
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "search", "content": "laptop", "turn_index": 0},
+            {
+                "action_type": "observation",
+                "content": "Found 5 results",
+                "turn_index": 1,
+            },
+            {"action_type": "buy", "content": "buy item 1", "turn_index": 2},
+        ]
+        rec["affordance_path"]["observations"] = [
+            {"content": "Found 5 results", "turn_index": 1},
+        ]
+        fired, _ = _check_trigger(policy["trigger"], rec)
+        assert fired is False
+
+
+class TestNegativeConditions:
+    def test_negative_condition_blocks_firing(self):
+        policy = {
+            "id": "test_neg",
+            "trigger": {"error_count_gte": 3},
+            "negative_conditions": ["errors_are_resolved_in_subsequent_turns"],
+        }
+        rec = _make_record(error_count=3, settlement_quality="recovered_success")
+        rec["affordance_path"]["recovery_events"] = [
+            {"error_turn": 2, "recovery_turn": 4, "recovered": True},
+            {"error_turn": 3, "recovery_turn": 5, "recovered": True},
+            {"error_turn": 4, "recovery_turn": 6, "recovered": True},
+        ]
+        fired, evidence = _check_trigger(
+            policy["trigger"], rec, policy.get("negative_conditions")
+        )
+        assert fired is False
+
+    def test_no_negative_conditions_allows_firing(self):
+        policy = {
+            "id": "test_none",
+            "trigger": {"error_count_gte": 3},
+        }
+        rec = _make_record(error_count=5, settlement_quality="failure_with_signal")
+        fired, evidence = _check_trigger(policy["trigger"], rec)
+        assert fired is True
+
+
+class TestSupersededPolicyHandling:
+    def test_superseded_policies_excluded_from_shadow(self):
+        records = _load_records()
+        policies = _load_policies()
+        results = evaluate_policies_shadow(records, policies, min_confidence=0.0)
+        superseded_ids = {
+            "compare_constraints_before_selection",
+            "test_before_final_answer",
+            "prevent_premature_concretion",
+        }
+        for r in results:
+            if r["policy_id"] in superseded_ids:
+                pytest.fail(
+                    f"Superseded policy {r['policy_id']} should not appear in shadow results"
+                )
+
+    def test_refined_policies_appear_in_results(self):
+        records = _load_records()
+        policies = _load_policies()
+        results = evaluate_policies_shadow(records, policies, min_confidence=0.0)
+        refined_ids = {
+            "require_test_or_settlement_evidence_before_final_for_code_patch",
+            "prevent_high_payment_action_when_constraints_unknown",
+            "require_constraint_match_before_multi_option_selection",
+        }
+        found_ids = {r["policy_id"] for r in results}
+        for rid in refined_ids:
+            assert rid in found_ids, f"Refined policy {rid} not found in results"
+
+
+class TestFalsePositivePrevention:
+    def test_refined_policies_have_zero_harmful_on_successful_traces(self):
+        records = _load_records()
+        policies = _load_policies()
+        results = evaluate_policies_shadow(records, policies, min_confidence=0.0)
+        refined_ids = {
+            "require_test_or_settlement_evidence_before_final_for_code_patch",
+            "prevent_high_payment_action_when_constraints_unknown",
+            "require_constraint_match_before_multi_option_selection",
+        }
+        for r in results:
+            if r["policy_id"] in refined_ids and r["would_fire"]:
+                if (
+                    r["observed_settlement_quality"]
+                    in ("clean_success", "recovered_success")
+                    and r["observed_failure_mode"] is None
+                ):
+                    assert r["counterfactual_assessment"] != "likely_harmful", (
+                        f"Refined policy {r['policy_id']} harms successful trace {r['trace_id']}"
+                    )
+
+    def test_refined_fire_count_less_than_original(self):
+        records = _load_records()
+        policies = _load_policies()
+        results = evaluate_policies_shadow(records, policies, min_confidence=0.0)
+        fire_counts = {}
+        for r in results:
+            if r["would_fire"]:
+                fire_counts[r["policy_id"]] = fire_counts.get(r["policy_id"], 0) + 1
+
+        original_policies = []
+        for policy in policies:
+            if policy["id"] in {
+                "test_before_final_answer",
+                "prevent_premature_concretion",
+                "compare_constraints_before_selection",
+            }:
+                original_policies.append({**policy, "status": "proposed"})
+        original_results = evaluate_policies_shadow(
+            records, original_policies, min_confidence=0.0
+        )
+        original_fire_counts = {}
+        for r in original_results:
+            if r["would_fire"]:
+                original_fire_counts[r["policy_id"]] = (
+                    original_fire_counts.get(r["policy_id"], 0) + 1
+                )
+
+        assert fire_counts.get(
+            "require_test_or_settlement_evidence_before_final_for_code_patch", 0
+        ) <= original_fire_counts.get("test_before_final_answer", 0)
+        assert fire_counts.get(
+            "prevent_high_payment_action_when_constraints_unknown", 0
+        ) <= original_fire_counts.get("prevent_premature_concretion", 0)
+        assert fire_counts.get(
+            "require_constraint_match_before_multi_option_selection", 0
+        ) <= original_fire_counts.get("compare_constraints_before_selection", 0)

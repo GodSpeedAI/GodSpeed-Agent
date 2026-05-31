@@ -124,4 +124,4 @@ PYTHONPATH=. uv run python scripts/settlement_datasets/update_metabolization_sta
 
 Output: `data/settlement_datasets/metabolization_candidates/candidates_updated.jsonl`
 
-Candidates move from `candidate` to `repeated` based on cross-trace support (3+ traces). They can move from `repeated` to `tested` based on shadow-mode evaluation. They cannot move to `metabolized` without live harness validation. See `docs/policy-shadow-evaluation.md` for details.
+Candidates move from `candidate` to `repeated` based on cross-trace support (3+ traces). They can move from `repeated` to `tested` based on shadow-mode evaluation. Guarded replay can produce `tested_in_replay` evidence for a policy experiment, but it still cannot metabolize a candidate. Candidates cannot move to `metabolized` without repeated live harness settlement. See `docs/policy-shadow-evaluation.md` for details.

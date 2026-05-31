@@ -35,6 +35,7 @@ TOOL_NAMES = [
     "cybernetic_nav.review_positive_disintegration",
     "cybernetic_nav.write_ledger_event",
     "cybernetic_nav.read_developmental_memory",
+    "cybernetic_nav.search_developmental_memory",
     "cybernetic_nav.start_direction",
     "cybernetic_nav.review_horizon",
     "cybernetic_nav.record_settlement",
@@ -135,6 +136,11 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 },
                 "lineage": _runtime(arguments).read_developmental_memory(),
             }
+        if name == "cybernetic_nav.search_developmental_memory":
+            return _store(arguments).search_developmental_memory(
+                arguments["query"],
+                limit=int(arguments.get("limit", 5)),
+            )
         if name == "cybernetic_nav.start_direction":
             return _runtime(arguments).start_direction(
                 label=arguments["label"],

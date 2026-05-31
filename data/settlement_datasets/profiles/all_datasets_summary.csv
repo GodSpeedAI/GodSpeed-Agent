@@ -1,0 +1,5 @@
+dataset,domain,count,avg_confidence,high_confidence_count
+agenttrove,code,5,0.86,5
+apibank,api,5,0.68,4
+swegym,code,5,0.8,5
+webshop,shopping,5,0.6,2

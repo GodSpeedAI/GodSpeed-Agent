@@ -1,0 +1,254 @@
+policies:
+- action:
+    block_next_tool_call_until: revised_plan_exists
+    require_operator: reflection
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids:
+    - at-246aacd1cbab
+    meets_min_supporting_count: false
+    observed_failure_pattern:
+    - tool_thrashing
+    - failed_recovery
+    proportion: 0.02
+    supporting_trace_count: 2
+    total_traces_analyzed: 100
+  id: require_reflection_after_repeated_tool_errors
+  rationale: Repeated tool errors indicate settlement feedback is not being metabolized.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    error_count_gte: 2
+- action:
+    require_settlement_evidence_before_final: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids: []
+    meets_min_supporting_count: false
+    observed_failure_pattern:
+    - premature_closure
+    proportion: 0.0
+    supporting_trace_count: 0
+    total_traces_analyzed: 100
+  id: block_premature_final_answer
+  rationale: Final answers without settlement evidence create false closure.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    failure_mode: premature_closure
+- action:
+    require_plan_reset: true
+    require_positive_disintegration: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids: []
+    meets_min_supporting_count: false
+    observed_failure_pattern:
+    - payment_spiral
+    proportion: 0.0
+    supporting_trace_count: 0
+    total_traces_analyzed: 100
+  id: payment_spiral_reset
+  rationale: High payment with no error reduction indicates path collapse.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    payment_pattern: high_payment_failure
+- action:
+    require_intermediate_state:
+      allowed_paths:
+      - general_abstract_to_specific_abstract_to_specific_concrete
+      - general_abstract_to_general_concrete_to_specific_concrete
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids: []
+    meets_min_supporting_count: false
+    observed_failure_pattern:
+    - representation_jump
+    proportion: 0.0
+    supporting_trace_count: 0
+    total_traces_analyzed: 100
+  id: force_intermediate_representation_for_direct_jump
+  rationale: Direct representational opposition jumps are often unaffordable.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    failure_mode: representation_jump
+- action:
+    require_context_check: true
+    restate_original_task: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids: []
+    meets_min_supporting_count: false
+    observed_failure_pattern:
+    - context_loss
+    proportion: 0.0
+    supporting_trace_count: 0
+    total_traces_analyzed: 100
+  id: detect_context_loss
+  rationale: Later actions that ignore earlier constraints waste payment and produce
+    settlement failure.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    later_turns_missing_early_keywords: true
+    turn_count_gt: 10
+- action:
+    require_concrete_action: true
+    suggest_tool_use: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids: []
+    meets_min_supporting_count: false
+    observed_failure_pattern:
+    - over_abstraction
+    proportion: 0.0
+    supporting_trace_count: 0
+    total_traces_analyzed: 100
+  id: flag_over_abstraction
+  rationale: Extended explanation without concrete action suggests the agent is avoiding
+    payment.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    assistant_turn_count_gt: 5
+    command_count_eq: 0
+    no_final_answer: true
+- action:
+    require_constraint_gathering_before_action: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids:
+    - at-8f9b3adcff0d
+    - at-fca5603bdf7f
+    - at-715c8de72a8c
+    - at-246aacd1cbab
+    - at-698352d3c52a
+    meets_min_supporting_count: true
+    observed_failure_pattern:
+    - premature_concretion
+    proportion: 0.05
+    supporting_trace_count: 5
+    total_traces_analyzed: 100
+  id: prevent_premature_concretion
+  rationale: Executing before understanding constraints leads to predictable error.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    error_on_first_action: true
+    first_assistant_is_action: true
+- action:
+    flag_for_repetition: true
+    require_metabolization_evidence: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids: []
+    meets_min_supporting_count: false
+    observed_failure_pattern:
+    - brittle_success
+    proportion: 0.0
+    supporting_trace_count: 0
+    total_traces_analyzed: 100
+  id: require_recovery_evidence_for_brittle_success
+  rationale: Success through excessive or fragile paths is not metabolized capability.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    settlement_quality: brittle_success
+- action:
+    require_strategy_change: true
+    suggest_alternative_approach: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids:
+    - at-d316aa830f54
+    - at-554757da3a03
+    - at-012232b0cc16
+    - at-1e6fc702fd89
+    - at-246aacd1cbab
+    meets_min_supporting_count: true
+    observed_failure_pattern:
+    - tool_thrashing
+    - failed_recovery
+    proportion: 0.15
+    supporting_trace_count: 15
+    total_traces_analyzed: 100
+  id: escalate_after_three_errors
+  rationale: Three or more errors without strategy change indicate the agent is stuck
+    in a loop.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    error_count_gte: 3
+- action:
+    record_error_correction_signal: true
+    require_failure_analysis: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids:
+    - at-a9257b14f0bd
+    - at-8483142d3578
+    - at-a9cf42620297
+    - at-d316aa830f54
+    - at-554757da3a03
+    meets_min_supporting_count: true
+    observed_failure_pattern: []
+    proportion: 0.39
+    supporting_trace_count: 39
+    total_traces_analyzed: 100
+  id: require_explicit_settlement_for_failure
+  rationale: Failures without explicit settlement recording lose error-correction
+    data.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    settlement_quality_in:
+    - failure_with_signal
+    - failure_without_signal
+- action:
+    require_positive_disintegration: true
+    suggest_terminating_unproductive_path: true
+  active_by_default: false
+  evidence:
+    avg_label_confidence: 0.0
+    example_trace_ids:
+    - at-a9257b14f0bd
+    - at-8483142d3578
+    - at-a9cf42620297
+    - at-d316aa830f54
+    - at-554757da3a03
+    meets_min_supporting_count: true
+    observed_failure_pattern:
+    - payment_spiral
+    proportion: 0.45
+    supporting_trace_count: 45
+    total_traces_analyzed: 100
+  id: payment_cap_for_unproductive_paths
+  rationale: Long traces without progress drain payment without settlement.
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  trigger:
+    no_success: true
+    turn_count_gt: 15

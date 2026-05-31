@@ -40,9 +40,13 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
     assert result["checks"]["config"]["details"]["preferred_database"] == "sqlite"
     assert result["checks"]["config"]["details"]["vector_index"] == "ruvector"
     assert result["checks"]["developmental_memory"]["details"]["lineage_query_available"] is True
+    assert result["checks"]["developmental_memory"]["details"]["semantic_search_available"] is True
+    assert result["checks"]["developmental_memory"]["details"]["semantic_search_provider"] == "ruvector"
     assert result["checks"]["self_critique"]["details"]["mandatory_surface_available"] is True
     assert result["checks"]["self_critique"]["details"]["doctrine_drift_detected"] is False
     assert result["checks"]["public_cognitive_surfaces"]["details"]["cli_command_available"] is True
+    assert result["checks"]["public_cognitive_surfaces"]["details"]["developmental_memory_search_cli_available"] is True
+    assert result["checks"]["public_cognitive_surfaces"]["details"]["developmental_memory_search_mcp_available"] is True
     assert result["checks"]["cognitive_os_conformance"]["details"]["representational_state"] is True
     assert result["checks"]["cognitive_os_conformance"]["details"]["representational_transition_policy"] is True
     assert result["checks"]["cognitive_os_conformance"]["details"]["affordance_paths"] is True

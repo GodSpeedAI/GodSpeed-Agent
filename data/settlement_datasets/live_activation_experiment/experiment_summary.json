@@ -1,0 +1,22 @@
+{
+  "error_count_delta": null,
+  "false_positive_count": 4,
+  "fires": 4,
+  "globally_active": false,
+  "harmful_intervention_count": 0,
+  "interventions": 4,
+  "interventions_after_final_settlement": 0,
+  "interventions_completed": 0,
+  "metabolized": false,
+  "mode": "replay-only",
+  "payment_cost_observed_or_estimated": null,
+  "policy_id": "require_reflection_after_repeated_errors",
+  "post_intervention_recovery_count": 0,
+  "recommendation": "ready_for_live_guarded_runs",
+  "repeated_error_loop_reduction": null,
+  "runs_evaluated": 331,
+  "settlement_quality_delta": null,
+  "status": "tested_in_replay",
+  "tool_call_delta": null,
+  "uncertain_count": 4
+}

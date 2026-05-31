@@ -16,6 +16,7 @@ from godspeed_nav.metrics import (
 from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.storage import LedgerStore
 from godspeed_nav.validation import validate_enterprise_readiness
 
 
@@ -172,6 +173,12 @@ def build_parser() -> argparse.ArgumentParser:
     predictive_parser.add_argument("--candidates", type=_json_list_arg, default=[])
     predictive_parser.add_argument("--provider", default=None)
 
+    search_memory_parser = subcommands.add_parser("search-developmental-memory")
+    search_memory_parser.add_argument("--workspace-root", default=".")
+    search_memory_parser.add_argument("--storage-root", default=".godspeed-harness")
+    search_memory_parser.add_argument("--query", required=True)
+    search_memory_parser.add_argument("--limit", type=int, default=5)
+
     validate_parser = subcommands.add_parser("validate")
     validate_parser.add_argument("--workspace-root", default=".")
     validate_parser.add_argument("--storage-root", default=".godspeed-harness")
@@ -272,6 +279,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             candidates=args.candidates,
             provider_name=args.provider,
         )
+    if args.command == "search-developmental-memory":
+        return LedgerStore(
+            _configured_storage_root(args.workspace_root, args.storage_root)
+        ).search_developmental_memory(args.query, limit=args.limit)
     if args.command == "validate":
         return validate_enterprise_readiness(
             args.workspace_root,

@@ -1,0 +1,9 @@
+{
+  "name": "godspeed-ruvector-bridge",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local RuVector bridge for Godspeed developmental memory search",
+  "dependencies": {
+    "ruvector": "^0.2.27"
+  }
+}

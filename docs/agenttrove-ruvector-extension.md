@@ -2,7 +2,13 @@
 
 ## Status
 
-RuVector integration is not implemented. This document describes the extension point for future vector memory integration.
+RuVector integration is now implemented as a local bridge for structured developmental-memory search. The active bridge keeps Python as the truth surface owner and calls a small Node sidecar in `tools/ruvector/` to run RuVector similarity search over settlement and critique summaries.
+
+Current limits:
+
+- The bridge indexes structured summaries only; it does not ingest raw traces.
+- The bridge rebuilds search state from the current structured documents for each query instead of maintaining a long-running external service.
+- The active public surface is `godspeed-nav search-developmental-memory` and the corresponding `LedgerStore.search_developmental_memory(...)` method.
 
 ## What Should Be Embedded
 
@@ -37,7 +43,7 @@ Settlement records provide the structured context that makes vector retrieval me
 - **Payment pattern** calibrates the result (find low-payment paths for the same task type)
 - **Path shape** ensures representational compatibility (direct jumps vs. gradual transitions)
 
-## Future Retrieval Use Cases
+## Active Retrieval Use Cases
 
 - Find traces similar to the current failure
 - Find recovered successes for the same failure mode
@@ -49,10 +55,10 @@ Settlement records provide the structured context that makes vector retrieval me
 
 ## Implementation Path
 
-When RuVector or an equivalent vector store is available:
+The current bridge follows this path already:
 
 1. Embed settlement record summaries (not raw traces)
-2. Index by failure_mode + settlement_quality + source
-3. Support filtered retrieval by outcome type
-4. Use for live harness memory during agent sessions
-5. Feed retrieval results back into policy evaluation
+2. Index by failure mode, settlement status, pathway text, and source ledger
+3. Return semantic matches through the local CLI/storage surfaces
+
+Future expansions can still add richer filtering, longer-lived indexes, and direct policy-feedback loops once settlement pressure justifies them.

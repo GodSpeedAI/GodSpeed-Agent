@@ -1,0 +1,7 @@
+policy_id,supporting_trace_count,would_fire_count,likely_helpful_count,likely_harmful_count,uncertain_count,false_positive_rate_estimate,payment_risk_distribution,domains_observed,datasets_observed,recommendation,recommendation_rationale
+require_reflection_after_repeated_errors,332,2,0,0,2,0.0,"{'medium': 1, 'high': 1}",['code'],"['agenttrove', 'swegym']",keep_proposed,Insufficient evidence for promotion.
+compare_constraints_before_selection,0,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+test_before_final_answer,0,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+require_explicit_settlement_for_failure,332,3,2,0,1,0.0,"{'low': 2, 'high': 1}","['api', 'code']","['apibank', 'swegym']",keep_proposed,Helpful on 2 traces but below activation threshold (need 5+).
+prevent_high_payment_action_when_constraints_unknown,332,46,0,0,46,0.0,"{'low': 16, 'high': 10, 'medium': 20}",['code'],['agenttrove'],keep_proposed,Insufficient evidence for promotion.
+prevent_premature_concretion,0,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.

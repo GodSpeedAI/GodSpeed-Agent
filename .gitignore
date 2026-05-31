@@ -2,6 +2,7 @@
 .godspeed-harness/
 __pycache__/
 .pytest_cache/
+tools/ruvector/node_modules/
 *:Zone.Identifier
 tmp/
 data/agenttrove/raw_samples/*.jsonl

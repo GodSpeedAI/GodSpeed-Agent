@@ -201,3 +201,36 @@ def test_corrupt_ledger_records_are_quarantined(tmp_path: Path):
     assert records == [{"id": "pay-1"}, {"id": "pay-2"}]
     quarantine = store.root / "cache" / "quarantine" / "payments.corrupt.jsonl"
     assert "not-json" in quarantine.read_text(encoding="utf-8")
+
+
+def test_ledger_store_can_search_developmental_memory_with_ruvector(tmp_path: Path):
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+    store.append(
+        "settlements",
+        {
+            "id": "set-1",
+            "status": "success",
+            "summary": "Recovered from timeout failure by replaying the last affordable step",
+            "failure_mode": "timeout",
+            "affordance_id": "aff-1",
+            "pathway": "replay the last affordable step",
+        },
+    )
+    store.append(
+        "settlements",
+        {
+            "id": "set-2",
+            "status": "failed",
+            "summary": "Jumped directly to the final deployment target without an adjacent path",
+            "failure_mode": "direct_jump",
+            "affordance_id": "aff-2",
+            "pathway": "skip all intermediate states",
+        },
+    )
+
+    result = store.search_developmental_memory("timeout recovery", limit=2)
+
+    assert result["provider"] == "ruvector"
+    assert result["result_count"] >= 1
+    assert result["results"][0]["record_id"] == "set-1"
+    assert result["results"][0]["ledger"] == "settlements"

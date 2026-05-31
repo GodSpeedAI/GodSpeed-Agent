@@ -1,0 +1,26 @@
+{
+  "avg_confidence": 0.6,
+  "count": 5,
+  "dataset": "webshop",
+  "domain": "shopping",
+  "failure_mode_distribution": {
+    "constraint_miss": 1,
+    "over_search": 1,
+    "premature_choice": 1
+  },
+  "high_confidence_count": 2,
+  "payment_summary": {
+    "api_calls": 0.0,
+    "commands": 2.2,
+    "error_count": 0.0,
+    "page_actions": 1.8,
+    "tool_calls": 0.0,
+    "turns": 4.0
+  },
+  "settlement_quality_distribution": {
+    "clean_success": 1,
+    "partial_success": 2,
+    "recovered_success": 1,
+    "unknown": 1
+  }
+}

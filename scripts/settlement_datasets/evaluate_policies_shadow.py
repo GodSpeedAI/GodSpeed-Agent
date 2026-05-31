@@ -15,8 +15,255 @@ from scripts.settlement_datasets.adapter_base import (
 from scripts.settlement_datasets.registry import available_datasets
 
 
+def _is_error_text(content: str) -> bool:
+    lowered = content.lower()
+    return any(
+        token in lowered
+        for token in (
+            "error",
+            "traceback",
+            "exception",
+            "failed",
+            "failure",
+            "permission denied",
+            "timeout",
+        )
+    )
+
+
+def _total_turns(record: dict[str, Any]) -> int:
+    payment = record.get("payment", {})
+    turns = int(payment.get("turns", 0) or payment.get("elapsed_steps", 0) or 0)
+    if turns > 0:
+        return turns
+
+    indexes = [
+        int(item.get("turn_index", -1))
+        for item in record.get("affordance_path", {}).get("actions", [])
+        + record.get("affordance_path", {}).get("observations", [])
+        if item.get("turn_index") is not None
+    ]
+    return (max(indexes) + 1) if indexes else 0
+
+
+def _estimate_fire_turn_index(
+    trigger: dict[str, Any],
+    record: dict[str, Any],
+    fired: bool,
+) -> int | None:
+    if not fired:
+        return None
+
+    if "settlement_quality" in trigger:
+        turns = _total_turns(record)
+        return max(turns - 1, 0) if turns else 0
+
+    actions = record.get("affordance_path", {}).get("actions", [])
+    observations = record.get("affordance_path", {}).get("observations", [])
+
+    if "early_specific_action" in trigger:
+        early_actions = [
+            a.get("turn_index")
+            for a in actions
+            if a.get("action_type") in ("command", "api_call", "buy")
+            and a.get("turn_index", 99) < trigger.get("turn_index_lt", 3)
+        ]
+        if early_actions:
+            return min(int(index) for index in early_actions if index is not None)
+
+    if "action_type" in trigger and trigger["action_type"] == "edit_or_api_call":
+        edit_indexes = [
+            a.get("turn_index")
+            for a in actions
+            if a.get("action_type") in ("command", "api_call")
+        ]
+        if edit_indexes:
+            return min(int(index) for index in edit_indexes if index is not None)
+
+    if "api_call" in trigger:
+        api_indexes = [
+            a.get("turn_index")
+            for a in actions
+            if a.get("action_type") == "api_call"
+        ]
+        if api_indexes:
+            return min(int(index) for index in api_indexes if index is not None)
+
+    if "selection_action" in trigger:
+        selection_indexes = [
+            a.get("turn_index")
+            for a in actions
+            if a.get("action_type") in ("buy", "selection")
+        ]
+        if selection_indexes:
+            return min(int(index) for index in selection_indexes if index is not None)
+
+    if "final_answer_action" in trigger or "final_answer_attempted" in trigger:
+        final_indexes = [
+            a.get("turn_index")
+            for a in actions
+            if a.get("action_type") in ("buy", "submit", "final_answer")
+        ]
+        if final_indexes:
+            return max(int(index) for index in final_indexes if index is not None)
+
+    if "error_count_gte" in trigger:
+        error_indexes = [
+            int(item.get("turn_index", -1))
+            for item in observations + actions
+            if _is_error_text(str(item.get("content", "")))
+            and item.get("turn_index") is not None
+        ]
+        threshold = int(trigger["error_count_gte"])
+        if len(error_indexes) >= threshold:
+            ordered = sorted(error_indexes)
+            return ordered[threshold - 1]
+        if error_indexes:
+            return max(error_indexes)
+
+    if "step_count_gte" in trigger:
+        turns = _total_turns(record)
+        threshold = int(trigger["step_count_gte"])
+        if turns:
+            return min(max(threshold - 1, 0), turns - 1)
+
+    turns = _total_turns(record)
+    return max(turns - 1, 0) if turns else None
+
+
+def _classify_fire_timing(
+    trigger: dict[str, Any],
+    record: dict[str, Any],
+    fire_turn_index: int | None,
+    fired: bool,
+) -> tuple[str, int]:
+    if not fired or fire_turn_index is None:
+        return "unknown", 0
+
+    turns = max(_total_turns(record), fire_turn_index + 1)
+    remaining_turns = max(turns - fire_turn_index - 1, 0)
+
+    if "settlement_quality" in trigger:
+        return "after_failure_already_settled", remaining_turns
+
+    if remaining_turns == 0:
+        return "final_turn", 0
+
+    last_index = max(turns - 1, 1)
+    progress_ratio = fire_turn_index / last_index
+    if progress_ratio < 0.25:
+        return "early", remaining_turns
+    if progress_ratio < 0.5:
+        return "middle", remaining_turns
+    return "late", remaining_turns
+
+
+def _detect_recovery_opportunity(
+    record: dict[str, Any],
+    fire_timing: str,
+    fire_turn_index: int | None,
+    remaining_turns_after_fire: int,
+) -> tuple[bool, list[str]]:
+    if fire_turn_index is None:
+        return False, ["unknown_fire_turn"]
+
+    if fire_timing == "after_failure_already_settled":
+        return False, ["failure_already_settled"]
+    if fire_timing == "final_turn":
+        return False, ["trigger_on_final_turn"]
+
+    labels = record.get("labels", {})
+    if labels.get("metabolization_candidate"):
+        return False, ["task_already_complete"]
+
+    later_actions = [
+        a
+        for a in record.get("affordance_path", {}).get("actions", [])
+        if int(a.get("turn_index", -1)) > fire_turn_index
+    ]
+    later_observations = [
+        o
+        for o in record.get("affordance_path", {}).get("observations", [])
+        if int(o.get("turn_index", -1)) > fire_turn_index
+    ]
+    later_recovery = [
+        r
+        for r in record.get("affordance_path", {}).get("recovery_events", [])
+        if int(r.get("turn_index", fire_turn_index + 1)) > fire_turn_index
+    ]
+
+    evidence: list[str] = []
+    if later_actions:
+        evidence.append(f"later_actions={len(later_actions)}")
+    if later_observations:
+        evidence.append(f"later_observations={len(later_observations)}")
+    if later_recovery:
+        evidence.append(f"later_recovery_events={len(later_recovery)}")
+    if remaining_turns_after_fire > 0:
+        evidence.append(f"remaining_turns={remaining_turns_after_fire}")
+
+    if later_actions or later_observations or later_recovery:
+        return True, evidence
+    if remaining_turns_after_fire > 0:
+        return True, evidence or [f"remaining_turns={remaining_turns_after_fire}"]
+    return False, ["no_post_trigger_steps"]
+
+
+def _classify_uncertainty(
+    policy: dict[str, Any],
+    record: dict[str, Any],
+    trigger_evidence: list[str],
+    fire_timing: str,
+    recovery_opportunity: bool,
+    remaining_turns_after_fire: int,
+) -> tuple[str, list[str]]:
+    outcome = record.get("outcome", {})
+    labels = record.get("labels", {})
+    payment = record.get("payment", {})
+    sq = outcome.get("settlement_quality", "unknown")
+    fm = labels.get("failure_mode")
+    conf = float(outcome.get("confidence", 0.0) or 0.0)
+    policy_fms = policy.get("evidence", {}).get("observed_failure_patterns", [])
+    action = policy.get("action", {})
+    require_operator = str(action.get("require_operator", "")).lower()
+
+    if fire_timing == "after_failure_already_settled":
+        return "policy_would_fire_too_late", ["trigger_depends_on_settled_failure_label"]
+
+    if not recovery_opportunity and fire_timing == "final_turn":
+        return "no_recovery_opportunity", ["no_turns_remain_after_fire"]
+
+    if sq == "unknown" or conf < 0.5:
+        return "missing_outcome_signal", [f"settlement_quality={sq}", f"confidence={conf}"]
+
+    if sq == "partial_success":
+        return "conflicting_settlement_evidence", [f"settlement_quality={sq}", f"failure_mode={fm}"]
+
+    if fm and fm not in policy_fms:
+        return "ambiguous_failure_mode", [f"failure_mode={fm}", f"policy_targets={policy_fms}"]
+
+    if len(trigger_evidence) <= 1 and payment.get("error_count", 0) <= 1:
+        return "weak_trigger_evidence", trigger_evidence or ["minimal_trigger_evidence"]
+
+    if _total_turns(record) <= 2:
+        return "insufficient_trace_context", [f"turns={_total_turns(record)}"]
+
+    if require_operator in ("reflection", "failure_analysis") and recovery_opportunity:
+        return "policy_action_effect_not_observable_offline", [
+            f"require_operator={require_operator}",
+            f"remaining_turns={remaining_turns_after_fire}",
+        ]
+
+    if not recovery_opportunity:
+        return "no_recovery_opportunity", ["no_post_trigger_steps"]
+
+    return "unknown", [f"settlement_quality={sq}", f"failure_mode={fm}"]
+
+
 def _check_trigger(
-    trigger: dict[str, Any], record: dict[str, Any]
+    trigger: dict[str, Any],
+    record: dict[str, Any],
+    negative_conditions: list[str] | None = None,
 ) -> tuple[bool, list[str]]:
     evidence: list[str] = []
     payment = record.get("payment", {})
@@ -62,7 +309,9 @@ def _check_trigger(
         has_selection = any(
             a.get("action_type") in ("buy", "selection") for a in actions
         )
-        if has_selection and trigger.get("prior_comparison") is False:
+        if not has_selection:
+            return False, []
+        if trigger.get("prior_comparison") is False:
             has_prior_compare = any(
                 a.get("action_type") == "analysis"
                 for a in actions[: max(1, len(actions) - 1)]
@@ -72,7 +321,7 @@ def _check_trigger(
             else:
                 return False, []
         else:
-            return False, []
+            evidence.append("selection_action_present")
 
     if "api_call" in trigger:
         has_api = any(a.get("action_type") == "api_call" for a in actions)
@@ -145,19 +394,341 @@ def _check_trigger(
         else:
             return False, []
 
+    if "domain_is_code" in trigger:
+        if domain != "code":
+            return False, []
+        evidence.append("domain_is_code")
+
+    if "action_history_includes_edit" in trigger:
+        has_edit = any(
+            a.get("action_type") in ("command", "api_call")
+            and any(
+                kw in str(a.get("content", "")).lower()
+                for kw in (
+                    "edit",
+                    "patch",
+                    "sed",
+                    "cat >",
+                    "python -c",
+                    "bash -c",
+                    "implement",
+                    "fix",
+                    "write",
+                )
+            )
+            for a in actions
+        )
+        if has_edit:
+            evidence.append("action_history_includes_code_edit")
+        else:
+            return False, []
+
+    if "final_answer_attempted" in trigger:
+        has_final = any(
+            a.get("action_type") in ("buy", "submit", "final_answer")
+            for a in actions[-3:]
+        )
+        if not has_final:
+            sq = outcome.get("settlement_quality", "")
+            if sq in (
+                "clean_success",
+                "brittle_success",
+                "recovered_success",
+                "partial_success",
+            ):
+                has_final = True
+        if has_final:
+            evidence.append("final_answer_attempted")
+        else:
+            return False, []
+
+    if "no_settlement_evidence" in trigger:
+        has_test_output = any(
+            "pass" in str(a.get("content", "")).lower()
+            or "passed" in str(a.get("content", "")).lower()
+            for a in actions
+            if a.get("role") == "tool" or a.get("action_type") == "observation"
+        )
+        has_task_complete = labels.get("metabolization_candidate") is not None
+        has_success_signal = (
+            outcome.get("confidence", 0) >= 0.8
+            and outcome.get("settlement_quality") == "clean_success"
+        )
+        if has_test_output or has_task_complete or has_success_signal:
+            return False, []
+        evidence.append("no_settlement_evidence_before_final_answer")
+
+    if "errors_are_unresolved" in trigger:
+        error_count = payment.get("error_count", 0)
+        recovery_events = record.get("affordance_path", {}).get("recovery_events", [])
+        recovered = sum(1 for r in recovery_events if r.get("recovered"))
+        if recovered >= error_count:
+            return False, []
+        evidence.append(f"errors_unresolved={error_count - recovered}_of_{error_count}")
+
+    if "has_failure_condition_evidence" in trigger:
+        has_errors = payment.get("error_count", 0) > 0
+        has_failure_sq = outcome.get("settlement_quality") in (
+            "failure_with_signal",
+            "failure_without_signal",
+        )
+        if not (has_errors or has_failure_sq):
+            return False, []
+        evidence.append("failure_condition_evidence_present")
+
+    if "constraints_missing_or_ambiguous" in trigger:
+        dd = record.get("desired_direction", {})
+        desc = str(dd.get("description", "")).lower()
+        has_constraints = any(
+            kw in desc
+            for kw in (
+                "must",
+                "should",
+                "only",
+                "required",
+                "at least",
+                "under",
+                "do not",
+                "ensure",
+            )
+        )
+        if has_constraints:
+            return False, []
+        evidence.append("no_explicit_constraints_in_task")
+
+    if "high_payment_or_irreversible_action" in trigger:
+        high_cost_actions = [
+            a
+            for a in actions
+            if a.get("action_type") in ("command", "api_call", "buy")
+            and any(
+                kw in str(a.get("content", "")).lower()
+                for kw in (
+                    "rm ",
+                    "delete",
+                    "commit",
+                    "submit",
+                    "buy",
+                    "push",
+                    "deploy",
+                    "drop",
+                    "install",
+                )
+            )
+        ]
+        if not high_cost_actions:
+            return False, []
+        evidence.append(f"high_cost_action_count={len(high_cost_actions)}")
+
+    if "no_intermediate_representation" in trigger:
+        has_analysis = any(
+            a.get("action_type") == "analysis"
+            for a in actions[: max(1, len(actions) - 1)]
+        )
+        if has_analysis:
+            return False, []
+        evidence.append("no_intermediate_representation_before_action")
+
+    if "no_user_feedback_resolved_ambiguity" in trigger:
+        observations = record.get("affordance_path", {}).get("observations", [])
+        if len(observations) >= 2:
+            return False, []
+        evidence.append("insufficient_feedback_to_resolve_ambiguity")
+
+    if "multiple_viable_options_present" in trigger:
+        observations = record.get("affordance_path", {}).get("observations", [])
+        has_multi_option_obs = any(
+            "result" in str(o.get("content", "")).lower()
+            or "found" in str(o.get("content", "")).lower()
+            or "." in str(o.get("content", ""))[:50]
+            for o in observations
+        )
+        if not has_multi_option_obs:
+            return False, []
+        evidence.append("multiple_options_observed")
+
+    if "explicit_constraints_exist" in trigger:
+        dd = record.get("desired_direction", {})
+        desc = str(dd.get("description", ""))
+        has_constraints = any(
+            kw in desc.lower() for kw in ("must", "only", "at least", "under", "do not")
+        )
+        if not has_constraints:
+            return False, []
+        evidence.append("explicit_constraints_in_instruction")
+
+    if "no_constraint_match_evidence" in trigger:
+        last_action_content = ""
+        for a in reversed(actions):
+            if a.get("action_type") == "buy":
+                last_action_content = str(a.get("content", "")).lower()
+                break
+        obs_contents = " ".join(
+            str(o.get("content", "")).lower()
+            for o in record.get("affordance_path", {}).get("observations", [])
+        )
+        if (
+            "match" in last_action_content
+            or "satisfies" in last_action_content
+            or "meets" in last_action_content
+            or "all constraints met" in last_action_content
+            or "matches all constraints" in last_action_content
+        ):
+            return False, []
+        if (
+            "matches" in obs_contents
+            or "correct" in obs_contents
+            or "all constraints met" in obs_contents
+            or "matches all constraints" in obs_contents
+        ):
+            return False, []
+        evidence.append("no_constraint_match_evidence_for_selection")
+
     if not evidence:
         return False, []
 
+    if negative_conditions:
+        blocked = _check_negative_conditions(negative_conditions, record)
+        if blocked:
+            return False, [f"blocked_by_negative_condition:{blocked}"]
+
     return True, evidence
+
+
+def _check_negative_conditions(
+    conditions: list[str],
+    record: dict[str, Any],
+) -> str | None:
+    payment = record.get("payment", {})
+    outcome = record.get("outcome", {})
+    actions = record.get("affordance_path", {}).get("actions", [])
+    labels = record.get("labels", {})
+    domain = record.get("domain", "")
+    dd = record.get("desired_direction", {})
+    desc = str(dd.get("description", "")).lower()
+    observations = record.get("affordance_path", {}).get("observations", [])
+
+    for cond in conditions:
+        if cond == "domain_is_not_code" and domain != "code":
+            return cond
+        if cond == "no_code_edit_in_action_history":
+            has_edit = any(
+                a.get("action_type") in ("command", "api_call")
+                and any(
+                    kw in str(a.get("content", "")).lower()
+                    for kw in ("edit", "patch", "sed", "fix", "implement")
+                )
+                for a in actions
+            )
+            if not has_edit:
+                return cond
+        if cond == "test_output_already_present":
+            has_test = any(
+                "pass" in str(a.get("content", "")).lower()
+                for a in actions
+                if a.get("role") == "tool" or a.get("action_type") == "observation"
+            )
+            if has_test:
+                return cond
+        if cond == "task_complete_marker_is_true":
+            mc = labels.get("metabolization_candidate")
+            if mc:
+                return cond
+        if cond == "explicit_evaluator_success_exists":
+            if (
+                outcome.get("confidence", 0) >= 0.8
+                and outcome.get("settlement_quality") == "clean_success"
+            ):
+                return cond
+        if cond == "successful_command_output_relevant_to_task":
+            for a in reversed(actions):
+                if (
+                    a.get("action_type") == "observation"
+                    and "success" in str(a.get("content", "")).lower()
+                ):
+                    return cond
+        if cond == "only_one_viable_option_exists":
+            if len(observations) <= 1:
+                return cond
+        if cond == "no_explicit_constraints_in_instruction":
+            has_constraints = any(
+                kw in desc for kw in ("must", "only", "at least", "under", "do not")
+            )
+            if not has_constraints:
+                return cond
+        if cond == "selection_is_exploratory_not_final":
+            buy_actions = [a for a in actions if a.get("action_type") == "buy"]
+            if not buy_actions:
+                return cond
+        if cond == "selected_option_has_explicit_match_evidence":
+            for a in reversed(actions):
+                content = str(a.get("content", "")).lower()
+                if (
+                    "match" in content
+                    or "satisfies" in content
+                    or "meets all" in content
+                    or "all constraints met" in content
+                    or "matches all constraints" in content
+                ):
+                    return cond
+        if cond == "errors_are_resolved_in_subsequent_turns":
+            recovery_events = record.get("affordance_path", {}).get(
+                "recovery_events", []
+            )
+            if recovery_events and all(r.get("recovered") for r in recovery_events):
+                return cond
+        if cond == "error_count_is_only_analysis_mentions":
+            if payment.get("error_count", 0) == 0:
+                return cond
+        if cond == "constraints_are_explicit_and_clear":
+            has_constraints = any(
+                kw in desc
+                for kw in ("must", "only", "at least", "under", "do not", "should")
+            )
+            if has_constraints:
+                return cond
+        if cond == "action_is_low_cost_exploratory":
+            first_actions = actions[:3] if actions else []
+            is_exploratory = all(
+                a.get("action_type") in ("analysis",)
+                or "cat " in str(a.get("content", "")).lower()
+                or "ls" in str(a.get("content", "")).lower()
+                for a in first_actions
+            )
+            if is_exploratory:
+                return cond
+        if cond == "intermediate_representation_exists_in_prior_turns":
+            has_analysis = any(
+                a.get("action_type") == "analysis"
+                for a in actions[: max(1, len(actions) - 1)]
+            )
+            if has_analysis:
+                return cond
+        if cond == "user_or_environment_feedback_has_resolved_ambiguity":
+            if len(observations) >= 2:
+                return cond
+        if cond == "settlement_quality_is_not_failure_with_signal":
+            if outcome.get("settlement_quality") != "failure_with_signal":
+                return cond
+        if cond == "no_failure_condition_evidence_available":
+            has_errors = payment.get("error_count", 0) > 0
+            has_failure_sq = outcome.get("settlement_quality") in (
+                "failure_with_signal",
+                "failure_without_signal",
+            )
+            if not (has_errors or has_failure_sq):
+                return cond
+
+    return None
 
 
 def _assess_counterfactual(
     policy: dict[str, Any],
     record: dict[str, Any],
     fired: bool,
-) -> tuple[str, str, str, str]:
+) -> tuple[str, str, str, str, str | None, list[str]]:
     if not fired:
-        return "no_effect", "Policy trigger not met.", "low", "low"
+        return "no_effect", "Policy trigger not met.", "low", "low", None, []
 
     fm = record.get("labels", {}).get("failure_mode")
     sq = record.get("outcome", {}).get("settlement_quality", "")
@@ -184,6 +755,8 @@ def _assess_counterfactual(
             f"Policy addresses observed failure mode '{fm}' in {sq} trace.",
             payment_risk,
             fp_risk,
+            None,
+            [],
         )
 
     if sq in ("clean_success", "recovered_success") and fm is None:
@@ -192,6 +765,8 @@ def _assess_counterfactual(
             f"Policy would fire on successful trace (quality={sq}) with no failure mode.",
             payment_risk,
             fp_risk,
+            None,
+            [],
         )
 
     if sq in ("partial_success", "unknown"):
@@ -200,6 +775,8 @@ def _assess_counterfactual(
             f"Policy fires on ambiguous trace (quality={sq}, fm={fm}).",
             payment_risk,
             fp_risk,
+            None,
+            [],
         )
 
     if fm and fm not in policy_fms:
@@ -208,6 +785,8 @@ def _assess_counterfactual(
             f"Policy fires but failure mode '{fm}' not in policy's target patterns {policy_fms}.",
             payment_risk,
             fp_risk,
+            None,
+            [],
         )
 
     return (
@@ -215,6 +794,8 @@ def _assess_counterfactual(
         f"Policy fires on trace with quality={sq}, fm={fm}.",
         payment_risk,
         fp_risk,
+        None,
+        [],
     )
 
 
@@ -224,6 +805,7 @@ def evaluate_policies_shadow(
     min_confidence: float = 0.65,
     dataset: str | None = None,
     domain: str | None = None,
+    target_policy_ids: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     results = []
     filtered = []
@@ -240,13 +822,49 @@ def evaluate_policies_shadow(
         filtered.append(rec)
 
     for policy in policies:
+        if policy.get("status") == "superseded":
+            continue
+        if target_policy_ids and policy.get("id") not in target_policy_ids:
+            continue
         for record in filtered:
             trigger = policy.get("trigger", {})
-            fired, trigger_evidence = _check_trigger(trigger, record)
+            negative_conditions = policy.get("negative_conditions")
+            fired, trigger_evidence = _check_trigger(
+                trigger, record, negative_conditions
+            )
 
-            assessment, rationale, payment_risk, fp_risk = _assess_counterfactual(
+            fire_turn_index = _estimate_fire_turn_index(trigger, record, fired)
+            fire_timing, remaining_turns_after_fire = _classify_fire_timing(
+                trigger,
+                record,
+                fire_turn_index,
+                fired,
+            )
+            recovery_opportunity, recovery_opportunity_evidence = (
+                _detect_recovery_opportunity(
+                    record,
+                    fire_timing,
+                    fire_turn_index,
+                    remaining_turns_after_fire,
+                )
+                if fired
+                else (False, ["policy_did_not_fire"])
+            )
+
+            assessment, rationale, payment_risk, fp_risk, _, _ = _assess_counterfactual(
                 policy, record, fired
             )
+            uncertainty_reason = None
+            uncertainty_evidence: list[str] = []
+            if fired and assessment == "uncertain":
+                uncertainty_reason, uncertainty_evidence = _classify_uncertainty(
+                    policy,
+                    record,
+                    trigger_evidence,
+                    fire_timing,
+                    recovery_opportunity,
+                    remaining_turns_after_fire,
+                )
 
             results.append(
                 {
@@ -267,12 +885,212 @@ def evaluate_policies_shadow(
                     ),
                     "counterfactual_assessment": assessment,
                     "rationale": rationale,
+                    "uncertainty_reason": uncertainty_reason,
+                    "uncertainty_evidence": uncertainty_evidence,
                     "payment_risk": payment_risk,
                     "false_positive_risk": fp_risk,
+                    "fire_turn_index": fire_turn_index,
+                    "fire_timing": fire_timing,
+                    "remaining_turns_after_fire": remaining_turns_after_fire,
+                    "recovery_opportunity": recovery_opportunity,
+                    "recovery_opportunity_evidence": recovery_opportunity_evidence,
                 }
             )
 
     return results
+
+
+def _distribution(items: list[str]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        key = item or "unknown"
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def _example_lines(results: list[dict[str, Any]], limit: int = 5) -> list[str]:
+    lines = []
+    for r in results[:limit]:
+        lines.append(
+            "- "
+            f"`{r.get('trace_id', '')}` "
+            f"dataset={r.get('dataset', '')} "
+            f"assessment={r.get('counterfactual_assessment', '')} "
+            f"timing={r.get('fire_timing', '')} "
+            f"recovery={r.get('recovery_opportunity')} "
+            f"evidence={r.get('trigger_evidence', [])}"
+        )
+    return lines or ["- None observed."]
+
+
+def _representative_trace_excerpt(result: dict[str, Any]) -> str:
+    return (
+        f"- Trace `{result.get('trace_id', '')}`: "
+        f"settlement={result.get('observed_settlement_quality', '')}, "
+        f"failure_mode={result.get('observed_failure_mode')}, "
+        f"trigger_evidence={result.get('trigger_evidence', [])}, "
+        f"uncertainty={result.get('uncertainty_reason') or 'n/a'}."
+    )
+
+
+def _policy_refinement_check(policy_id: str, results: list[dict[str, Any]]) -> list[str]:
+    uncertain_reasons = _distribution(
+        [
+            r.get("uncertainty_reason") or "unknown"
+            for r in results
+            if r.get("counterfactual_assessment") == "uncertain"
+        ]
+    )
+    late_count = sum(
+        1
+        for r in results
+        if r.get("fire_timing") in ("late", "final_turn", "after_failure_already_settled")
+    )
+    recovery_count = sum(1 for r in results if r.get("recovery_opportunity"))
+
+    if policy_id == "require_reflection_after_repeated_errors":
+        return [
+            "Repeated errors should remain constrained to unresolved tool or environment errors.",
+            f"Late, final, or already-settled fires: {late_count}.",
+            "Reflection remains plausible when recovery opportunity exists; traces that need a revised plan should refine the intervention before activation.",
+            f"Offline evaluator limitation signals: {uncertain_reasons.get('policy_action_effect_not_observable_offline', 0)}.",
+        ]
+    if policy_id == "require_explicit_settlement_for_failure":
+        domains = _distribution([r.get("domain", "unknown") for r in results])
+        return [
+            "The trigger is tied to observed failure_with_signal settlement and explicit failure-condition evidence.",
+            f"Recovery opportunity fires: {recovery_count}.",
+            f"Domain distribution: {domains}.",
+            "No domain-specific variant is justified unless helpful evidence concentrates in one domain after more traces.",
+        ]
+    return ["No policy-specific refinement check is defined."]
+
+
+def generate_policy_evidence_packs(
+    results: list[dict[str, Any]],
+    policies: list[dict[str, Any]],
+    output_dir: str | Path,
+    target_policy_ids: set[str] | None = None,
+) -> list[Path]:
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    scores_by_policy = {
+        score["policy_id"]: score for score in compute_promotion_scores(results, policies)
+    }
+    results_by_policy: dict[str, list[dict[str, Any]]] = {}
+    for result in results:
+        if result.get("would_fire"):
+            results_by_policy.setdefault(result.get("policy_id", ""), []).append(result)
+
+    written: list[Path] = []
+    for policy in policies:
+        pid = policy.get("id", "")
+        if target_policy_ids and pid not in target_policy_ids:
+            continue
+        fires = results_by_policy.get(pid, [])
+        score = scores_by_policy.get(pid, {})
+        helpful = [r for r in fires if r.get("counterfactual_assessment") == "likely_helpful"]
+        uncertain = [r for r in fires if r.get("counterfactual_assessment") == "uncertain"]
+        harmful = [r for r in fires if r.get("counterfactual_assessment") == "likely_harmful"]
+        uncertainty_groups: dict[str, list[dict[str, Any]]] = {}
+        for r in uncertain:
+            uncertainty_groups.setdefault(r.get("uncertainty_reason") or "unknown", []).append(r)
+
+        fire_timing = score.get(
+            "fire_timing_distribution",
+            _distribution([r.get("fire_timing", "unknown") for r in fires]),
+        )
+        recovery_distribution = _distribution(
+            ["has_recovery_opportunity" if r.get("recovery_opportunity") else "no_recovery_opportunity" for r in fires]
+        )
+
+        lines = [
+            f"# {pid}",
+            "",
+            "## Policy Definition",
+            "",
+            "```yaml",
+            yaml.safe_dump(
+                {
+                    "trigger": policy.get("trigger", {}),
+                    "negative_conditions": policy.get("negative_conditions", []),
+                    "required_evidence": policy.get("required_evidence", []),
+                    "action": policy.get("action", {}),
+                },
+                sort_keys=False,
+            ).strip(),
+            "```",
+            "",
+            "## Intended Intervention",
+            "",
+            policy.get("rationale", "No rationale recorded."),
+            "",
+            "## Current Support Counts",
+            "",
+            f"- Mined support: {policy.get('evidence', {}).get('supporting_trace_count', 0)}",
+            f"- Would-fire events: {score.get('would_fire_count', 0)}",
+            f"- Likely helpful: {score.get('likely_helpful_count', 0)}",
+            f"- Uncertain: {score.get('uncertain_count', 0)}",
+            f"- Harmful: {score.get('likely_harmful_count', 0)}",
+            "",
+            "## Would-Fire Examples",
+            "",
+            *_example_lines(fires),
+            "",
+            "## Likely Helpful Examples",
+            "",
+            *_example_lines(helpful),
+            "",
+            "## Uncertain Examples By Reason",
+            "",
+        ]
+        if uncertainty_groups:
+            for reason, grouped in sorted(uncertainty_groups.items()):
+                lines.extend([f"### {reason}", "", *_example_lines(grouped), ""])
+        else:
+            lines.extend(["- None observed.", ""])
+
+        lines.extend(
+            [
+                "## Harmful Examples",
+                "",
+                *_example_lines(harmful),
+                "",
+                "## Fire Timing Distribution",
+                "",
+                f"`{json.dumps(fire_timing, sort_keys=True)}`",
+                "",
+                "## Recovery Opportunity Distribution",
+                "",
+                f"`{json.dumps(recovery_distribution, sort_keys=True)}`",
+                "",
+                "## Representative Trace Excerpts",
+                "",
+                *([_representative_trace_excerpt(r) for r in fires[:5]] or ["- None observed."]),
+                "",
+                "## What Evidence Is Still Missing",
+                "",
+                "- More likely-helpful shadow fires with recovery opportunity.",
+                "- Clearer outcome signals after policy trigger points.",
+                "- Evidence that the policy action changes settlement, not only that the trigger matches.",
+                "",
+                "## Policy-Specific Refinement Check",
+                "",
+                *_policy_refinement_check(pid, fires),
+                "",
+                "## Recommendation",
+                "",
+                f"`{score.get('recommendation', 'keep_proposed')}`: {score.get('recommendation_rationale', 'No recommendation rationale recorded.')}",
+                "",
+            ]
+        )
+
+        path = out / f"{pid}.md"
+        path.write_text("\n".join(lines))
+        written.append(path)
+
+    return written
 
 
 def compute_promotion_scores(
@@ -315,9 +1133,30 @@ def compute_promotion_scores(
             fp_rate = round(fp_events / len(fire_events), 3)
 
         payment_dist: dict[str, int] = {}
+        uncertainty_reason_distribution: dict[str, int] = {}
+        fire_timing_distribution: dict[str, int] = {}
+        recovery_opportunity_count = 0
+        helpful_with_recovery_opportunity_count = 0
+        uncertain_with_recovery_opportunity_count = 0
+        fires_after_failure_settled_count = 0
         for r in fire_events:
             pr_key = r.get("payment_risk", "low")
             payment_dist[pr_key] = payment_dist.get(pr_key, 0) + 1
+            timing = r.get("fire_timing", "unknown")
+            fire_timing_distribution[timing] = fire_timing_distribution.get(timing, 0) + 1
+            if timing == "after_failure_already_settled":
+                fires_after_failure_settled_count += 1
+            if r.get("recovery_opportunity"):
+                recovery_opportunity_count += 1
+                if r.get("counterfactual_assessment") == "likely_helpful":
+                    helpful_with_recovery_opportunity_count += 1
+                if r.get("counterfactual_assessment") == "uncertain":
+                    uncertain_with_recovery_opportunity_count += 1
+            if r.get("counterfactual_assessment") == "uncertain":
+                reason = r.get("uncertainty_reason") or "unknown"
+                uncertainty_reason_distribution[reason] = (
+                    uncertainty_reason_distribution.get(reason, 0) + 1
+                )
 
         domains = sorted(set(r["domain"] for r in fire_events)) if fire_events else []
         datasets = sorted(set(r["dataset"] for r in fire_events)) if fire_events else []
@@ -360,6 +1199,12 @@ def compute_promotion_scores(
                 "likely_harmful_count": harmful,
                 "uncertain_count": uncertain,
                 "false_positive_rate_estimate": fp_rate,
+                "uncertainty_reason_distribution": uncertainty_reason_distribution,
+                "fire_timing_distribution": fire_timing_distribution,
+                "recovery_opportunity_count": recovery_opportunity_count,
+                "helpful_with_recovery_opportunity_count": helpful_with_recovery_opportunity_count,
+                "uncertain_with_recovery_opportunity_count": uncertain_with_recovery_opportunity_count,
+                "fires_after_failure_settled_count": fires_after_failure_settled_count,
                 "payment_risk_distribution": payment_dist,
                 "domains_observed": domains,
                 "datasets_observed": datasets,
@@ -381,6 +1226,17 @@ def main() -> None:
     parser.add_argument("--min-confidence", type=float, default=0.0)
     parser.add_argument("--dataset", default=None)
     parser.add_argument("--domain", default=None)
+    parser.add_argument(
+        "--target-policy",
+        action="append",
+        default=[],
+        help="Restrict shadow evaluation and evidence packs to a policy id. May repeat.",
+    )
+    parser.add_argument(
+        "--evidence-pack-output",
+        default="docs/policy-evidence-packs",
+        help="Directory for generated policy evidence packs.",
+    )
 
     args = parser.parse_args()
 
@@ -403,6 +1259,7 @@ def main() -> None:
         min_confidence=args.min_confidence,
         dataset=args.dataset,
         domain=args.domain,
+        target_policy_ids=set(args.target_policy) if args.target_policy else None,
     )
 
     output_dir = Path(args.output)
@@ -428,6 +1285,12 @@ def main() -> None:
                 "likely_harmful_count",
                 "uncertain_count",
                 "false_positive_rate_estimate",
+                "uncertainty_reason_distribution",
+                "fire_timing_distribution",
+                "recovery_opportunity_count",
+                "helpful_with_recovery_opportunity_count",
+                "uncertain_with_recovery_opportunity_count",
+                "fires_after_failure_settled_count",
                 "payment_risk_distribution",
                 "domains_observed",
                 "datasets_observed",
@@ -439,6 +1302,15 @@ def main() -> None:
         for s in scores:
             writer.writerow(s)
     print(f"Wrote promotion scores -> {summary_path}")
+
+    if args.target_policy:
+        pack_paths = generate_policy_evidence_packs(
+            results,
+            policies,
+            args.evidence_pack_output,
+            target_policy_ids=set(args.target_policy),
+        )
+        print(f"Wrote {len(pack_paths)} policy evidence packs -> {args.evidence_pack_output}")
 
     for s in scores:
         print(

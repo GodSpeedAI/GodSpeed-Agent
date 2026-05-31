@@ -54,6 +54,12 @@ This index links each schema file under `schemas/` to the runtime concept or wor
 - Main producers: future runtime-owned metabolization and substrate promotion paths
 - Main reporting surface: developmental metabolization summary
 
+### `schemas/live_shadow_run_event.schema.json`
+
+- Runtime concept: step-level live shadow observation for proposed policy would-fire evaluation
+- Main producers: `LiveShadowPolicyEvaluator`, `replay_live_shadow_from_traces.py`, optional harness hook wrappers
+- Main ledgers: `data/settlement_datasets/live_shadow/events.jsonl`
+
 ## Reading Rule
 
 Use this index in both directions:

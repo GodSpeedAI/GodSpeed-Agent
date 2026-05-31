@@ -1,0 +1,20 @@
+{
+  "candidate_count": 7,
+  "expanded_agenttrove_source_distribution": {
+    "code_contests": 120,
+    "codeforces": 120,
+    "freelancer": 120,
+    "nl2bash": 120,
+    "staqc": 120
+  },
+  "expanded_agenttrove_teacher_distribution": {
+    "GLM-4.6": 120,
+    "GPT 5.1 Nano": 360,
+    "GPT-5-mini": 120
+  },
+  "expanded_agenttrove_trace_count": 600,
+  "labeled_agenttrove_record_count": 321,
+  "policy_count": 6,
+  "replay_result_count": 15,
+  "shadow_result_count": 996
+}

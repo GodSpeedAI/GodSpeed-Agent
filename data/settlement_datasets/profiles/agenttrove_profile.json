@@ -1,0 +1,27 @@
+{
+  "avg_confidence": 0.86,
+  "count": 5,
+  "dataset": "agenttrove",
+  "domain": "code",
+  "failure_mode_distribution": {
+    "context_loss": 1,
+    "failed_recovery": 1,
+    "premature_closure": 1,
+    "tool_thrashing": 1,
+    "unknown": 1
+  },
+  "high_confidence_count": 5,
+  "payment_summary": {
+    "api_calls": 0.0,
+    "commands": 4.0,
+    "error_count": 1.2,
+    "page_actions": 0.0,
+    "tool_calls": 0.0,
+    "turns": 9.6
+  },
+  "settlement_quality_distribution": {
+    "clean_success": 2,
+    "failure_with_signal": 2,
+    "recovered_success": 1
+  }
+}

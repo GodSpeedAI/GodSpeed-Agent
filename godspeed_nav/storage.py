@@ -8,6 +8,7 @@ import fcntl
 from pathlib import Path
 from typing import Any
 
+from godspeed_nav.ruvector_bridge import RuVectorBridgeError, search_documents
 from godspeed_nav.schemas import now_iso
 
 
@@ -220,6 +221,21 @@ class LedgerStore:
             "revised_critique_findings": revised_critique_findings,
         }
 
+    def search_developmental_memory(self, query: str, limit: int = 5) -> dict[str, Any]:
+        documents = self._developmental_memory_documents()
+        if not documents:
+            return {"provider": "ruvector", "query": query, "result_count": 0, "results": []}
+
+        try:
+            return search_documents(
+                repo_root=Path(__file__).resolve().parents[1],
+                documents=documents,
+                query=query,
+                limit=limit,
+            )
+        except RuVectorBridgeError as error:
+            raise StorageError(error.code, str(error)) from error
+
     def _redact(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {
@@ -235,6 +251,52 @@ class LedgerStore:
         with quarantine.open("a", encoding="utf-8") as handle:
             for line in lines:
                 handle.write(line + "\n")
+
+    def _developmental_memory_documents(self) -> list[dict[str, Any]]:
+        documents: list[dict[str, Any]] = []
+        for record in self.read("settlements"):
+            summary = str(record.get("summary") or "").strip()
+            if not summary:
+                continue
+            text = " ".join(
+                part
+                for part in [
+                    summary,
+                    str(record.get("failure_mode") or "").strip(),
+                    str(record.get("pathway") or "").strip(),
+                    str(record.get("status") or "").strip(),
+                ]
+                if part
+            )
+            documents.append(
+                {
+                    "record_id": str(record.get("id") or ""),
+                    "ledger": "settlements",
+                    "text": text,
+                    "metadata": {
+                        "status": record.get("status"),
+                        "affordance_id": record.get("affordance_id"),
+                        "failure_mode": record.get("failure_mode"),
+                    },
+                }
+            )
+
+        for record in self.read("critique_findings"):
+            summary = str(record.get("summary") or record.get("finding") or "").strip()
+            if not summary:
+                continue
+            documents.append(
+                {
+                    "record_id": str(record.get("id") or ""),
+                    "ledger": "critique_findings",
+                    "text": summary,
+                    "metadata": {
+                        "revised_by": record.get("revised_by"),
+                    },
+                }
+            )
+
+        return [document for document in documents if document["record_id"]]
 
     def _checksum(self, envelope: dict[str, Any]) -> str:
         payload = {key: value for key, value in envelope.items() if key != "checksum"}

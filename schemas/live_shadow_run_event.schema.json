@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://godspeed.local/schemas/live_shadow_run_event.schema.json",
+  "title": "Live Shadow Run Event",
+  "type": "object",
+  "required": [
+    "run_id",
+    "step_index",
+    "timestamp",
+    "event_type",
+    "content",
+    "tool_name",
+    "metadata",
+    "settlement_signals"
+  ],
+  "properties": {
+    "run_id": { "type": "string" },
+    "step_index": { "type": "integer", "minimum": 0 },
+    "timestamp": { "type": "string" },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "model_message",
+        "tool_call",
+        "tool_result",
+        "error",
+        "final_answer",
+        "task_complete",
+        "evaluator_result"
+      ]
+    },
+    "content": { "type": "string" },
+    "tool_name": { "type": ["string", "null"] },
+    "metadata": { "type": "object" },
+    "settlement_signals": {
+      "type": "object",
+      "required": [
+        "error_detected",
+        "task_complete",
+        "success_signal",
+        "failure_signal",
+        "test_passed",
+        "test_failed"
+      ],
+      "properties": {
+        "error_detected": { "type": "boolean" },
+        "task_complete": { "type": "boolean" },
+        "success_signal": { "type": "boolean" },
+        "failure_signal": { "type": "boolean" },
+        "test_passed": { "type": "boolean" },
+        "test_failed": { "type": "boolean" }
+      }
+    }
+  }
+}

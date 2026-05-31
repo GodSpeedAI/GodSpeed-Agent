@@ -1,0 +1,9 @@
+{
+  "record_count": 336,
+  "result_count": 996,
+  "targets": [
+    "require_reflection_after_repeated_errors",
+    "require_explicit_settlement_for_failure"
+  ],
+  "status_path": "data/settlement_datasets/policy_helpfulness_adjudication_run/policies_review/policy_status_recommendations.yaml"
+}

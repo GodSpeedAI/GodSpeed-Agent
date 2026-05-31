@@ -1,0 +1,150 @@
+actions:
+  require_reflection:
+    description: Require the agent to reflect on settlement feedback and revise its plan before continuing.
+    family: adaptive_recovery
+    aliases:
+      - require_operator_reflection
+      - require_reflection_after_error
+      - reflect_after_repeated_tool_error
+      - require_plan_revision_after_error
+      - revised_plan_exists
+    compatible_policy_actions:
+      - require_operator: reflection
+      - block_next_action_until: revised_plan_exists
+    compatible_eval_behaviors:
+      - require reflection
+      - require revised plan
+      - reflect on settlement feedback
+      - revise plan after error
+
+  require_settlement_evidence:
+    description: Require explicit settlement evidence or verification before finalizing or closing a task.
+    family: closure_validation
+    aliases:
+      - require_explicit_settlement
+      - require_settlement_evidence_before_final
+      - block_final_answer_until_evidence
+      - require_test_or_settlement_evidence
+      - verification_step
+    compatible_policy_actions:
+      - require_operator: verification_step
+      - block: answer_without_test_or_settlement_signal
+      - block: answer_without_test
+    compatible_eval_behaviors:
+      - require settlement evidence
+      - block final answer
+      - require test or explicit evidence
+      - require verification
+      - verify answer before submitting
+
+  reset_plan:
+    description: Require the agent to abandon, reset, or revise a failing path after thrashing or payment spiral.
+    family: adaptive_recovery
+    aliases:
+      - require_plan_reset
+      - payment_spiral_reset
+      - positive_disintegration_reset
+      - reset after payment spiral
+      - alternative approach
+      - escalate or reset
+    compatible_policy_actions:
+      - require_operator: positive_disintegration
+      - suggest: terminate_or_reset
+    compatible_eval_behaviors:
+      - reset plan
+      - stop tool loop
+      - revise strategy
+      - abandon failing path
+      - propose alternative approach
+      - escalate or reset
+
+  require_constraint_match:
+    description: Require explicit matching between user constraints and selected option before final selection.
+    family: selection_validation
+    aliases:
+      - compare_constraints
+      - constraint_match_before_selection
+      - require_constraint_comparison
+      - constraint_verification
+    compatible_policy_actions:
+      - require_operator: constraint_verification
+      - block: selection_without_comparison
+    compatible_eval_behaviors:
+      - compare constraints
+      - verify selected option satisfies constraints
+      - require constraint matching
+
+  require_intermediate_representation:
+    description: Require an intermediate plan or clarification step before high-payment action when constraints are unknown.
+    family: planning_guard
+    aliases:
+      - prevent_premature_concretion
+      - require_intermediate_state
+      - require_plan_before_irreversible_action
+      - intermediate_representation
+    compatible_policy_actions:
+      - require_operator: intermediate_representation
+      - block: direct_high_payment_action_with_unknown_constraints
+      - block: direct_jump
+    compatible_eval_behaviors:
+      - route through intermediate representation
+      - require plan
+      - ask for missing constraint
+      - clarify before action
+
+  search_or_inspect_context:
+    description: Require inspection or search of relevant context before acting directly.
+    family: planning_guard
+    aliases:
+      - search_before_patch
+      - search_or_inspect
+      - inspect_before_edit
+    compatible_policy_actions:
+      - require_operator: search_or_inspect
+      - block: direct_edit_without_context
+    compatible_eval_behaviors:
+      - inspect relevant context
+      - search before patch
+      - inspect before editing
+
+  inspect_api_schema:
+    description: Require schema or tool inspection before making an API call.
+    family: planning_guard
+    aliases:
+      - inspect_api_schema_before_call
+      - schema_inspection
+      - inspect tool schema
+    compatible_policy_actions:
+      - require_operator: schema_inspection
+      - block: api_call_without_schema
+    compatible_eval_behaviors:
+      - inspect api schema
+      - inspect tool schema before call
+      - verify parameters before call
+
+  require_failure_analysis:
+    description: Require explicit analysis of a failed settlement when failure evidence exists.
+    family: closure_validation
+    aliases:
+      - require_explicit_settlement_for_failure
+      - failure_analysis
+      - error_correction_signal
+    compatible_policy_actions:
+      - require_operator: failure_analysis
+      - record: error_correction_signal
+    compatible_eval_behaviors:
+      - analyze failure explicitly
+      - record failure evidence
+      - require explicit failure evidence
+
+  recognize_reusable_pattern:
+    description: Recognize and apply a reusable settlement pattern from prior successful traces.
+    family: pattern_learning
+    aliases:
+      - metabolization_candidate
+      - recognize reusable pattern
+      - apply reusable pattern
+    compatible_policy_actions:
+      - recognize_reusable_pattern
+    compatible_eval_behaviors:
+      - recognize reusable pattern and apply it

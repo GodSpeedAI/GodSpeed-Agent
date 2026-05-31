@@ -1,9 +1,12 @@
 policy_id,supporting_trace_count,would_fire_count,likely_helpful_count,likely_harmful_count,uncertain_count,false_positive_rate_estimate,payment_risk_distribution,domains_observed,datasets_observed,recommendation,recommendation_rationale
-require_reflection_after_repeated_errors,20,2,1,0,1,0.0,"{'medium': 1, 'high': 1}",['code'],"['agenttrove', 'swegym']",keep_proposed,Helpful on 1 traces but below activation threshold (need 5+).
-search_before_patch,20,6,0,0,6,0.0,"{'low': 3, 'medium': 3}",['code'],"['agenttrove', 'swegym']",keep_proposed,Insufficient evidence for promotion.
-compare_constraints_before_selection,20,5,0,2,3,0.4,{'low': 5},['shopping'],['webshop'],reject,Policy harms 2 successful traces.
+require_reflection_after_repeated_errors,20,1,0,0,1,0.0,{'high': 1},['code'],['swegym'],keep_proposed,Insufficient evidence for promotion.
+search_before_patch,20,5,0,0,5,0.0,"{'low': 3, 'medium': 2}",['code'],"['agenttrove', 'swegym']",keep_proposed,Insufficient evidence for promotion.
+require_constraint_match_before_multi_option_selection,20,1,0,0,1,0.0,{'low': 1},['shopping'],['webshop'],keep_proposed,Insufficient evidence for promotion.
+compare_constraints_before_selection,0,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
 inspect_api_schema_before_call,20,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
-reset_plan_after_payment_spiral,20,3,0,0,3,0.0,"{'medium': 2, 'high': 1}",['code'],"['agenttrove', 'swegym']",keep_proposed,Insufficient evidence for promotion.
-test_before_final_answer,20,13,0,7,6,0.538,"{'low': 11, 'medium': 2}","['api', 'code', 'shopping']","['agenttrove', 'apibank', 'swegym', 'webshop']",reject,Policy harms 7 successful traces.
+reset_plan_after_payment_spiral,20,1,0,0,1,0.0,{'high': 1},['code'],['swegym'],keep_proposed,Insufficient evidence for promotion.
+require_test_or_settlement_evidence_before_final_for_code_patch,20,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+test_before_final_answer,0,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
 require_explicit_settlement_for_failure,20,5,2,0,3,0.0,"{'medium': 2, 'low': 2, 'high': 1}","['api', 'code']","['agenttrove', 'apibank', 'swegym']",keep_proposed,Helpful on 2 traces but below activation threshold (need 5+).
-prevent_premature_concretion,20,11,0,3,8,0.273,"{'low': 5, 'medium': 5, 'high': 1}","['code', 'shopping']","['agenttrove', 'swegym', 'webshop']",reject,Policy harms 3 successful traces.
+prevent_high_payment_action_when_constraints_unknown,20,1,0,0,1,0.0,{'medium': 1},['code'],['agenttrove'],keep_proposed,Insufficient evidence for promotion.
+prevent_premature_concretion,0,0,0,0,0,0.0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.

@@ -1,0 +1,29 @@
+{
+  "avg_confidence": 0.682,
+  "count": 600,
+  "dataset": "agenttrove",
+  "domain": "code",
+  "failure_mode_distribution": {
+    "context_loss": 5,
+    "failed_recovery": 10,
+    "payment_spiral": 78,
+    "premature_concretion": 32,
+    "tool_thrashing": 149,
+    "unknown": 326
+  },
+  "high_confidence_count": 321,
+  "payment_summary": {
+    "api_calls": 0.0,
+    "commands": 25.72,
+    "error_count": 1.45,
+    "page_actions": 0.0,
+    "tool_calls": 0.0,
+    "turns": 13.52
+  },
+  "settlement_quality_distribution": {
+    "clean_success": 239,
+    "failure_with_signal": 224,
+    "partial_success": 55,
+    "recovered_success": 82
+  }
+}

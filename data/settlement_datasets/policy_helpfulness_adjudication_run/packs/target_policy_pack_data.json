@@ -1,0 +1,828 @@
+{
+  "require_reflection_after_repeated_errors": {
+    "policy": {
+      "id": "require_reflection_after_repeated_errors",
+      "status": "proposed",
+      "supersedes": null,
+      "superseded_by": null,
+      "trigger": {
+        "error_count_gte": 3,
+        "errors_are_unresolved": true
+      },
+      "negative_conditions": [
+        "errors_are_resolved_in_subsequent_turns",
+        "error_count_is_only_analysis_mentions"
+      ],
+      "required_evidence": [
+        "at_least_3_error_outputs_from_environment_or_tool",
+        "errors_remain_unresolved_at_trace_end_or_last_3_turns"
+      ],
+      "action": {
+        "require_operator": "reflection",
+        "block_next_action_until": "revised_plan_exists"
+      },
+      "rationale": "Repeated unresolved errors from environment/tool feedback indicate settlement feedback is not being metabolized.",
+      "false_positive_risk": "low",
+      "payment_risk": "low",
+      "evidence": {
+        "supporting_trace_count": 31,
+        "supporting_dataset_count": 1,
+        "supporting_datasets": [
+          "agenttrove"
+        ],
+        "total_traces_analyzed": 336,
+        "example_trace_ids": [
+          "at-246aacd1cbab",
+          "at-61bf56ea495a",
+          "at-3c55c9fdb653",
+          "at-5f99897f51c6",
+          "at-1fa6dff6686c"
+        ],
+        "observed_failure_patterns": [
+          "tool_thrashing",
+          "payment_spiral",
+          "failed_recovery"
+        ],
+        "proportion": 0.092,
+        "avg_label_confidence": 0.8,
+        "confidence_distribution": {
+          "min": 0.8,
+          "max": 0.8,
+          "mean": 0.8
+        },
+        "meets_min_supporting_count": true
+      },
+      "risk": {
+        "false_positive_concern": "Deterministic heuristics may misclassify some traces.",
+        "recommended_review": "Human review before activation in production harness."
+      },
+      "activation_status": "proposed",
+      "active_by_default": false
+    },
+    "baseline_shadow": {
+      "policy_id": "require_reflection_after_repeated_errors",
+      "supporting_trace_count": "332",
+      "would_fire_count": "2",
+      "likely_helpful_count": "0",
+      "likely_harmful_count": "0",
+      "uncertain_count": "2",
+      "false_positive_rate_estimate": "0.0",
+      "payment_risk_distribution": "{'medium': 1, 'high': 1}",
+      "domains_observed": "['code']",
+      "datasets_observed": "['agenttrove', 'swegym']",
+      "recommendation": "keep_proposed",
+      "recommendation_rationale": "Insufficient evidence for promotion."
+    },
+    "baseline_replay": {
+      "policy_id": "require_reflection_after_repeated_errors",
+      "total": "4",
+      "raw_match": "0",
+      "exact_semantic_match": "0",
+      "partial_semantic_match": "2",
+      "mismatch": "1",
+      "unknown_policy_action": "0",
+      "unknown_eval_behavior": "1",
+      "insufficient_evidence": "0",
+      "raw_match_rate": "0.0",
+      "semantic_match_rate": "0.333",
+      "partial_match_rate": "0.667",
+      "unknown_policy_action_count": "0",
+      "unknown_eval_behavior_count": "1",
+      "mismatch_count": "1",
+      "excluded_unknown_count": "1"
+    },
+    "current_score": {
+      "policy_id": "require_reflection_after_repeated_errors",
+      "supporting_trace_count": 332,
+      "would_fire_count": 2,
+      "likely_helpful_count": 0,
+      "likely_harmful_count": 0,
+      "uncertain_count": 2,
+      "false_positive_rate_estimate": 0.0,
+      "uncertainty_reason_distribution": {
+        "no_recovery_opportunity": 2
+      },
+      "fire_timing_distribution": {
+        "final_turn": 2
+      },
+      "recovery_opportunity_count": 0,
+      "helpful_with_recovery_opportunity_count": 0,
+      "uncertain_with_recovery_opportunity_count": 0,
+      "fires_after_failure_settled_count": 0,
+      "payment_risk_distribution": {
+        "medium": 1,
+        "high": 1
+      },
+      "domains_observed": [
+        "code"
+      ],
+      "datasets_observed": [
+        "agenttrove",
+        "swegym"
+      ],
+      "recommendation": "keep_proposed",
+      "recommendation_rationale": "Insufficient evidence for promotion."
+    },
+    "current_replay": {
+      "policy_id": "require_reflection_after_repeated_errors",
+      "raw_match": 0,
+      "exact_semantic_match": 0,
+      "partial_semantic_match": 2,
+      "mismatch": 1,
+      "unknown_policy_action": 0,
+      "unknown_eval_behavior": 1,
+      "insufficient_evidence": 0,
+      "total": 4,
+      "raw_match_rate": 0.0,
+      "semantic_match_rate": 0.333,
+      "partial_match_rate": 0.667,
+      "unknown_policy_action_count": 0,
+      "unknown_eval_behavior_count": 1,
+      "mismatch_count": 1,
+      "excluded_unknown_count": 1
+    },
+    "would_fire_examples": [
+      {
+        "trace_id": "task_1119",
+        "dataset": "agenttrove",
+        "domain": "code",
+        "assessment": "uncertain",
+        "uncertainty_reason": "no_recovery_opportunity",
+        "fire_timing": "final_turn",
+        "recovery_opportunity": false,
+        "trigger_evidence": [
+          "error_count=4>=3",
+          "errors_unresolved=4_of_4"
+        ],
+        "rationale": "Policy fires on trace with quality=recovered_success, fm=failed_recovery.",
+        "outcome": {
+          "confidence": 0.8,
+          "evidence": [
+            "task_complete:True:prose",
+            "json_command_count:1",
+            "error_count:4",
+            "has_final_answer:true"
+          ],
+          "reward": null,
+          "score": null,
+          "settlement_quality": "recovered_success",
+          "success": true
+        },
+        "failure_mode": "failed_recovery",
+        "desired_direction": "previous response had parsing errors:\nerror: invalid json: invalid control character at: line 2 column 60 (char 61) | content preview: '{\\n  \"analysis\": \"i\\'m in the /workspace directory and need to:\\",
+        "actions_excerpt": [
+          {
+            "turn_index": 1,
+            "action_type": "text",
+            "content": ""
+          },
+          {
+            "turn_index": 3,
+            "action_type": "text",
+            "content": ""
+          },
+          {
+            "turn_index": 5,
+            "action_type": "text",
+            "content": ""
+          },
+          {
+            "turn_index": 7,
+            "action_type": "command",
+            "content": "\n<think>Now I can see the contents of input.txt. It contains:\none\ntwo\nthree\nfour\nfive\nsix\n\nSo I need to:\n1. Join all lines with commas between them (resulting i"
+          }
+        ],
+        "observations_excerpt": []
+      },
+      {
+        "trace_id": "swe-failed-004",
+        "dataset": "swegym",
+        "domain": "code",
+        "assessment": "uncertain",
+        "uncertainty_reason": "no_recovery_opportunity",
+        "fire_timing": "final_turn",
+        "recovery_opportunity": false,
+        "trigger_evidence": [
+          "error_count=3>=3",
+          "errors_unresolved=3_of_3"
+        ],
+        "rationale": "Policy fires but failure mode 'test_failure' not in policy's target patterns ['tool_thrashing', 'payment_spiral', 'failed_recovery'].",
+        "outcome": {
+          "confidence": 0.7,
+          "evidence": [
+            "test_result.resolved=false",
+            "failed_tests=[\"tests/test_csv_parser.py::test_quoted_newline\"]",
+            "passed_count=2"
+          ],
+          "reward": 0.0,
+          "score": 0.6666666666666666,
+          "settlement_quality": "failure_with_signal",
+          "success": false
+        },
+        "failure_mode": "test_failure",
+        "desired_direction": "CSV parser fails on quoted fields with embedded newlines: When parsing CSV files with quoted fields containing embedded newlines, the parser splits the field across multiple rows. Example input:\n```\nname,description\n\"Alice\",\"Line 1\\nLine 2\"\n```\nExpected: 1 d",
+        "actions_excerpt": [
+          {
+            "turn_index": 0,
+            "action_type": "analysis",
+            "content": "The CSV parser splits quoted fields with embedded newlines into separate rows. The core issue is that the parser splits on newlines before handling quotes."
+          },
+          {
+            "turn_index": 1,
+            "action_type": "command",
+            "content": "sed -i 's/lines = data.split/lines = data.replace(\"\\\\n\", \"\\\\n\").split/' csv_parser/__init__.py"
+          },
+          {
+            "turn_index": 3,
+            "action_type": "command",
+            "content": "python -m pytest tests/test_csv_parser.py -v"
+          },
+          {
+            "turn_index": 5,
+            "action_type": "analysis",
+            "content": "That didn't work. Let me try a different approach - using a state machine to track quote context instead of simple split."
+          }
+        ],
+        "observations_excerpt": [
+          {
+            "turn_index": 2,
+            "content": ""
+          },
+          {
+            "turn_index": 4,
+            "content": "============================= test session starts ==============================\ntests/test_csv_parser.py::test_simple_csv PASSED\ntests/test_csv_parser.py::test"
+          },
+          {
+            "turn_index": 7,
+            "content": ""
+          }
+        ]
+      }
+    ],
+    "helpful_examples": [],
+    "harmful_examples": [],
+    "uncertain_examples_by_reason": {
+      "no_recovery_opportunity": [
+        {
+          "trace_id": "task_1119",
+          "dataset": "agenttrove",
+          "domain": "code",
+          "assessment": "uncertain",
+          "uncertainty_reason": "no_recovery_opportunity",
+          "fire_timing": "final_turn",
+          "recovery_opportunity": false,
+          "trigger_evidence": [
+            "error_count=4>=3",
+            "errors_unresolved=4_of_4"
+          ],
+          "rationale": "Policy fires on trace with quality=recovered_success, fm=failed_recovery.",
+          "outcome": {
+            "confidence": 0.8,
+            "evidence": [
+              "task_complete:True:prose",
+              "json_command_count:1",
+              "error_count:4",
+              "has_final_answer:true"
+            ],
+            "reward": null,
+            "score": null,
+            "settlement_quality": "recovered_success",
+            "success": true
+          },
+          "failure_mode": "failed_recovery",
+          "desired_direction": "previous response had parsing errors:\nerror: invalid json: invalid control character at: line 2 column 60 (char 61) | content preview: '{\\n  \"analysis\": \"i\\'m in the /workspace directory and need to:\\",
+          "actions_excerpt": [
+            {
+              "turn_index": 1,
+              "action_type": "text",
+              "content": ""
+            },
+            {
+              "turn_index": 3,
+              "action_type": "text",
+              "content": ""
+            },
+            {
+              "turn_index": 5,
+              "action_type": "text",
+              "content": ""
+            },
+            {
+              "turn_index": 7,
+              "action_type": "command",
+              "content": "\n<think>Now I can see the contents of input.txt. It contains:\none\ntwo\nthree\nfour\nfive\nsix\n\nSo I need to:\n1. Join all lines with commas between them (resulting i"
+            }
+          ],
+          "observations_excerpt": []
+        },
+        {
+          "trace_id": "swe-failed-004",
+          "dataset": "swegym",
+          "domain": "code",
+          "assessment": "uncertain",
+          "uncertainty_reason": "no_recovery_opportunity",
+          "fire_timing": "final_turn",
+          "recovery_opportunity": false,
+          "trigger_evidence": [
+            "error_count=3>=3",
+            "errors_unresolved=3_of_3"
+          ],
+          "rationale": "Policy fires but failure mode 'test_failure' not in policy's target patterns ['tool_thrashing', 'payment_spiral', 'failed_recovery'].",
+          "outcome": {
+            "confidence": 0.7,
+            "evidence": [
+              "test_result.resolved=false",
+              "failed_tests=[\"tests/test_csv_parser.py::test_quoted_newline\"]",
+              "passed_count=2"
+            ],
+            "reward": 0.0,
+            "score": 0.6666666666666666,
+            "settlement_quality": "failure_with_signal",
+            "success": false
+          },
+          "failure_mode": "test_failure",
+          "desired_direction": "CSV parser fails on quoted fields with embedded newlines: When parsing CSV files with quoted fields containing embedded newlines, the parser splits the field across multiple rows. Example input:\n```\nname,description\n\"Alice\",\"Line 1\\nLine 2\"\n```\nExpected: 1 d",
+          "actions_excerpt": [
+            {
+              "turn_index": 0,
+              "action_type": "analysis",
+              "content": "The CSV parser splits quoted fields with embedded newlines into separate rows. The core issue is that the parser splits on newlines before handling quotes."
+            },
+            {
+              "turn_index": 1,
+              "action_type": "command",
+              "content": "sed -i 's/lines = data.split/lines = data.replace(\"\\\\n\", \"\\\\n\").split/' csv_parser/__init__.py"
+            },
+            {
+              "turn_index": 3,
+              "action_type": "command",
+              "content": "python -m pytest tests/test_csv_parser.py -v"
+            },
+            {
+              "turn_index": 5,
+              "action_type": "analysis",
+              "content": "That didn't work. Let me try a different approach - using a state machine to track quote context instead of simple split."
+            }
+          ],
+          "observations_excerpt": [
+            {
+              "turn_index": 2,
+              "content": ""
+            },
+            {
+              "turn_index": 4,
+              "content": "============================= test session starts ==============================\ntests/test_csv_parser.py::test_simple_csv PASSED\ntests/test_csv_parser.py::test"
+            },
+            {
+              "turn_index": 7,
+              "content": ""
+            }
+          ]
+        }
+      ]
+    },
+    "fire_timing_distribution": {
+      "final_turn": 2
+    },
+    "recovery_opportunity_distribution": {
+      "no_recovery_opportunity": 2
+    },
+    "domain_distribution": {
+      "agenttrove": 1,
+      "swegym": 1
+    }
+  },
+  "require_explicit_settlement_for_failure": {
+    "policy": {
+      "id": "require_explicit_settlement_for_failure",
+      "status": "proposed",
+      "supersedes": null,
+      "superseded_by": null,
+      "trigger": {
+        "settlement_quality": "failure_with_signal",
+        "has_failure_condition_evidence": true
+      },
+      "negative_conditions": [
+        "settlement_quality_is_not_failure_with_signal",
+        "no_failure_condition_evidence_available"
+      ],
+      "required_evidence": [
+        "settlement_quality_is_failure_with_signal",
+        "failure_condition_has_observable_evidence_test_output_error_message_or_tool_feedback"
+      ],
+      "action": {
+        "require_operator": "failure_analysis",
+        "record": "error_correction_signal"
+      },
+      "rationale": "Failures with observable signals should produce explicit error-correction data backed by actual failure condition evidence.",
+      "false_positive_risk": "low",
+      "payment_risk": "low",
+      "evidence": {
+        "supporting_trace_count": 8,
+        "supporting_dataset_count": 2,
+        "supporting_datasets": [
+          "agenttrove",
+          "swegym"
+        ],
+        "total_traces_analyzed": 336,
+        "example_trace_ids": [
+          "at-a3d8c2e58d88",
+          "at-4e190fe45dac",
+          "at-efa503e29895",
+          "freelancer_askllm_filtered-0105",
+          "task_1090"
+        ],
+        "observed_failure_patterns": [
+          "failed_recovery",
+          "test_failure"
+        ],
+        "proportion": 0.024,
+        "avg_label_confidence": 0.775,
+        "confidence_distribution": {
+          "min": 0.7,
+          "max": 0.8,
+          "mean": 0.775
+        },
+        "meets_min_supporting_count": true
+      },
+      "risk": {
+        "false_positive_concern": "Deterministic heuristics may misclassify some traces.",
+        "recommended_review": "Human review before activation in production harness."
+      },
+      "activation_status": "proposed",
+      "active_by_default": false
+    },
+    "baseline_shadow": {
+      "policy_id": "require_explicit_settlement_for_failure",
+      "supporting_trace_count": "332",
+      "would_fire_count": "3",
+      "likely_helpful_count": "2",
+      "likely_harmful_count": "0",
+      "uncertain_count": "1",
+      "false_positive_rate_estimate": "0.0",
+      "payment_risk_distribution": "{'low': 2, 'high': 1}",
+      "domains_observed": "['api', 'code']",
+      "datasets_observed": "['apibank', 'swegym']",
+      "recommendation": "keep_proposed",
+      "recommendation_rationale": "Helpful on 2 traces but below activation threshold (need 5+)."
+    },
+    "baseline_replay": {
+      "policy_id": "require_explicit_settlement_for_failure",
+      "total": "3",
+      "raw_match": "0",
+      "exact_semantic_match": "0",
+      "partial_semantic_match": "0",
+      "mismatch": "2",
+      "unknown_policy_action": "0",
+      "unknown_eval_behavior": "1",
+      "insufficient_evidence": "0",
+      "raw_match_rate": "0.0",
+      "semantic_match_rate": "0.0",
+      "partial_match_rate": "0.0",
+      "unknown_policy_action_count": "0",
+      "unknown_eval_behavior_count": "1",
+      "mismatch_count": "2",
+      "excluded_unknown_count": "1"
+    },
+    "current_score": {
+      "policy_id": "require_explicit_settlement_for_failure",
+      "supporting_trace_count": 332,
+      "would_fire_count": 3,
+      "likely_helpful_count": 2,
+      "likely_harmful_count": 0,
+      "uncertain_count": 1,
+      "false_positive_rate_estimate": 0.0,
+      "uncertainty_reason_distribution": {
+        "policy_would_fire_too_late": 1
+      },
+      "fire_timing_distribution": {
+        "after_failure_already_settled": 3
+      },
+      "recovery_opportunity_count": 0,
+      "helpful_with_recovery_opportunity_count": 0,
+      "uncertain_with_recovery_opportunity_count": 0,
+      "fires_after_failure_settled_count": 3,
+      "payment_risk_distribution": {
+        "low": 2,
+        "high": 1
+      },
+      "domains_observed": [
+        "api",
+        "code"
+      ],
+      "datasets_observed": [
+        "apibank",
+        "swegym"
+      ],
+      "recommendation": "keep_proposed",
+      "recommendation_rationale": "Helpful on 2 traces but below activation threshold (need 5+)."
+    },
+    "current_replay": {
+      "policy_id": "require_explicit_settlement_for_failure",
+      "raw_match": 0,
+      "exact_semantic_match": 0,
+      "partial_semantic_match": 0,
+      "mismatch": 2,
+      "unknown_policy_action": 0,
+      "unknown_eval_behavior": 1,
+      "insufficient_evidence": 0,
+      "total": 3,
+      "raw_match_rate": 0.0,
+      "semantic_match_rate": 0.0,
+      "partial_match_rate": 0.0,
+      "unknown_policy_action_count": 0,
+      "unknown_eval_behavior_count": 1,
+      "mismatch_count": 2,
+      "excluded_unknown_count": 1
+    },
+    "would_fire_examples": [
+      {
+        "trace_id": "api-wrong-tool-003",
+        "dataset": "apibank",
+        "domain": "api",
+        "assessment": "uncertain",
+        "uncertainty_reason": "policy_would_fire_too_late",
+        "fire_timing": "after_failure_already_settled",
+        "recovery_opportunity": false,
+        "trigger_evidence": [
+          "settlement_quality=failure_with_signal",
+          "failure_condition_evidence_present"
+        ],
+        "rationale": "Policy fires but failure mode 'wrong_tool' not in policy's target patterns ['failed_recovery', 'test_failure'].",
+        "outcome": {
+          "confidence": 0.7,
+          "evidence": [
+            "actual_calls:search_web",
+            "expected_calls:get_weather",
+            "missing_calls:get_weather"
+          ],
+          "reward": 0.0,
+          "score": 0.0,
+          "settlement_quality": "failure_with_signal",
+          "success": false
+        },
+        "failure_mode": "wrong_tool",
+        "desired_direction": "Get weather in Tokyo",
+        "actions_excerpt": [],
+        "observations_excerpt": []
+      },
+      {
+        "trace_id": "swe-failed-004",
+        "dataset": "swegym",
+        "domain": "code",
+        "assessment": "likely_helpful",
+        "uncertainty_reason": null,
+        "fire_timing": "after_failure_already_settled",
+        "recovery_opportunity": false,
+        "trigger_evidence": [
+          "settlement_quality=failure_with_signal",
+          "failure_condition_evidence_present"
+        ],
+        "rationale": "Policy addresses observed failure mode 'test_failure' in failure_with_signal trace.",
+        "outcome": {
+          "confidence": 0.7,
+          "evidence": [
+            "test_result.resolved=false",
+            "failed_tests=[\"tests/test_csv_parser.py::test_quoted_newline\"]",
+            "passed_count=2"
+          ],
+          "reward": 0.0,
+          "score": 0.6666666666666666,
+          "settlement_quality": "failure_with_signal",
+          "success": false
+        },
+        "failure_mode": "test_failure",
+        "desired_direction": "CSV parser fails on quoted fields with embedded newlines: When parsing CSV files with quoted fields containing embedded newlines, the parser splits the field across multiple rows. Example input:\n```\nname,description\n\"Alice\",\"Line 1\\nLine 2\"\n```\nExpected: 1 d",
+        "actions_excerpt": [
+          {
+            "turn_index": 0,
+            "action_type": "analysis",
+            "content": "The CSV parser splits quoted fields with embedded newlines into separate rows. The core issue is that the parser splits on newlines before handling quotes."
+          },
+          {
+            "turn_index": 1,
+            "action_type": "command",
+            "content": "sed -i 's/lines = data.split/lines = data.replace(\"\\\\n\", \"\\\\n\").split/' csv_parser/__init__.py"
+          },
+          {
+            "turn_index": 3,
+            "action_type": "command",
+            "content": "python -m pytest tests/test_csv_parser.py -v"
+          },
+          {
+            "turn_index": 5,
+            "action_type": "analysis",
+            "content": "That didn't work. Let me try a different approach - using a state machine to track quote context instead of simple split."
+          }
+        ],
+        "observations_excerpt": [
+          {
+            "turn_index": 2,
+            "content": ""
+          },
+          {
+            "turn_index": 4,
+            "content": "============================= test session starts ==============================\ntests/test_csv_parser.py::test_simple_csv PASSED\ntests/test_csv_parser.py::test"
+          },
+          {
+            "turn_index": 7,
+            "content": ""
+          }
+        ]
+      },
+      {
+        "trace_id": "swe-premature-005",
+        "dataset": "swegym",
+        "domain": "code",
+        "assessment": "likely_helpful",
+        "uncertainty_reason": null,
+        "fire_timing": "after_failure_already_settled",
+        "recovery_opportunity": false,
+        "trigger_evidence": [
+          "settlement_quality=failure_with_signal",
+          "failure_condition_evidence_present"
+        ],
+        "rationale": "Policy addresses observed failure mode 'test_failure' in failure_with_signal trace.",
+        "outcome": {
+          "confidence": 0.7,
+          "evidence": [
+            "test_result.resolved=false",
+            "failed_tests=[\"tests/test_config.py::test_env_override\"]",
+            "passed_count=2"
+          ],
+          "reward": 0.0,
+          "score": 0.6666666666666666,
+          "settlement_quality": "failure_with_signal",
+          "success": false
+        },
+        "failure_mode": "test_failure",
+        "desired_direction": "Config loader ignores environment variable overrides: When YAML config values should be overridden by environment variables, the overrides are silently ignored. The load_config function reads YAML but never checks os.environ.",
+        "actions_excerpt": [
+          {
+            "turn_index": 0,
+            "action_type": "command",
+            "content": "sed -i 's/return config/return {**config, **{k.lower().replace(prefix+\"_\",\"\")/' config_loader/__init__.py"
+          }
+        ],
+        "observations_excerpt": [
+          {
+            "turn_index": 1,
+            "content": "sed: unmatched parenthesis"
+          }
+        ]
+      }
+    ],
+    "helpful_examples": [
+      {
+        "trace_id": "swe-failed-004",
+        "dataset": "swegym",
+        "domain": "code",
+        "assessment": "likely_helpful",
+        "uncertainty_reason": null,
+        "fire_timing": "after_failure_already_settled",
+        "recovery_opportunity": false,
+        "trigger_evidence": [
+          "settlement_quality=failure_with_signal",
+          "failure_condition_evidence_present"
+        ],
+        "rationale": "Policy addresses observed failure mode 'test_failure' in failure_with_signal trace.",
+        "outcome": {
+          "confidence": 0.7,
+          "evidence": [
+            "test_result.resolved=false",
+            "failed_tests=[\"tests/test_csv_parser.py::test_quoted_newline\"]",
+            "passed_count=2"
+          ],
+          "reward": 0.0,
+          "score": 0.6666666666666666,
+          "settlement_quality": "failure_with_signal",
+          "success": false
+        },
+        "failure_mode": "test_failure",
+        "desired_direction": "CSV parser fails on quoted fields with embedded newlines: When parsing CSV files with quoted fields containing embedded newlines, the parser splits the field across multiple rows. Example input:\n```\nname,description\n\"Alice\",\"Line 1\\nLine 2\"\n```\nExpected: 1 d",
+        "actions_excerpt": [
+          {
+            "turn_index": 0,
+            "action_type": "analysis",
+            "content": "The CSV parser splits quoted fields with embedded newlines into separate rows. The core issue is that the parser splits on newlines before handling quotes."
+          },
+          {
+            "turn_index": 1,
+            "action_type": "command",
+            "content": "sed -i 's/lines = data.split/lines = data.replace(\"\\\\n\", \"\\\\n\").split/' csv_parser/__init__.py"
+          },
+          {
+            "turn_index": 3,
+            "action_type": "command",
+            "content": "python -m pytest tests/test_csv_parser.py -v"
+          },
+          {
+            "turn_index": 5,
+            "action_type": "analysis",
+            "content": "That didn't work. Let me try a different approach - using a state machine to track quote context instead of simple split."
+          }
+        ],
+        "observations_excerpt": [
+          {
+            "turn_index": 2,
+            "content": ""
+          },
+          {
+            "turn_index": 4,
+            "content": "============================= test session starts ==============================\ntests/test_csv_parser.py::test_simple_csv PASSED\ntests/test_csv_parser.py::test"
+          },
+          {
+            "turn_index": 7,
+            "content": ""
+          }
+        ]
+      },
+      {
+        "trace_id": "swe-premature-005",
+        "dataset": "swegym",
+        "domain": "code",
+        "assessment": "likely_helpful",
+        "uncertainty_reason": null,
+        "fire_timing": "after_failure_already_settled",
+        "recovery_opportunity": false,
+        "trigger_evidence": [
+          "settlement_quality=failure_with_signal",
+          "failure_condition_evidence_present"
+        ],
+        "rationale": "Policy addresses observed failure mode 'test_failure' in failure_with_signal trace.",
+        "outcome": {
+          "confidence": 0.7,
+          "evidence": [
+            "test_result.resolved=false",
+            "failed_tests=[\"tests/test_config.py::test_env_override\"]",
+            "passed_count=2"
+          ],
+          "reward": 0.0,
+          "score": 0.6666666666666666,
+          "settlement_quality": "failure_with_signal",
+          "success": false
+        },
+        "failure_mode": "test_failure",
+        "desired_direction": "Config loader ignores environment variable overrides: When YAML config values should be overridden by environment variables, the overrides are silently ignored. The load_config function reads YAML but never checks os.environ.",
+        "actions_excerpt": [
+          {
+            "turn_index": 0,
+            "action_type": "command",
+            "content": "sed -i 's/return config/return {**config, **{k.lower().replace(prefix+\"_\",\"\")/' config_loader/__init__.py"
+          }
+        ],
+        "observations_excerpt": [
+          {
+            "turn_index": 1,
+            "content": "sed: unmatched parenthesis"
+          }
+        ]
+      }
+    ],
+    "harmful_examples": [],
+    "uncertain_examples_by_reason": {
+      "policy_would_fire_too_late": [
+        {
+          "trace_id": "api-wrong-tool-003",
+          "dataset": "apibank",
+          "domain": "api",
+          "assessment": "uncertain",
+          "uncertainty_reason": "policy_would_fire_too_late",
+          "fire_timing": "after_failure_already_settled",
+          "recovery_opportunity": false,
+          "trigger_evidence": [
+            "settlement_quality=failure_with_signal",
+            "failure_condition_evidence_present"
+          ],
+          "rationale": "Policy fires but failure mode 'wrong_tool' not in policy's target patterns ['failed_recovery', 'test_failure'].",
+          "outcome": {
+            "confidence": 0.7,
+            "evidence": [
+              "actual_calls:search_web",
+              "expected_calls:get_weather",
+              "missing_calls:get_weather"
+            ],
+            "reward": 0.0,
+            "score": 0.0,
+            "settlement_quality": "failure_with_signal",
+            "success": false
+          },
+          "failure_mode": "wrong_tool",
+          "desired_direction": "Get weather in Tokyo",
+          "actions_excerpt": [],
+          "observations_excerpt": []
+        }
+      ]
+    },
+    "fire_timing_distribution": {
+      "after_failure_already_settled": 3
+    },
+    "recovery_opportunity_distribution": {
+      "no_recovery_opportunity": 3
+    },
+    "domain_distribution": {
+      "apibank": 1,
+      "swegym": 2
+    }
+  }
+}

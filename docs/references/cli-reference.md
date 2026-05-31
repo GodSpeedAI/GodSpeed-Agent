@@ -34,6 +34,8 @@ Scores whether consequence actually settled from before/after state and evidence
 
 Storage-backed commands (`start-direction`, `review-horizon`, `record-settlement`, `runtime-snapshot`, `developmental-report`, `predictive-extensions`, and `validate`) resolve `--storage-root` inside `--workspace-root`. The CLI rejects storage paths outside the workspace boundary.
 
+The RuVector-backed command `search-developmental-memory` uses the local Node sidecar under `tools/ruvector/`. Install it once with `pushd tools/ruvector >/dev/null && npm install && popd >/dev/null`.
+
 ### `start-direction`
 
 Creates a desired direction and its initial horizon.
@@ -91,6 +93,22 @@ Reads the workspace safety policy before deciding whether an absorption review r
 ### `developmental-report`
 
 Returns the observability summary with settlement quality, payment debt, horizon state, metabolization candidates, and trajectory fields such as `circular_motion`.
+
+### `search-developmental-memory`
+
+Runs local semantic retrieval over structured developmental-memory summaries using RuVector. The search surface indexes settlement summaries and critique findings, not raw traces.
+
+```bash
+uv run godspeed-nav search-developmental-memory \
+  --workspace-root . \
+  --storage-root .godspeed-harness/session \
+  --query "timeout recovery" \
+  --limit 5
+```
+
+Use this when you need recall over prior settlement patterns instead of deterministic lineage counts alone.
+
+The same surface is exposed through MCP as `cybernetic_nav.search_developmental_memory` so operators can inspect semantic developmental memory without dropping back to raw ledger reads.
 
 ### `predictive-extensions`
 

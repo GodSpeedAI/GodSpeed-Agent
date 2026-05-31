@@ -1,0 +1,6 @@
+source,count,avg_turns,avg_errors,avg_commands
+code_contests,20,8.1,0.6,7.45
+codeforces,20,19.7,0.35,9.55
+freelancer,20,15.2,2.45,65.6
+nl2bash,20,10.1,0.25,4.65
+staqc,20,11.7,2.05,25.25

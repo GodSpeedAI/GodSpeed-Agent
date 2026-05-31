@@ -44,11 +44,13 @@ Prerequisites:
 
 - Python 3.11+
 - `uv`
+- Node.js for the local RuVector bridge
 
 Install dependencies and run the test suite:
 
 ```bash
 uv sync --extra dev
+pushd tools/ruvector >/dev/null && npm install && popd >/dev/null
 uv run pytest -q
 ```
 
@@ -113,9 +115,12 @@ The CLI exposes deterministic and workflow-grade commands.
 - `absorbability` checks whether an external capability is potential, possible, or absorbable.
 - `start-direction`, `review-horizon`, `record-settlement`, and `runtime-snapshot` operate the local runtime.
 - `developmental-report` summarizes settlement quality, payment burden, trajectory, and active directions.
+- `search-developmental-memory` runs local RuVector-backed semantic retrieval over structured developmental-memory summaries.
 - `validate` runs an enterprise-readiness audit over package shape, config, storage, hooks, MCP, runtime, and reports.
 
 These surfaces implement the cognitive-runtime substrate directly. Representational state, transition policy, explicit affordance paths, identity-state accounting, repetition backlog, developmental memory lineage, and runtime-owned self-critique are now inspectable through the public surfaces.
+
+The RuVector bridge lives under `tools/ruvector/` and is intentionally local-first: Python owns the developmental ledgers, while a small Node sidecar uses the published `ruvector` package to run similarity search over structured settlement and critique summaries rather than raw traces.
 
 ## Implementation-defined Behavior
 
@@ -151,6 +156,7 @@ Focused checks:
 ```bash
 uv run pytest tests/test_docs_alignment.py -q
 uv run pytest tests/test_cli_hooks_mcp.py -q
+uv run python -m godspeed_nav.cli search-developmental-memory --query "timeout recovery"
 uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .godspeed-harness/validation
 ```
 

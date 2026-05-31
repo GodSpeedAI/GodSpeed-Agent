@@ -1,0 +1,23 @@
+{
+  "avg_confidence": 0.8,
+  "count": 5,
+  "dataset": "swegym",
+  "domain": "code",
+  "failure_mode_distribution": {
+    "test_failure": 2
+  },
+  "high_confidence_count": 5,
+  "payment_summary": {
+    "api_calls": 0.0,
+    "commands": 4.0,
+    "error_count": 0.8,
+    "page_actions": 0.0,
+    "tool_calls": 4.0,
+    "turns": 10.2
+  },
+  "settlement_quality_distribution": {
+    "clean_success": 2,
+    "failure_with_signal": 2,
+    "recovered_success": 1
+  }
+}

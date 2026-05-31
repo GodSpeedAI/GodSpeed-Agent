@@ -12,6 +12,12 @@ from scripts.settlement_datasets.adapter_base import (
     read_records_jsonl,
     write_records_jsonl,
 )
+from scripts.settlement_datasets.action_ontology import (
+    compare_normalized_actions,
+    load_action_ontology,
+    normalize_eval_behavior,
+    normalize_policy_action,
+)
 
 
 def _match_policy_to_eval(
@@ -24,22 +30,23 @@ def _match_policy_to_eval(
     if eval_fm and eval_fm in policy_fms:
         return True, f"Policy targets '{eval_fm}' which matches eval failure mode."
 
-    expected = eval_item.get("expected_harness_behavior", "").lower()
-    action = policy.get("action", {})
-    require = action.get("require_operator", "")
-    if require and require in expected:
-        return True, f"Policy action '{require}' matches expected behavior."
-
     return False, "No match between policy and eval context."
+
+
+def _raw_match(policy_action: dict[str, Any], expected: str) -> bool:
+    require = str(policy_action.get("require_operator", "")).lower()
+    return bool(require and require in expected.lower())
 
 
 def replay_evals(
     policies: list[dict[str, Any]],
     eval_dir: str = "data/settlement_datasets/evals/",
     min_confidence: float = 0.65,
+    ontology_path: str = "configs/settlement_datasets/harness_action_ontology.yaml",
 ) -> list[dict[str, Any]]:
     results = []
     eval_path = Path(eval_dir)
+    ontology = load_action_ontology(ontology_path)
 
     for suite_file in sorted(eval_path.glob("*.jsonl")):
         suite_name = suite_file.stem
@@ -57,27 +64,33 @@ def replay_evals(
 
                 expected = item.get("expected_harness_behavior", "")
                 policy_action = policy.get("action", {})
-                require = policy_action.get("require_operator", "")
-
-                action_match = "uncertain"
-                if require and require.lower() in expected.lower():
-                    action_match = "match"
-                elif expected and require:
-                    action_match = "mismatch"
-                elif not expected:
-                    action_match = "no_expected_behavior"
+                normalized_policy = normalize_policy_action(policy_action, ontology)
+                normalized_eval = normalize_eval_behavior(expected, ontology)
+                semantic_result = compare_normalized_actions(
+                    normalized_policy,
+                    normalized_eval,
+                )
+                raw_match = _raw_match(policy_action, expected)
 
                 results.append(
                     {
                         "policy_id": policy.get("id", ""),
+                        "eval_id": item.get("trace_id", ""),
                         "eval_suite": suite_name,
                         "trace_id": item.get("trace_id", ""),
                         "dataset": item.get("dataset", ""),
                         "domain": item.get("domain", ""),
                         "observed_failure_mode": item.get("observed_failure_mode", ""),
-                        "expected_behavior": expected,
-                        "policy_action": require,
-                        "match_result": action_match,
+                        "eval_raw_expected_behavior": expected,
+                        "policy_raw_action": policy_action,
+                        "policy_canonical_action": normalized_policy.get("canonical_action"),
+                        "eval_canonical_action": normalized_eval.get("canonical_action"),
+                        "raw_match": raw_match,
+                        "match_result": semantic_result["match_category"],
+                        "semantic_match": semantic_result["semantic_match"],
+                        "match_confidence": semantic_result["match_confidence"],
+                        "match_evidence": semantic_result["match_evidence"],
+                        "mismatch_reason": semantic_result["mismatch_reason"],
                         "match_rationale": match_rationale,
                         "eval_confidence": item_conf,
                     }
@@ -92,26 +105,47 @@ def compute_replay_summary(results: list[dict[str, Any]]) -> list[dict[str, Any]
         pid = r["policy_id"]
         if pid not in policy_stats:
             policy_stats[pid] = {
-                "match": 0,
+                "raw_match": 0,
+                "exact_semantic_match": 0,
+                "partial_semantic_match": 0,
                 "mismatch": 0,
-                "uncertain": 0,
-                "no_expected_behavior": 0,
+                "unknown_policy_action": 0,
+                "unknown_eval_behavior": 0,
+                "insufficient_evidence": 0,
                 "total": 0,
             }
         policy_stats[pid]["total"] += 1
+        if r.get("raw_match"):
+            policy_stats[pid]["raw_match"] += 1
         mr = r["match_result"]
         if mr in policy_stats[pid]:
             policy_stats[pid][mr] += 1
 
     summary = []
     for pid, stats in sorted(policy_stats.items()):
+        excluded_unknown = stats["unknown_policy_action"] + stats["unknown_eval_behavior"]
+        eligible_total = max(0, stats["total"] - excluded_unknown)
+        semantic_score = stats["exact_semantic_match"] + (0.5 * stats["partial_semantic_match"])
         summary.append(
             {
                 "policy_id": pid,
                 **stats,
-                "match_rate": round(stats["match"] / stats["total"], 3)
+                "raw_match_rate": round(stats["raw_match"] / stats["total"], 3)
                 if stats["total"]
                 else 0.0,
+                "semantic_match_rate": round(semantic_score / eligible_total, 3)
+                if eligible_total
+                else 0.0,
+                "partial_match_rate": round(
+                    stats["partial_semantic_match"] / eligible_total,
+                    3,
+                )
+                if eligible_total
+                else 0.0,
+                "unknown_policy_action_count": stats["unknown_policy_action"],
+                "unknown_eval_behavior_count": stats["unknown_eval_behavior"],
+                "mismatch_count": stats["mismatch"],
+                "excluded_unknown_count": excluded_unknown,
             }
         )
     return summary
@@ -154,11 +188,20 @@ def main() -> None:
             fieldnames=[
                 "policy_id",
                 "total",
-                "match",
+                "raw_match",
+                "exact_semantic_match",
+                "partial_semantic_match",
                 "mismatch",
-                "uncertain",
-                "no_expected_behavior",
-                "match_rate",
+                "unknown_policy_action",
+                "unknown_eval_behavior",
+                "insufficient_evidence",
+                "raw_match_rate",
+                "semantic_match_rate",
+                "partial_match_rate",
+                "unknown_policy_action_count",
+                "unknown_eval_behavior_count",
+                "mismatch_count",
+                "excluded_unknown_count",
             ],
         )
         writer.writeheader()
@@ -168,8 +211,9 @@ def main() -> None:
 
     for s in summary:
         print(
-            f"  {s['policy_id']}: {s['total']} evals, match={s['match']}, "
-            f"mismatch={s['mismatch']}, rate={s['match_rate']:.1%}"
+            f"  {s['policy_id']}: {s['total']} evals, raw={s['raw_match_rate']:.1%}, "
+            f"semantic={s['semantic_match_rate']:.1%}, partial={s['partial_match_rate']:.1%}, "
+            f"unknown={s['excluded_unknown_count']}"
         )
 
 

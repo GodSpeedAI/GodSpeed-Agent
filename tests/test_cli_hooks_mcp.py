@@ -184,6 +184,38 @@ def test_cli_runtime_snapshot_outputs_connected_counts(tmp_path: Path):
     assert output["latest_trajectory"] is None
 
 
+def test_cli_search_developmental_memory_returns_ruvector_matches(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+    settlements = storage_root / "ledgers" / "settlements.jsonl"
+    settlements.parent.mkdir(parents=True, exist_ok=True)
+    settlements.write_text(
+        '{"id": "set-1", "status": "success", "summary": "Recovered from timeout failure by replaying the last affordable step", "failure_mode": "timeout", "affordance_id": "aff-1", "pathway": "replay the last affordable step"}\n'
+        '{"id": "set-2", "status": "failed", "summary": "Jumped directly to the final deployment target without an adjacent path", "failure_mode": "direct_jump", "affordance_id": "aff-2", "pathway": "skip all intermediate states"}\n',
+        encoding="utf-8",
+    )
+
+    output = run_python(
+        [
+            "-m",
+            "godspeed_nav.cli",
+            "search-developmental-memory",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--query",
+            "timeout recovery",
+            "--limit",
+            "2",
+        ]
+    )
+
+    assert output["provider"] == "ruvector"
+    assert output["result_count"] >= 1
+    assert output["results"][0]["record_id"] == "set-1"
+
+
 def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
     workspace_root = make_workspace(tmp_path)
     storage_root = workspace_root / ".godspeed-harness"
@@ -779,6 +811,7 @@ def test_mcp_wrapper_registers_required_tools():
         "cybernetic_nav.record_settlement",
         "cybernetic_nav.review_representational_transition",
         "cybernetic_nav.runtime_snapshot",
+        "cybernetic_nav.search_developmental_memory",
         "cybernetic_nav.developmental_report",
         "cybernetic_nav.predictive_extensions",
         "cybernetic_nav.validate_enterprise_readiness",
@@ -1035,6 +1068,34 @@ def test_mcp_wrapper_dispatches_enterprise_validation(tmp_path: Path):
 
     assert result["status"] == "pass"
     assert "mcp" in result["checks"]
+
+
+def test_mcp_wrapper_dispatches_ruvector_developmental_memory_search(tmp_path: Path):
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+    settlements = storage_root / "ledgers" / "settlements.jsonl"
+    settlements.parent.mkdir(parents=True, exist_ok=True)
+    settlements.write_text(
+        '{"id": "set-1", "status": "success", "summary": "Recovered from timeout failure by replaying the last affordable step", "failure_mode": "timeout", "affordance_id": "aff-1", "pathway": "replay the last affordable step"}\n'
+        '{"id": "set-2", "status": "failed", "summary": "Jumped directly to the final deployment target without an adjacent path", "failure_mode": "direct_jump", "affordance_id": "aff-2", "pathway": "skip all intermediate states"}\n',
+        encoding="utf-8",
+    )
+
+    result = call_tool(
+        "cybernetic_nav.search_developmental_memory",
+        {
+            "workspace_root": str(workspace_root),
+            "storage_root": str(storage_root),
+            "query": "timeout recovery",
+            "limit": 2,
+        },
+    )
+
+    assert result["provider"] == "ruvector"
+    assert result["result_count"] >= 1
+    assert result["results"][0]["record_id"] == "set-1"
 
 
 def test_monitor_configuration_contains_recommended_monitors():
