@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,10 @@ from scripts.settlement_datasets.adapter_base import (
     write_records_jsonl,
 )
 from scripts.settlement_datasets.registry import available_datasets
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 
 def _is_error_text(content: str) -> bool:
@@ -29,6 +34,254 @@ def _is_error_text(content: str) -> bool:
             "timeout",
         )
     )
+
+
+def _is_test_failure_text(content: str) -> bool:
+    lowered = content.lower()
+    return any(
+        token in lowered
+        for token in (
+            "tests failed",
+            "test failed",
+            "pytest output",
+            "assertionerror",
+            "failing test",
+            "tests/test_",
+            "test_",
+        )
+    ) and ("failed" in lowered or "assertionerror" in lowered)
+
+
+def _contains_strategy_revision(content: str) -> bool:
+    lowered = content.lower()
+    return any(
+        token in lowered
+        for token in (
+            "revised plan",
+            "new plan",
+            "change strategy",
+            "different approach",
+            "reflect",
+            "reflection",
+            "diagnose",
+            "inspect",
+        )
+    )
+
+
+def _is_low_cost_inspection(content: str) -> bool:
+    lowered = content.lower()
+    return any(
+        token in lowered
+        for token in (
+            "cat ",
+            "ls",
+            "pwd",
+            "rg ",
+            "grep ",
+            "find ",
+            "head ",
+            "tail ",
+            "sed -n",
+        )
+    )
+
+
+def _closure_likely_text(content: str) -> bool:
+    lowered = content.lower()
+    return any(
+        token in lowered
+        for token in (
+            "final answer",
+            "cannot complete",
+            "unable to complete",
+            "i failed",
+            "task failed",
+            "closing",
+        )
+    )
+
+
+def _is_feedback_item(item: dict[str, Any]) -> bool:
+    role = str(item.get("role", "")).lower()
+    action_type = item.get("action_type")
+    return role in {"tool", "user"} or action_type in {None, "observation"}
+
+
+def _sorted_trace_items(record: dict[str, Any]) -> list[dict[str, Any]]:
+    items = record.get("affordance_path", {}).get("actions", []) + record.get(
+        "affordance_path", {}
+    ).get("observations", [])
+    return sorted(items, key=lambda item: int(item.get("turn_index", 0)))
+
+
+def _normalize_error_signature(content: str) -> str:
+    return " ".join(content.lower().split())
+
+
+def _distinct_error_events(record: dict[str, Any]) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    seen_signatures: set[str] = set()
+    for item in _sorted_trace_items(record):
+        if not _is_feedback_item(item):
+            continue
+        content = str(item.get("content", ""))
+        if not _is_error_text(content):
+            continue
+        signature = _normalize_error_signature(content)
+        if signature in seen_signatures:
+            continue
+        seen_signatures.add(signature)
+        events.append(item)
+    return events
+
+
+def _payment_evidence_count(record: dict[str, Any], prefix: str) -> int | None:
+    for item in record.get("payment", {}).get("evidence", []):
+        text = str(item)
+        if text.startswith(f"{prefix}:"):
+            try:
+                return int(text.split(":", 1)[1])
+            except ValueError:
+                return None
+    return None
+
+
+def _labeled_error_turn(record: dict[str, Any]) -> int | None:
+    for item in record.get("labels", {}).get("failure_mode_evidence", []):
+        match = re.search(r"error_at_turn:(\d+)", str(item))
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def _total_error_count(record: dict[str, Any]) -> int:
+    return max(
+        len(_distinct_error_events(record)),
+        int(record.get("payment", {}).get("error_count", 0) or 0),
+    )
+
+
+def _second_unresolved_error_turn(record: dict[str, Any]) -> int | None:
+    error_events = _distinct_error_events(record)
+    if len(error_events) >= 2:
+        return int(error_events[1].get("turn_index", 0))
+    if _total_error_count(record) >= 2:
+        return _labeled_error_turn(record)
+    return None
+
+
+def _latest_error_turn(record: dict[str, Any]) -> int | None:
+    error_events = _distinct_error_events(record)
+    if error_events:
+        return int(error_events[-1].get("turn_index", 0))
+    if _total_error_count(record) > 0:
+        return _labeled_error_turn(record)
+    return None
+
+
+def _continued_after_second_error(record: dict[str, Any], second_error_turn: int | None) -> bool:
+    if second_error_turn is not None and _later_items(record, second_error_turn):
+        return True
+    return _total_error_count(record) >= 2 and (_payment_evidence_count(record, "recovery_attempt_count") or 0) > 0
+
+
+def _later_items(record: dict[str, Any], turn_index: int) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in _sorted_trace_items(record)
+        if int(item.get("turn_index", -1)) > turn_index
+    ]
+
+
+def _first_test_failure_turn(record: dict[str, Any]) -> int | None:
+    for item in _sorted_trace_items(record):
+        if not _is_feedback_item(item):
+            continue
+        if _is_test_failure_text(str(item.get("content", ""))):
+            return int(item.get("turn_index", 0))
+    return None
+
+
+def _test_failure_turns(record: dict[str, Any]) -> list[int]:
+    turns: list[int] = []
+    for item in _sorted_trace_items(record):
+        if not _is_feedback_item(item):
+            continue
+        if _is_test_failure_text(str(item.get("content", ""))):
+            turns.append(int(item.get("turn_index", 0)))
+    return turns
+
+
+def _has_test_pass_after(record: dict[str, Any], turn_index: int) -> bool:
+    for item in _later_items(record, turn_index):
+        if not _is_feedback_item(item):
+            continue
+        lowered = str(item.get("content", "")).lower()
+        if ("passed" in lowered or "tests pass" in lowered) and not _is_test_failure_text(
+            lowered
+        ):
+            return True
+    return False
+
+
+def _test_failure_trigger(record: dict[str, Any]) -> tuple[int | None, str | None]:
+    failure_turns = _test_failure_turns(record)
+    if not failure_turns:
+        return None, None
+
+    if len(failure_turns) >= 2 and not _has_test_pass_after(record, failure_turns[1]):
+        return failure_turns[1], "repeated_test_failure"
+
+    closure_turn = _first_closure_turn_after(record, failure_turns[0])
+    if closure_turn is not None:
+        return closure_turn, "closure"
+
+    return None, None
+
+
+def _first_closure_turn_after(record: dict[str, Any], turn_index: int) -> int | None:
+    for item in _later_items(record, turn_index):
+        content = str(item.get("content", ""))
+        if item.get("action_type") in {"final_answer", "submit"}:
+            return int(item.get("turn_index", 0))
+        if _closure_likely_text(content):
+            return int(item.get("turn_index", 0))
+    return None
+
+
+def _contains_explicit_failure_evidence(content: str) -> bool:
+    lowered = content.lower()
+    return any(
+        token in lowered
+        for token in (
+            "stack trace",
+            "traceback",
+            "assertionerror",
+            "failing test",
+            "pytest output",
+            "error message",
+            "observed failing",
+        )
+    )
+
+
+def _failure_evidence_already_present(record: dict[str, Any]) -> bool:
+    failure_turn = _first_test_failure_turn(record)
+    if failure_turn is None:
+        return False
+
+    trigger_turn, _ = _test_failure_trigger(record)
+    if trigger_turn is None:
+        return False
+
+    for item in _sorted_trace_items(record):
+        turn = int(item.get("turn_index", -1))
+        if failure_turn < turn < trigger_turn and _contains_explicit_failure_evidence(
+            str(item.get("content", ""))
+        ):
+            return True
+    return False
 
 
 def _total_turns(record: dict[str, Any]) -> int:
@@ -107,6 +360,16 @@ def _estimate_fire_turn_index(
         if final_indexes:
             return max(int(index) for index in final_indexes if index is not None)
 
+    if "second_unresolved_error_before_continuing" in trigger:
+        second_error_turn = _second_unresolved_error_turn(record)
+        if second_error_turn is not None:
+            return second_error_turn
+
+    if "closure_without_failure_evidence_after_test_failure" in trigger:
+        trigger_turn, _ = _test_failure_trigger(record)
+        if trigger_turn is not None:
+            return trigger_turn
+
     if "error_count_gte" in trigger:
         error_indexes = [
             int(item.get("turn_index", -1))
@@ -153,7 +416,7 @@ def _classify_fire_timing(
     progress_ratio = fire_turn_index / last_index
     if progress_ratio < 0.25:
         return "early", remaining_turns
-    if progress_ratio < 0.5:
+    if progress_ratio <= 0.5:
         return "middle", remaining_turns
     return "late", remaining_turns
 
@@ -271,6 +534,48 @@ def _check_trigger(
     outcome = record.get("outcome", {})
     actions = record.get("affordance_path", {}).get("actions", [])
     domain = record.get("domain", "")
+
+    if "second_unresolved_error_before_continuing" in trigger:
+        total_error_count = _total_error_count(record)
+        if total_error_count < 2:
+            return False, []
+
+        second_error_turn = _second_unresolved_error_turn(record)
+        if not _continued_after_second_error(record, second_error_turn):
+            return False, []
+
+        evidence.extend(
+            [
+                f"distinct_unresolved_error_count={total_error_count}",
+                f"second_error_turn={second_error_turn if second_error_turn is not None else 'inferred'}",
+                "continued_after_second_error",
+            ]
+        )
+
+    if "closure_without_failure_evidence_after_test_failure" in trigger:
+        failure_turn = _first_test_failure_turn(record)
+        if failure_turn is None:
+            return False, []
+
+        trigger_turn, trigger_kind = _test_failure_trigger(record)
+        if trigger_turn is None:
+            return False, []
+
+        evidence.extend(["test_failure_signal_detected", f"test_failure_turn={failure_turn}"])
+        if trigger_kind == "repeated_test_failure":
+            evidence.extend(
+                [
+                    "repeated_test_failure_signal_detected",
+                    f"repeated_failure_turn={trigger_turn}",
+                ]
+            )
+        else:
+            evidence.extend(
+                [
+                    "closure_attempt_detected",
+                    f"closure_turn={trigger_turn}",
+                ]
+            )
 
     if "error_count_gte" in trigger:
         threshold = trigger["error_count_gte"]
@@ -609,8 +914,53 @@ def _check_negative_conditions(
     observations = record.get("affordance_path", {}).get("observations", [])
 
     for cond in conditions:
+        if cond == "duplicate_error_signals_only":
+            error_events = [
+                item
+                for item in _sorted_trace_items(record)
+                if _is_error_text(str(item.get("content", "")))
+            ]
+            distinct_errors = _distinct_error_events(record)
+            if error_events and len(distinct_errors) < 2 <= len(error_events):
+                return cond
+        if cond == "strategy_revision_after_latest_error":
+            latest_turn = _latest_error_turn(record)
+            if latest_turn is not None:
+                if any(
+                    _contains_strategy_revision(str(item.get("content", "")))
+                    for item in _later_items(record, latest_turn)
+                ):
+                    return cond
+        if cond == "low_cost_inspection_after_latest_error":
+            latest_turn = _latest_error_turn(record)
+            if latest_turn is not None:
+                if any(
+                    _is_low_cost_inspection(str(item.get("content", "")))
+                    for item in _later_items(record, latest_turn)
+                ):
+                    return cond
+        if cond == "closure_or_settlement_after_latest_error":
+            latest_turn = _latest_error_turn(record)
+            if latest_turn is not None:
+                later_items = _later_items(record, latest_turn)
+                if not later_items:
+                    return cond
+                if any(
+                    item.get("action_type") in {"final_answer", "submit", "task_complete"}
+                    or _closure_likely_text(str(item.get("content", "")))
+                    for item in later_items
+                ):
+                    return cond
         if cond == "domain_is_not_code" and domain != "code":
             return cond
+        if cond == "failure_evidence_already_present":
+            if _failure_evidence_already_present(record):
+                return cond
+        if cond == "task_already_settled":
+            if labels.get("metabolization_candidate") or outcome.get(
+                "settlement_quality"
+            ) in {"clean_success", "brittle_success", "recovered_success"}:
+                return cond
         if cond == "no_code_edit_in_action_history":
             has_edit = any(
                 a.get("action_type") in ("command", "api_call")
@@ -1098,6 +1448,7 @@ def compute_promotion_scores(
     policies: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     policy_results: dict[str, list[dict]] = {}
+    policy_by_id = {policy.get("id"): policy for policy in policies}
     for r in results:
         pid = r["policy_id"]
         policy_results.setdefault(pid, []).append(r)
@@ -1193,7 +1544,9 @@ def compute_promotion_scores(
         scores.append(
             {
                 "policy_id": pid,
-                "supporting_trace_count": len(pr),
+                "supporting_trace_count": policy_by_id.get(pid, {})
+                .get("evidence", {})
+                .get("supporting_trace_count", 0),
                 "would_fire_count": fire_count,
                 "likely_helpful_count": helpful,
                 "likely_harmful_count": harmful,
@@ -1237,16 +1590,35 @@ def main() -> None:
         default="docs/policy-evidence-packs",
         help="Directory for generated policy evidence packs.",
     )
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
 
-    with open(args.policies) as f:
+    policies_path = (
+        str(scope.named_path("policies", "policies.yaml", input_surface=True))
+        if scope is not None
+        else args.policies
+    )
+    with open(policies_path) as f:
         policy_data = yaml.safe_load(f)
     policies = policy_data.get("policies", [])
 
     all_records = []
-    for ds in available_datasets():
-        path = f"data/settlement_datasets/raw_samples/{ds}.jsonl"
+    datasets = [args.dataset] if args.dataset else available_datasets()
+    for ds in datasets:
+        path = (
+            str(scope.dataset_jsonl_path("normalized", ds, input_surface=True))
+            if scope is not None
+            else f"data/settlement_datasets/raw_samples/{ds}.jsonl"
+        )
         p = Path(path)
         if p.exists():
             all_records.extend(read_records_jsonl(str(p)))
@@ -1262,7 +1634,7 @@ def main() -> None:
         target_policy_ids=set(args.target_policy) if args.target_policy else None,
     )
 
-    output_dir = Path(args.output)
+    output_dir = scope.shadow_dir if scope is not None else Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     results_path = output_dir / "policy_shadow_results.jsonl"

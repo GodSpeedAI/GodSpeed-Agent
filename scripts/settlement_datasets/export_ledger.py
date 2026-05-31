@@ -8,6 +8,10 @@ from typing import Any
 
 from scripts.settlement_datasets.adapter_base import read_records_jsonl
 from scripts.settlement_datasets.registry import available_datasets
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS datasets (
@@ -346,10 +350,21 @@ def main() -> None:
     parser.add_argument(
         "--output", default="data/settlement_datasets/settlement_ledger.sqlite"
     )
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
     path = export_ledger(
-        dataset=args.dataset, input_dir=args.input, output_path=args.output
+        dataset=args.dataset,
+        input_dir=str(scope.stage_dir("settlements", input_surface=True)) if scope is not None else args.input,
+        output_path=str(scope.named_path("ledger", "settlement_ledger.sqlite")) if scope is not None else args.output,
     )
     print(f"Exported to {path}")
 

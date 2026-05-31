@@ -9,6 +9,10 @@ from typing import Any
 
 from scripts.settlement_datasets.adapter_base import read_records_jsonl
 from scripts.settlement_datasets.registry import available_datasets
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 
 def profile_records(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -101,13 +105,28 @@ def main() -> None:
     )
     parser.add_argument("--input", default=None)
     parser.add_argument("--output", default="data/settlement_datasets/profiles/")
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
     datasets = available_datasets() if args.dataset == "all" else [args.dataset]
 
     summary_rows = []
     for ds in datasets:
-        result = profile_dataset(ds, input_path=args.input, output_dir=args.output)
+        input_path = args.input or (
+            str(scope.dataset_jsonl_path("normalized", ds, input_surface=True))
+            if scope is not None
+            else None
+        )
+        output_dir = args.output if scope is None else str(scope.profiles_dir)
+        result = profile_dataset(ds, input_path=input_path, output_dir=output_dir)
         profile_path = result["profile"]
 
         from scripts.settlement_datasets.adapter_base import read_records_jsonl
@@ -119,7 +138,8 @@ def main() -> None:
         summary_rows.append(profile_data)
 
     if len(summary_rows) > 1:
-        summary_path = Path(args.output) / "all_datasets_summary.csv"
+        summary_root = Path(args.output) if scope is None else scope.profiles_dir
+        summary_path = summary_root / "all_datasets_summary.csv"
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         with summary_path.open("w", newline="") as f:
             writer = csv.DictWriter(

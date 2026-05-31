@@ -13,12 +13,19 @@ from scripts.settlement_datasets.adapter_base import (
     write_records_jsonl,
 )
 from scripts.settlement_datasets.registry import available_datasets
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 
 POLICY_TEMPLATES = [
     {
         "id": "require_reflection_after_repeated_errors",
-        "status": "proposed",
+        "status": "refine",
+        "always_include": True,
+        "status_reason": "Historical late-trigger variant preserved for comparison; fires after settlement feedback is already mostly spent.",
+        "superseded_by": "require_reflection_before_continuing_after_second_unresolved_error",
         "failure_modes": ["tool_thrashing", "payment_spiral", "failed_recovery"],
         "trigger": {"error_count_gte": 3, "errors_are_unresolved": True},
         "negative_conditions": [
@@ -33,7 +40,35 @@ POLICY_TEMPLATES = [
             "require_operator": "reflection",
             "block_next_action_until": "revised_plan_exists",
         },
+        "shadow_action": "historical_late_reflection_marker",
         "rationale": "Repeated unresolved errors from environment/tool feedback indicate settlement feedback is not being metabolized.",
+        "false_positive_risk": "low",
+        "payment_risk": "low",
+    },
+    {
+        "id": "require_reflection_before_continuing_after_second_unresolved_error",
+        "status": "proposed",
+        "always_include": True,
+        "supersedes": "require_reflection_after_repeated_errors",
+        "failure_modes": ["tool_thrashing", "payment_spiral", "failed_recovery"],
+        "trigger": {"second_unresolved_error_before_continuing": True},
+        "negative_conditions": [
+            "duplicate_error_signals_only",
+            "strategy_revision_after_latest_error",
+            "low_cost_inspection_after_latest_error",
+            "closure_or_settlement_after_latest_error",
+        ],
+        "required_evidence": [
+            "at_least_2_distinct_error_outputs_from_environment_or_tool",
+            "continued_attempt_after_second_error_without_strategy_revision",
+            "recovery_window_remains_open_after_second_error",
+        ],
+        "action": {
+            "require_operator": "reflection",
+            "block_next_action_until": "revised_plan_exists",
+        },
+        "shadow_action": "would_require_reflection_or_revised_plan",
+        "rationale": "The second distinct unresolved error is the earliest spendable point to require reflection before the same path continues.",
         "false_positive_risk": "low",
         "payment_risk": "low",
     },
@@ -66,6 +101,7 @@ POLICY_TEMPLATES = [
     {
         "id": "require_constraint_match_before_multi_option_selection",
         "status": "proposed",
+        "always_include": True,
         "supersedes": "compare_constraints_before_selection",
         "failure_modes": ["constraint_miss", "premature_choice"],
         "trigger": {
@@ -155,6 +191,7 @@ POLICY_TEMPLATES = [
     {
         "id": "require_test_or_settlement_evidence_before_final_for_code_patch",
         "status": "proposed",
+        "always_include": True,
         "supersedes": "test_before_final_answer",
         "failure_modes": ["brittle_success", "premature_closure"],
         "trigger": {
@@ -207,7 +244,10 @@ POLICY_TEMPLATES = [
     },
     {
         "id": "require_explicit_settlement_for_failure",
-        "status": "proposed",
+        "status": "refine",
+        "always_include": True,
+        "status_reason": "Historical late-trigger variant preserved for comparison; it labels settled failure rather than intervening before closure.",
+        "superseded_by": "require_failure_evidence_before_stopping_on_test_failure",
         "failure_modes": ["failed_recovery", "test_failure"],
         "trigger": {
             "settlement_quality": "failure_with_signal",
@@ -225,13 +265,43 @@ POLICY_TEMPLATES = [
             "require_operator": "failure_analysis",
             "record": "error_correction_signal",
         },
+        "shadow_action": "historical_failure_settlement_marker",
         "rationale": "Failures with observable signals should produce explicit error-correction data backed by actual failure condition evidence.",
+        "false_positive_risk": "low",
+        "payment_risk": "low",
+    },
+    {
+        "id": "require_failure_evidence_before_stopping_on_test_failure",
+        "status": "proposed",
+        "always_include": True,
+        "supersedes": "require_explicit_settlement_for_failure",
+        "failure_modes": ["failed_recovery", "test_failure"],
+        "trigger": {
+            "closure_without_failure_evidence_after_test_failure": True,
+        },
+        "negative_conditions": [
+            "domain_is_not_code",
+            "failure_evidence_already_present",
+            "task_already_settled",
+        ],
+        "required_evidence": [
+            "code_domain_test_failure_signal_detected_before_closure",
+            "closure_or_stop_attempt_after_test_failure",
+            "no_explicit_failure_evidence_recorded_before_closure",
+        ],
+        "action": {
+            "require_operator": "failure_analysis",
+            "record": "error_correction_signal",
+        },
+        "shadow_action": "would_require_explicit_failure_evidence_before_closure",
+        "rationale": "A failing test should produce explicit failure evidence before the agent closes the run, while recovery opportunity still exists.",
         "false_positive_risk": "low",
         "payment_risk": "low",
     },
     {
         "id": "prevent_high_payment_action_when_constraints_unknown",
         "status": "proposed",
+        "always_include": True,
         "supersedes": "prevent_premature_concretion",
         "failure_modes": [
             "premature_concretion",
@@ -310,7 +380,11 @@ def mine_policies(
     for template in POLICY_TEMPLATES:
         matching_fms = template["failure_modes"]
         total_support = sum(failure_mode_counts.get(fm, 0) for fm in matching_fms)
-        if template.get("status") != "superseded" and total_support < min_supporting_traces:
+        if (
+            template.get("status") != "superseded"
+            and not template.get("always_include", False)
+            and total_support < min_supporting_traces
+        ):
             continue
 
         all_trace_ids = []
@@ -331,12 +405,14 @@ def mine_policies(
         policy = {
             "id": template["id"],
             "status": template.get("status", "proposed"),
+            "status_reason": template.get("status_reason"),
             "supersedes": template.get("supersedes"),
             "superseded_by": template.get("superseded_by"),
             "trigger": template["trigger"],
             "negative_conditions": template.get("negative_conditions", []),
             "required_evidence": template.get("required_evidence", []),
             "action": template["action"],
+            "shadow_action": template.get("shadow_action"),
             "rationale": template["rationale"],
             "false_positive_risk": template.get("false_positive_risk", "low"),
             "payment_risk": template.get("payment_risk", "low"),
@@ -391,14 +467,27 @@ def main() -> None:
     parser.add_argument("--output", default="data/settlement_datasets/policies.yaml")
     parser.add_argument("--min-confidence", type=float, default=0.65)
     parser.add_argument("--min-supporting-traces", type=int, default=3)
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
 
     datasets = available_datasets() if args.dataset == "all" else [args.dataset]
     all_records = []
 
     for ds in datasets:
-        input_path = args.input or f"data/settlement_datasets/settlements/{ds}.jsonl"
+        input_path = args.input or (
+            str(scope.dataset_jsonl_path("settlements", ds, input_surface=True))
+            if scope is not None
+            else f"data/settlement_datasets/settlements/{ds}.jsonl"
+        )
         p = Path(input_path)
         if p.exists():
             all_records.extend(read_records_jsonl(str(p)))
@@ -408,7 +497,12 @@ def main() -> None:
         min_confidence=args.min_confidence,
         min_supporting_traces=args.min_supporting_traces,
     )
-    path = write_policies(policies, args.output)
+    output_path = (
+        str(scope.named_path("policies", "policies.yaml"))
+        if scope is not None
+        else args.output
+    )
+    path = write_policies(policies, output_path)
     print(f"Generated {len(policies)} policies -> {path}")
     for p in policies:
         print(

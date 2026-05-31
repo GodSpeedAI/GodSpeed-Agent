@@ -1,8 +1,10 @@
 policies:
 - id: require_reflection_after_repeated_errors
-  status: proposed
+  status: refine
+  status_reason: Historical late-trigger variant preserved for comparison; fires after
+    settlement feedback is already mostly spent.
   supersedes: null
-  superseded_by: null
+  superseded_by: require_reflection_before_continuing_after_second_unresolved_error
   trigger:
     error_count_gte: 3
     errors_are_unresolved: true
@@ -15,74 +17,85 @@ policies:
   action:
     require_operator: reflection
     block_next_action_until: revised_plan_exists
+  shadow_action: historical_late_reflection_marker
   rationale: Repeated unresolved errors from environment/tool feedback indicate settlement
     feedback is not being metabolized.
   false_positive_risk: low
   payment_risk: low
   evidence:
-    supporting_trace_count: 2
+    supporting_trace_count: 31
     supporting_dataset_count: 1
     supporting_datasets:
     - agenttrove
-    total_traces_analyzed: 20
+    total_traces_analyzed: 336
     example_trace_ids:
-    - fl-debug-api
-    - sq-parse-json
+    - at-246aacd1cbab
+    - at-61bf56ea495a
+    - at-3c55c9fdb653
+    - at-5f99897f51c6
+    - at-1fa6dff6686c
     observed_failure_patterns:
     - tool_thrashing
     - payment_spiral
     - failed_recovery
-    proportion: 0.1
-    avg_label_confidence: 0.85
+    proportion: 0.092
+    avg_label_confidence: 0.8
     confidence_distribution:
-      min: 0.85
-      max: 0.85
-      mean: 0.85
+      min: 0.8
+      max: 0.8
+      mean: 0.8
     meets_min_supporting_count: true
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
     recommended_review: Human review before activation in production harness.
   activation_status: proposed
   active_by_default: false
-- id: search_before_patch
+- id: require_reflection_before_continuing_after_second_unresolved_error
   status: proposed
-  supersedes: null
+  status_reason: null
+  supersedes: require_reflection_after_repeated_errors
   superseded_by: null
   trigger:
-    action_type: edit_or_api_call
-    prior_search: false
+    second_unresolved_error_before_continuing: true
   negative_conditions:
-  - action_is_low_cost_exploratory
-  - intermediate_representation_exists_in_prior_turns
+  - duplicate_error_signals_only
+  - strategy_revision_after_latest_error
+  - low_cost_inspection_after_latest_error
+  - closure_or_settlement_after_latest_error
   required_evidence:
-  - edit_or_api_call_attempted
-  - no_prior_search_or_inspection_before_edit_or_call
+  - at_least_2_distinct_error_outputs_from_environment_or_tool
+  - continued_attempt_after_second_error_without_strategy_revision
+  - recovery_window_remains_open_after_second_error
   action:
-    require_operator: search_or_inspect
-    block: direct_edit_without_context
-  rationale: Direct edits without prior inspection lead to localization failures.
+    require_operator: reflection
+    block_next_action_until: revised_plan_exists
+  shadow_action: would_require_reflection_or_revised_plan
+  rationale: The second distinct unresolved error is the earliest spendable point
+    to require reflection before the same path continues.
   false_positive_risk: low
   payment_risk: low
   evidence:
-    supporting_trace_count: 2
+    supporting_trace_count: 31
     supporting_dataset_count: 1
     supporting_datasets:
-    - apibank
-    total_traces_analyzed: 20
+    - agenttrove
+    total_traces_analyzed: 336
     example_trace_ids:
-    - api-wrong-tool-003
-    - api-wrong-args-004
+    - at-246aacd1cbab
+    - at-61bf56ea495a
+    - at-3c55c9fdb653
+    - at-5f99897f51c6
+    - at-1fa6dff6686c
     observed_failure_patterns:
-    - poor_localization
-    - bad_patch
-    - wrong_tool
-    - wrong_arguments
-    proportion: 0.1
-    avg_label_confidence: 0.4
+    - tool_thrashing
+    - payment_spiral
+    - failed_recovery
+    proportion: 0.092
+    avg_label_confidence: 0.8
     confidence_distribution:
-      min: 0.1
-      max: 0.7
-      mean: 0.4
+      min: 0.8
+      max: 0.8
+      mean: 0.8
     meets_min_supporting_count: true
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
@@ -91,6 +104,7 @@ policies:
   active_by_default: false
 - id: require_constraint_match_before_multi_option_selection
   status: proposed
+  status_reason: null
   supersedes: compare_constraints_before_selection
   superseded_by: null
   trigger:
@@ -110,29 +124,27 @@ policies:
   action:
     require_operator: constraint_verification
     block: selection_without_comparison
+  shadow_action: null
   rationale: When multiple options exist and constraints are explicit, selection without
     constraint comparison leads to constraint misses.
   false_positive_risk: low
   payment_risk: low
   evidence:
-    supporting_trace_count: 2
-    supporting_dataset_count: 1
-    supporting_datasets:
-    - webshop
-    total_traces_analyzed: 20
-    example_trace_ids:
-    - ws-wrong-item-003
-    - ws-premature-004
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
     observed_failure_patterns:
     - constraint_miss
     - premature_choice
-    proportion: 0.1
-    avg_label_confidence: 0.35
+    proportion: 0.0
+    avg_label_confidence: 0.0
     confidence_distribution:
-      min: 0.1
-      max: 0.6
-      mean: 0.35
-    meets_min_supporting_count: true
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
     recommended_review: Human review before activation in production harness.
@@ -140,6 +152,7 @@ policies:
   active_by_default: false
 - id: compare_constraints_before_selection
   status: superseded
+  status_reason: null
   supersedes: null
   superseded_by: require_constraint_match_before_multi_option_selection
   trigger:
@@ -152,115 +165,27 @@ policies:
   action:
     require_operator: constraint_verification
     block: selection_without_comparison
+  shadow_action: null
   rationale: Selection without comparing against constraints leads to constraint misses.
   false_positive_risk: high
   payment_risk: low
   evidence:
-    supporting_trace_count: 3
-    supporting_dataset_count: 2
-    supporting_datasets:
-    - agenttrove
-    - webshop
-    total_traces_analyzed: 20
-    example_trace_ids:
-    - ws-wrong-item-003
-    - ws-premature-004
-    - nb-list-procs
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
     observed_failure_patterns:
     - constraint_miss
     - premature_choice
     - premature_closure
-    proportion: 0.15
-    avg_label_confidence: 0.5
+    proportion: 0.0
+    avg_label_confidence: 0.0
     confidence_distribution:
-      min: 0.1
-      max: 0.8
-      mean: 0.5
-    meets_min_supporting_count: true
-  risk:
-    false_positive_concern: Deterministic heuristics may misclassify some traces.
-    recommended_review: Human review before activation in production harness.
-  activation_status: proposed
-  active_by_default: false
-- id: inspect_api_schema_before_call
-  status: proposed
-  supersedes: null
-  superseded_by: null
-  trigger:
-    api_call: true
-    prior_schema_check: false
-  negative_conditions:
-  - intermediate_representation_exists_in_prior_turns
-  required_evidence:
-  - api_call_attempted
-  - no_prior_schema_or_tool_inspection_detected
-  action:
-    require_operator: schema_inspection
-    block: api_call_without_schema
-  rationale: API calls without prior schema inspection lead to argument and tool errors.
-  false_positive_risk: low
-  payment_risk: low
-  evidence:
-    supporting_trace_count: 2
-    supporting_dataset_count: 1
-    supporting_datasets:
-    - apibank
-    total_traces_analyzed: 20
-    example_trace_ids:
-    - api-wrong-tool-003
-    - api-wrong-args-004
-    observed_failure_patterns:
-    - wrong_tool
-    - wrong_arguments
-    - missing_precondition
-    proportion: 0.1
-    avg_label_confidence: 0.4
-    confidence_distribution:
-      min: 0.1
-      max: 0.7
-      mean: 0.4
-    meets_min_supporting_count: true
-  risk:
-    false_positive_concern: Deterministic heuristics may misclassify some traces.
-    recommended_review: Human review before activation in production harness.
-  activation_status: proposed
-  active_by_default: false
-- id: reset_plan_after_payment_spiral
-  status: proposed
-  supersedes: null
-  superseded_by: null
-  trigger:
-    step_count_gte: 8
-    no_progress: true
-  negative_conditions:
-  - errors_are_resolved_in_subsequent_turns
-  required_evidence:
-  - step_count_exceeds_payment_spiral_threshold
-  - trace_still_shows_no_progress
-  action:
-    require_operator: positive_disintegration
-    suggest: terminate_or_reset
-  rationale: Extended unproductive payment should trigger path reset.
-  false_positive_risk: low
-  payment_risk: medium
-  evidence:
-    supporting_trace_count: 1
-    supporting_dataset_count: 1
-    supporting_datasets:
-    - webshop
-    total_traces_analyzed: 20
-    example_trace_ids:
-    - ws-over-search-005
-    observed_failure_patterns:
-    - payment_spiral
-    - over_search
-    proportion: 0.05
-    avg_label_confidence: 0.6
-    confidence_distribution:
-      min: 0.6
-      max: 0.6
-      mean: 0.6
-    meets_min_supporting_count: true
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
     recommended_review: Human review before activation in production harness.
@@ -268,6 +193,7 @@ policies:
   active_by_default: false
 - id: require_test_or_settlement_evidence_before_final_for_code_patch
   status: proposed
+  status_reason: null
   supersedes: test_before_final_answer
   superseded_by: null
   trigger:
@@ -291,28 +217,27 @@ policies:
   action:
     require_operator: verification_step
     block: answer_without_test_or_settlement_signal
+  shadow_action: null
   rationale: Code patches without test output or settlement evidence before final
     answer risk brittle or premature closure.
   false_positive_risk: low
   payment_risk: low
   evidence:
-    supporting_trace_count: 1
-    supporting_dataset_count: 1
-    supporting_datasets:
-    - agenttrove
-    total_traces_analyzed: 20
-    example_trace_ids:
-    - nb-list-procs
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
     observed_failure_patterns:
     - brittle_success
     - premature_closure
-    proportion: 0.05
-    avg_label_confidence: 0.8
+    proportion: 0.0
+    avg_label_confidence: 0.0
     confidence_distribution:
-      min: 0.8
-      max: 0.8
-      mean: 0.8
-    meets_min_supporting_count: true
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
     recommended_review: Human review before activation in production harness.
@@ -320,6 +245,7 @@ policies:
   active_by_default: false
 - id: test_before_final_answer
   status: superseded
+  status_reason: null
   supersedes: null
   superseded_by: require_test_or_settlement_evidence_before_final_for_code_patch
   trigger:
@@ -332,36 +258,37 @@ policies:
   action:
     require_operator: verification_step
     block: answer_without_test
+  shadow_action: null
   rationale: Final answers without verification produce brittle or premature settlements.
   false_positive_risk: high
   payment_risk: medium
   evidence:
-    supporting_trace_count: 1
-    supporting_dataset_count: 1
-    supporting_datasets:
-    - agenttrove
-    total_traces_analyzed: 20
-    example_trace_ids:
-    - nb-list-procs
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
     observed_failure_patterns:
     - brittle_success
     - premature_closure
-    proportion: 0.05
-    avg_label_confidence: 0.8
+    proportion: 0.0
+    avg_label_confidence: 0.0
     confidence_distribution:
-      min: 0.8
-      max: 0.8
-      mean: 0.8
-    meets_min_supporting_count: true
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
     recommended_review: Human review before activation in production harness.
   activation_status: proposed
   active_by_default: false
 - id: require_explicit_settlement_for_failure
-  status: proposed
+  status: refine
+  status_reason: Historical late-trigger variant preserved for comparison; it labels
+    settled failure rather than intervening before closure.
   supersedes: null
-  superseded_by: null
+  superseded_by: require_failure_evidence_before_stopping_on_test_failure
   trigger:
     settlement_quality: failure_with_signal
     has_failure_condition_evidence: true
@@ -374,30 +301,84 @@ policies:
   action:
     require_operator: failure_analysis
     record: error_correction_signal
+  shadow_action: historical_failure_settlement_marker
   rationale: Failures with observable signals should produce explicit error-correction
     data backed by actual failure condition evidence.
   false_positive_risk: low
   payment_risk: low
   evidence:
-    supporting_trace_count: 3
+    supporting_trace_count: 8
     supporting_dataset_count: 2
     supporting_datasets:
     - agenttrove
     - swegym
-    total_traces_analyzed: 20
+    total_traces_analyzed: 336
     example_trace_ids:
-    - sq-parse-json
-    - swe-failed-004
-    - swe-premature-005
+    - at-a3d8c2e58d88
+    - at-4e190fe45dac
+    - at-efa503e29895
+    - freelancer_askllm_filtered-0105
+    - task_1090
     observed_failure_patterns:
     - failed_recovery
     - test_failure
-    proportion: 0.15
-    avg_label_confidence: 0.75
+    proportion: 0.024
+    avg_label_confidence: 0.775
     confidence_distribution:
       min: 0.7
-      max: 0.85
-      mean: 0.75
+      max: 0.8
+      mean: 0.775
+    meets_min_supporting_count: true
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: require_failure_evidence_before_stopping_on_test_failure
+  status: proposed
+  status_reason: null
+  supersedes: require_explicit_settlement_for_failure
+  superseded_by: null
+  trigger:
+    closure_without_failure_evidence_after_test_failure: true
+  negative_conditions:
+  - domain_is_not_code
+  - failure_evidence_already_present
+  - task_already_settled
+  required_evidence:
+  - code_domain_test_failure_signal_detected_before_closure
+  - closure_or_stop_attempt_after_test_failure
+  - no_explicit_failure_evidence_recorded_before_closure
+  action:
+    require_operator: failure_analysis
+    record: error_correction_signal
+  shadow_action: would_require_explicit_failure_evidence_before_closure
+  rationale: A failing test should produce explicit failure evidence before the agent
+    closes the run, while recovery opportunity still exists.
+  false_positive_risk: low
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 8
+    supporting_dataset_count: 2
+    supporting_datasets:
+    - agenttrove
+    - swegym
+    total_traces_analyzed: 336
+    example_trace_ids:
+    - at-a3d8c2e58d88
+    - at-4e190fe45dac
+    - at-efa503e29895
+    - freelancer_askllm_filtered-0105
+    - task_1090
+    observed_failure_patterns:
+    - failed_recovery
+    - test_failure
+    proportion: 0.024
+    avg_label_confidence: 0.775
+    confidence_distribution:
+      min: 0.7
+      max: 0.8
+      mean: 0.775
     meets_min_supporting_count: true
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
@@ -406,6 +387,7 @@ policies:
   active_by_default: false
 - id: prevent_high_payment_action_when_constraints_unknown
   status: proposed
+  status_reason: null
   supersedes: prevent_premature_concretion
   superseded_by: null
   trigger:
@@ -426,30 +408,33 @@ policies:
   action:
     require_operator: intermediate_representation
     block: direct_high_payment_action_with_unknown_constraints
+  shadow_action: null
   rationale: High-payment or irreversible actions when constraints are unknown risk
     premature concretion without affordance for correction.
   false_positive_risk: low
   payment_risk: medium
   evidence:
-    supporting_trace_count: 2
-    supporting_dataset_count: 2
+    supporting_trace_count: 23
+    supporting_dataset_count: 1
     supporting_datasets:
     - agenttrove
-    - webshop
-    total_traces_analyzed: 20
+    total_traces_analyzed: 336
     example_trace_ids:
-    - nb-list-procs
-    - ws-wrong-item-003
+    - at-8f9b3adcff0d
+    - at-fca5603bdf7f
+    - at-715c8de72a8c
+    - at-698352d3c52a
+    - at-7fad4f91d5c1
     observed_failure_patterns:
     - premature_concretion
     - premature_closure
     - constraint_miss
-    proportion: 0.1
-    avg_label_confidence: 0.45
+    proportion: 0.068
+    avg_label_confidence: 0.8
     confidence_distribution:
-      min: 0.1
+      min: 0.8
       max: 0.8
-      mean: 0.45
+      mean: 0.8
     meets_min_supporting_count: true
   risk:
     false_positive_concern: Deterministic heuristics may misclassify some traces.
@@ -458,6 +443,7 @@ policies:
   active_by_default: false
 - id: prevent_premature_concretion
   status: superseded
+  status_reason: null
   supersedes: null
   superseded_by: prevent_high_payment_action_when_constraints_unknown
   trigger:
@@ -470,21 +456,26 @@ policies:
   action:
     require_operator: intermediate_representation
     block: direct_jump
+  shadow_action: null
   rationale: Jumping to specific action without analysis leads to premature concretion.
   false_positive_risk: high
   payment_risk: medium
   evidence:
-    supporting_trace_count: 1
+    supporting_trace_count: 23
     supporting_dataset_count: 1
     supporting_datasets:
     - agenttrove
-    total_traces_analyzed: 20
+    total_traces_analyzed: 336
     example_trace_ids:
-    - nb-list-procs
+    - at-8f9b3adcff0d
+    - at-fca5603bdf7f
+    - at-715c8de72a8c
+    - at-698352d3c52a
+    - at-7fad4f91d5c1
     observed_failure_patterns:
     - premature_concretion
     - premature_closure
-    proportion: 0.05
+    proportion: 0.068
     avg_label_confidence: 0.8
     confidence_distribution:
       min: 0.8

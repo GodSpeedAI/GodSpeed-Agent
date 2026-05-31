@@ -8,6 +8,10 @@ from scripts.settlement_datasets.adapter_base import (
     read_records_jsonl,
     write_records_jsonl,
 )
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 
 def update_metabolization_status(
@@ -83,11 +87,22 @@ def main() -> None:
         "--output",
         default="data/settlement_datasets/metabolization_candidates/candidates_updated.jsonl",
     )
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
 
     path = update_metabolization_status(
-        args.candidates, args.shadow_results, args.output
+        str(scope.named_path("metabolization", "candidates.jsonl", input_surface=True)) if scope is not None else args.candidates,
+        str(scope.named_path("shadow", "policy_shadow_results.jsonl", input_surface=True)) if scope is not None else args.shadow_results,
+        str(scope.named_path("metabolization", "candidates_updated.jsonl")) if scope is not None else args.output,
     )
     updated = read_records_jsonl(str(path))
     print(f"Updated {len(updated)} metabolization candidates -> {path}")

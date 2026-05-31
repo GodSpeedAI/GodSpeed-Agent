@@ -1,0 +1,202 @@
+{
+  "confidence_distribution": {
+    "gte_0_65": 0,
+    "gte_0_8": 4,
+    "lt_0_65": 0
+  },
+  "created_at": "2026-05-31T12:49:43Z",
+  "dataset": "agenttrove",
+  "false_positive_count": 0,
+  "harmful_count": 0,
+  "live_shadow_fire_counts": {
+    "by_policy": {},
+    "total": 0
+  },
+  "metabolization_candidate_status_counts": {
+    "repeated": 7
+  },
+  "min_confidence": 0.65,
+  "policy_activation_count": 0,
+  "policy_fire_counts": {
+    "likely_harmful": 0,
+    "likely_helpful": 0,
+    "total": 5,
+    "uncertain": 5
+  },
+  "recommended_next_move": "Inspect uncertain shadow results and replay summaries to tighten evidence thresholds without changing policy status.",
+  "reflection_policy_evidence": {
+    "assessment_distribution": {
+      "uncertain": 4
+    },
+    "fire_timing_distribution": {
+      "final_turn": 4
+    },
+    "policy_id": "require_reflection_before_continuing_after_second_unresolved_error",
+    "pre_settlement_fire_count": 0,
+    "recovery_opportunity_count": 0,
+    "status_recommendation": "needs_more_evidence",
+    "would_fire_count": 4
+  },
+  "run_id": "reflection-target-001",
+  "target_policy_evidence": {
+    "policy_fire_counts": {
+      "prevent_high_payment_action_when_constraints_unknown": 1,
+      "require_reflection_before_continuing_after_second_unresolved_error": 4
+    },
+    "target_profile": "reflection_second_unresolved_error"
+  },
+  "target_profile": "reflection_second_unresolved_error",
+  "target_profile_match_counts": {
+    "exclude_reason_counts": {
+      "below_min_confidence": 230,
+      "fewer_than_two_unresolved_errors": 326,
+      "low_cost_inspection_after_error": 113,
+      "no_action_after_error": 2,
+      "no_same_path_continuation_after_second_error": 301,
+      "no_tool_or_environment_error": 248,
+      "recovery_window_not_open": 341
+    },
+    "high_confidence_count": 270,
+    "matched_count": 4,
+    "notes": [
+      "This profile is operational only for reflection_second_unresolved_error.",
+      "Matching requires the early reflection path to remain spendable: distinct second error, same-path continuation, no strategy revision after the latest error, and recovery opportunity still open.",
+      "When explicit copied terminal-output observations are absent, the filter falls back to normalized payment evidence such as error_count and recovery_attempt_count.",
+      "Raw sampling remains unfiltered; the targeted slice is applied to normalized records before labeling and shadow evaluation."
+    ],
+    "qualifying_examples": [
+      {
+        "fire_timing": "middle",
+        "recovery_opportunity_evidence": [
+          "recovery_attempt_count=3"
+        ],
+        "remaining_turns_after_fire": 3,
+        "trace_id": "at-1fa6dff6686c"
+      },
+      {
+        "fire_timing": "middle",
+        "recovery_opportunity_evidence": [
+          "recovery_attempt_count=2"
+        ],
+        "remaining_turns_after_fire": 2,
+        "trace_id": "codeforces-00033"
+      },
+      {
+        "fire_timing": "middle",
+        "recovery_opportunity_evidence": [
+          "recovery_attempt_count=3"
+        ],
+        "remaining_turns_after_fire": 3,
+        "trace_id": "codeforces-00090"
+      },
+      {
+        "fire_timing": "middle",
+        "recovery_opportunity_evidence": [
+          "recovery_attempt_count=2"
+        ],
+        "remaining_turns_after_fire": 2,
+        "trace_id": "codeforces-00091"
+      }
+    ],
+    "rejected_examples": [
+      {
+        "exclude_reasons": [
+          "low_cost_inspection_after_error",
+          "recovery_window_not_open"
+        ],
+        "fire_timing": "early",
+        "trace_id": "at-61bf56ea495a"
+      },
+      {
+        "exclude_reasons": [
+          "no_tool_or_environment_error",
+          "fewer_than_two_unresolved_errors",
+          "no_same_path_continuation_after_second_error",
+          "recovery_window_not_open"
+        ],
+        "fire_timing": "unknown",
+        "trace_id": "at-132b1cb5612c"
+      },
+      {
+        "exclude_reasons": [
+          "fewer_than_two_unresolved_errors",
+          "no_same_path_continuation_after_second_error",
+          "recovery_window_not_open"
+        ],
+        "fire_timing": "unknown",
+        "trace_id": "at-ee280494f975"
+      },
+      {
+        "exclude_reasons": [
+          "no_tool_or_environment_error",
+          "fewer_than_two_unresolved_errors",
+          "no_same_path_continuation_after_second_error",
+          "recovery_window_not_open"
+        ],
+        "fire_timing": "unknown",
+        "trace_id": "at-988b662a5d70"
+      },
+      {
+        "exclude_reasons": [
+          "below_min_confidence",
+          "fewer_than_two_unresolved_errors",
+          "no_same_path_continuation_after_second_error",
+          "recovery_window_not_open"
+        ],
+        "fire_timing": "unknown",
+        "trace_id": "at-8e77a719a1ac"
+      }
+    ],
+    "sampled_count": 500,
+    "signal_counts": {
+      "command_or_action_trace": 500,
+      "no_strategy_revision_after_latest_error": 500,
+      "recovery_actions_after_error": 232,
+      "recovery_opportunity_remaining": 159,
+      "same_path_continuation_after_second_error": 199,
+      "task_complete_marker": 193,
+      "two_or_more_unresolved_errors": 174
+    },
+    "targeting_mode": "operational_filtering_on_normalized_records"
+  },
+  "target_profile_metadata": {
+    "dataset": "agenttrove",
+    "description": "Capture traces where a second distinct tool or environment error appears before the agent revises strategy or closes the run.",
+    "notes": [
+      "This profile now applies operational filtering to normalized records before labeling and shadow evaluation.",
+      "Raw sampling remains unfiltered so sampled-versus-matched counts stay visible in the run manifest and summary.",
+      "This is still evidence collection only, not an activation surface."
+    ],
+    "query": "second unresolved tool or environment error before continued attempt without revised plan",
+    "signals": {
+      "exclude": [
+        "final_turn_only_error",
+        "duplicate_error_only",
+        "no_action_after_error",
+        "low_cost_inspection_after_error",
+        "closure_after_error"
+      ],
+      "prefer": [
+        "command_or_action_trace",
+        "multiple_error_events",
+        "same_path_continuation_after_second_error",
+        "no_strategy_revision_after_latest_error",
+        "recovery_actions_after_error",
+        "continued_attempt_without_strategy_revision",
+        "pre_closure_recovery_opportunity",
+        "task_complete_marker"
+      ],
+      "require": [
+        "tool_or_environment_error",
+        "second_unresolved_error",
+        "recovery_window_open"
+      ]
+    }
+  },
+  "trace_counts": {
+    "ingested": 500,
+    "labeled": 4,
+    "normalized": 4
+  },
+  "uncertain_count": 5
+}

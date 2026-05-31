@@ -1,0 +1,10 @@
+policy_id,total,raw_match,exact_semantic_match,partial_semantic_match,mismatch,unknown_policy_action,unknown_eval_behavior,insufficient_evidence,raw_match_rate,semantic_match_rate,partial_match_rate,unknown_policy_action_count,unknown_eval_behavior_count,mismatch_count,excluded_unknown_count
+compare_constraints_before_selection,2,0,0,0,2,0,0,0,0.0,0.0,0.0,0,0,2,0
+prevent_high_payment_action_when_constraints_unknown,2,0,0,0,2,0,0,0,0.0,0.0,0.0,0,0,2,0
+prevent_premature_concretion,2,0,0,0,2,0,0,0,0.0,0.0,0.0,0,0,2,0
+require_explicit_settlement_for_failure,3,0,0,0,2,0,1,0,0.0,0.0,0.0,0,1,2,1
+require_failure_evidence_before_stopping_on_test_failure,3,0,0,0,2,0,1,0,0.0,0.0,0.0,0,1,2,1
+require_reflection_after_repeated_errors,4,0,0,2,1,0,1,0,0.0,0.333,0.667,0,1,1,1
+require_reflection_before_continuing_after_second_unresolved_error,4,0,0,2,1,0,1,0,0.0,0.333,0.667,0,1,1,1
+require_test_or_settlement_evidence_before_final_for_code_patch,2,0,1,0,1,0,0,0,0.0,0.5,0.0,0,0,1,0
+test_before_final_answer,2,0,1,0,1,0,0,0,0.0,0.5,0.0,0,0,1,0

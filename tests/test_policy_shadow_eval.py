@@ -667,6 +667,284 @@ class TestMetabolizationStatusUpdate:
 
 
 class TestRefinedPolicyTriggers:
+    def test_pre_settlement_reflection_trigger_fires_on_second_distinct_error(self):
+        policy = {
+            "id": "require_reflection_before_continuing_after_second_unresolved_error",
+            "trigger": {"second_unresolved_error_before_continuing": True},
+            "negative_conditions": [
+                "duplicate_error_signals_only",
+                "strategy_revision_after_latest_error",
+                "low_cost_inspection_after_latest_error",
+                "closure_or_settlement_after_latest_error",
+            ],
+            "evidence": {"observed_failure_patterns": ["tool_thrashing"]},
+            "action": {"require_operator": "reflection"},
+        }
+        rec = _make_record(
+            error_count=2,
+            settlement_quality="failure_with_signal",
+            failure_mode="tool_thrashing",
+            turns=5,
+        )
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "Traceback: missing import in app.py"},
+            {"turn_index": 2, "content": "Error: NameError still raised in app.py"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 3, "content": "python app.py"},
+            {"action_type": "command", "turn_index": 4, "content": "retry implementation"},
+        ]
+
+        results = evaluate_policies_shadow([rec], [policy], min_confidence=0.0)
+
+        assert results[0]["would_fire"] is True
+        assert results[0]["fire_turn_index"] == 2
+        assert results[0]["fire_timing"] == "middle"
+        assert results[0]["recovery_opportunity"] is True
+        assert "distinct_unresolved_error_count=2" in results[0]["trigger_evidence"]
+
+    def test_pre_settlement_reflection_trigger_ignores_duplicate_errors(self):
+        policy = {
+            "id": "require_reflection_before_continuing_after_second_unresolved_error",
+            "trigger": {"second_unresolved_error_before_continuing": True},
+            "negative_conditions": ["duplicate_error_signals_only"],
+        }
+        rec = _make_record(error_count=2, settlement_quality="failure_with_signal", turns=4)
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "Traceback: module missing"},
+            {"turn_index": 2, "content": "Traceback: module missing"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 3, "content": "python app.py"},
+        ]
+
+        fired, _ = _check_trigger(
+            policy["trigger"], rec, policy["negative_conditions"]
+        )
+
+        assert fired is False
+
+    def test_pre_settlement_reflection_trigger_blocks_on_strategy_revision(self):
+        policy = {
+            "id": "require_reflection_before_continuing_after_second_unresolved_error",
+            "trigger": {"second_unresolved_error_before_continuing": True},
+            "negative_conditions": ["strategy_revision_after_latest_error"],
+        }
+        rec = _make_record(error_count=2, settlement_quality="failure_with_signal", turns=5)
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "Error: first failure"},
+            {"turn_index": 2, "content": "Error: second failure"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "analysis", "turn_index": 3, "content": "new plan: inspect the failing path"},
+            {"action_type": "command", "turn_index": 4, "content": "python app.py"},
+        ]
+
+        fired, _ = _check_trigger(
+            policy["trigger"], rec, policy["negative_conditions"]
+        )
+
+        assert fired is False
+
+    def test_pre_settlement_reflection_trigger_blocks_on_low_cost_inspection(self):
+        policy = {
+            "id": "require_reflection_before_continuing_after_second_unresolved_error",
+            "trigger": {"second_unresolved_error_before_continuing": True},
+            "negative_conditions": ["low_cost_inspection_after_latest_error"],
+        }
+        rec = _make_record(error_count=2, settlement_quality="failure_with_signal", turns=5)
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "Error: first failure"},
+            {"turn_index": 2, "content": "Error: second failure"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 3, "content": "cat failing_test.py"},
+            {"action_type": "command", "turn_index": 4, "content": "ls tests"},
+        ]
+
+        fired, _ = _check_trigger(
+            policy["trigger"], rec, policy["negative_conditions"]
+        )
+
+        assert fired is False
+
+    def test_pre_settlement_reflection_trigger_blocks_on_final_turn(self):
+        policy = {
+            "id": "require_reflection_before_continuing_after_second_unresolved_error",
+            "trigger": {"second_unresolved_error_before_continuing": True},
+            "negative_conditions": ["closure_or_settlement_after_latest_error"],
+        }
+        rec = _make_record(error_count=2, settlement_quality="failure_with_signal", turns=2)
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 0, "content": "Error: first failure"},
+            {"turn_index": 1, "content": "Error: second failure"},
+        ]
+
+        fired, _ = _check_trigger(
+            policy["trigger"], rec, policy["negative_conditions"]
+        )
+
+        assert fired is False
+
+    def test_pre_settlement_reflection_trigger_ignores_analysis_mentions(self):
+        policy = {
+            "id": "require_reflection_before_continuing_after_second_unresolved_error",
+            "trigger": {"second_unresolved_error_before_continuing": True},
+        }
+        rec = _make_record(error_count=0, settlement_quality="clean_success", turns=5)
+        rec["affordance_path"]["actions"] = [
+            {
+                "action_type": "analysis",
+                "turn_index": 0,
+                "content": "The issue mentions a TypeError on empty input.",
+            },
+            {
+                "action_type": "analysis",
+                "turn_index": 1,
+                "content": "The failure likely comes from the parser raising an exception.",
+            },
+            {"action_type": "command", "turn_index": 2, "content": "cat parser.py"},
+            {"action_type": "command", "turn_index": 3, "content": "sed -i 's/x/y/' parser.py"},
+        ]
+
+        fired, _ = _check_trigger(policy["trigger"], rec)
+
+        assert fired is False
+
+    def test_pre_settlement_failure_evidence_trigger_fires_for_code_test_failure(self):
+        policy = {
+            "id": "require_failure_evidence_before_stopping_on_test_failure",
+            "trigger": {"closure_without_failure_evidence_after_test_failure": True},
+            "negative_conditions": [
+                "domain_is_not_code",
+                "failure_evidence_already_present",
+                "task_already_settled",
+            ],
+            "evidence": {"observed_failure_patterns": ["test_failure", "failed_recovery"]},
+            "action": {"require_operator": "failure_analysis"},
+        }
+        rec = _make_record(
+            error_count=1,
+            settlement_quality="failure_with_signal",
+            failure_mode="test_failure",
+            turns=5,
+        )
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "pytest output: 2 failed, 5 passed"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "analysis", "turn_index": 2, "content": "I cannot complete this because tests failed"},
+            {"action_type": "command", "turn_index": 3, "content": "collect failure details"},
+            {"action_type": "command", "turn_index": 4, "content": "write summary"},
+        ]
+
+        results = evaluate_policies_shadow([rec], [policy], min_confidence=0.0)
+
+        assert results[0]["would_fire"] is True
+        assert results[0]["fire_turn_index"] == 2
+        assert results[0]["recovery_opportunity"] is True
+        assert "test_failure_signal_detected" in results[0]["trigger_evidence"]
+        assert "closure_attempt_detected" in results[0]["trigger_evidence"]
+
+    def test_pre_settlement_failure_evidence_trigger_fires_on_repeated_failed_tests(self):
+        policy = {
+            "id": "require_failure_evidence_before_stopping_on_test_failure",
+            "trigger": {"closure_without_failure_evidence_after_test_failure": True},
+            "negative_conditions": [
+                "domain_is_not_code",
+                "failure_evidence_already_present",
+                "task_already_settled",
+            ],
+            "evidence": {"observed_failure_patterns": ["test_failure"]},
+            "action": {"require_operator": "failure_analysis"},
+        }
+        rec = _make_record(
+            error_count=2,
+            settlement_quality="failure_with_signal",
+            failure_mode="test_failure",
+            turns=6,
+        )
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "pytest output: test_parser FAILED"},
+            {"turn_index": 3, "content": "pytest output: test_parser FAILED again"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {"action_type": "command", "turn_index": 2, "content": "apply patch"},
+            {"action_type": "command", "turn_index": 4, "content": "retry parser patch"},
+            {"action_type": "analysis", "turn_index": 5, "content": "still failing"},
+        ]
+
+        results = evaluate_policies_shadow([rec], [policy], min_confidence=0.0)
+
+        assert results[0]["would_fire"] is True
+        assert results[0]["fire_turn_index"] == 3
+        assert results[0]["recovery_opportunity"] is True
+        assert "repeated_test_failure_signal_detected" in results[0]["trigger_evidence"]
+
+    def test_pre_settlement_failure_evidence_trigger_blocks_when_evidence_exists(self):
+        policy = {
+            "id": "require_failure_evidence_before_stopping_on_test_failure",
+            "trigger": {"closure_without_failure_evidence_after_test_failure": True},
+            "negative_conditions": ["failure_evidence_already_present"],
+        }
+        rec = _make_record(
+            error_count=1,
+            settlement_quality="failure_with_signal",
+            failure_mode="test_failure",
+            turns=4,
+        )
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "pytest output: AssertionError in test_login"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {
+                "action_type": "analysis",
+                "turn_index": 2,
+                "content": "Observed failing test_login assertion with stack trace in pytest output",
+            },
+            {
+                "action_type": "analysis",
+                "turn_index": 3,
+                "content": "I cannot complete this because tests failed",
+            },
+        ]
+
+        fired, _ = _check_trigger(
+            policy["trigger"], rec, policy["negative_conditions"]
+        )
+
+        assert fired is False
+
+    def test_pre_settlement_failure_evidence_trigger_is_code_specific(self):
+        policy = {
+            "id": "require_failure_evidence_before_stopping_on_test_failure",
+            "trigger": {"closure_without_failure_evidence_after_test_failure": True},
+            "negative_conditions": ["domain_is_not_code"],
+        }
+        rec = _make_record(
+            error_count=1,
+            settlement_quality="failure_with_signal",
+            failure_mode="test_failure",
+            turns=4,
+            domain="api",
+        )
+        rec["affordance_path"]["observations"] = [
+            {"turn_index": 1, "content": "tests failed for request payload"},
+        ]
+        rec["affordance_path"]["actions"] = [
+            {
+                "action_type": "analysis",
+                "turn_index": 2,
+                "content": "I cannot complete this because tests failed",
+            },
+        ]
+
+        fired, _ = _check_trigger(
+            policy["trigger"], rec, policy["negative_conditions"]
+        )
+
+        assert fired is False
+
     def test_code_patch_trigger_fires_on_code_edit_without_test(self):
         policy = {
             "id": "require_test_or_settlement_evidence_before_final_for_code_patch",

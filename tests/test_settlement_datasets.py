@@ -536,6 +536,53 @@ class TestPolicyMiningAcrossDatasets:
             assert p["activation_status"] == "proposed"
             assert p["active_by_default"] is False
 
+    def test_target_policy_refinement_variants_are_preserved(self):
+        from scripts.settlement_datasets.mine_policies import mine_policies
+
+        all_records = []
+        for name, AdapterCls in [
+            ("swegym", SWEGymAdapter),
+            ("apibank", APIBankAdapter),
+        ]:
+            adapter = AdapterCls()
+            fixture = FIXTURES_DIR / name / "sample.jsonl"
+            all_records.extend(
+                adapter.to_settlement_record(r)
+                for r in adapter.stream(input_path=str(fixture))
+            )
+
+        policies = mine_policies(
+            all_records, min_confidence=0.0, min_supporting_traces=1
+        )
+        by_id = {policy["id"]: policy for policy in policies}
+
+        assert by_id["require_reflection_after_repeated_errors"]["status"] == "refine"
+        assert (
+            by_id["require_reflection_after_repeated_errors"]["superseded_by"]
+            == "require_reflection_before_continuing_after_second_unresolved_error"
+        )
+        assert (
+            by_id[
+                "require_reflection_before_continuing_after_second_unresolved_error"
+            ]["status"]
+            == "proposed"
+        )
+        assert by_id["require_explicit_settlement_for_failure"]["status"] == "refine"
+        assert (
+            by_id["require_explicit_settlement_for_failure"]["superseded_by"]
+            == "require_failure_evidence_before_stopping_on_test_failure"
+        )
+        assert (
+            by_id["require_failure_evidence_before_stopping_on_test_failure"]["status"]
+            == "proposed"
+        )
+        assert (
+            by_id[
+                "require_failure_evidence_before_stopping_on_test_failure"
+            ]["shadow_action"]
+            == "would_require_explicit_failure_evidence_before_closure"
+        )
+
 
 class TestEvalSuiteGeneration:
     def test_build_eval_suites(self):

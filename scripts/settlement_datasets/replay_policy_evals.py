@@ -18,6 +18,10 @@ from scripts.settlement_datasets.action_ontology import (
     normalize_eval_behavior,
     normalize_policy_action,
 )
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 
 def _match_policy_to_eval(
@@ -161,10 +165,24 @@ def main() -> None:
         "--output", default="data/settlement_datasets/policy_shadow_eval"
     )
     parser.add_argument("--min-confidence", type=float, default=0.0)
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
 
-    with open(args.policies) as f:
+    policies_path = (
+        str(scope.named_path("policies", "policies.yaml", input_surface=True))
+        if scope is not None
+        else args.policies
+    )
+    with open(policies_path) as f:
         policy_data = yaml.safe_load(f)
     policies = policy_data.get("policies", [])
 
@@ -173,7 +191,7 @@ def main() -> None:
         policies, eval_dir=args.eval_dir, min_confidence=args.min_confidence
     )
 
-    output_dir = Path(args.output)
+    output_dir = scope.replay_dir if scope is not None else Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     results_path = output_dir / "eval_replay_results.jsonl"

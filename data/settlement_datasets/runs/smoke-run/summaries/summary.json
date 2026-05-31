@@ -1,0 +1,63 @@
+{
+  "confidence_distribution": {
+    "gte_0_65": 0,
+    "gte_0_8": 0,
+    "lt_0_65": 0
+  },
+  "created_at": "2026-05-31T12:19:40Z",
+  "dataset": "agenttrove",
+  "false_positive_count": 0,
+  "harmful_count": 0,
+  "live_shadow_fire_counts": {
+    "by_policy": {},
+    "total": 0
+  },
+  "metabolization_candidate_status_counts": {},
+  "min_confidence": 0.65,
+  "policy_activation_count": 0,
+  "policy_fire_counts": {
+    "likely_harmful": 0,
+    "likely_helpful": 0,
+    "total": 0,
+    "uncertain": 0
+  },
+  "recommended_next_move": "Populate the run with real traces or rerun from a later stage using --input-run-dir once new evidence is available.",
+  "run_id": "smoke-run",
+  "target_policy_evidence": {
+    "policy_fire_counts": {},
+    "target_profile": "reflection_second_unresolved_error"
+  },
+  "target_profile": "reflection_second_unresolved_error",
+  "target_profile_metadata": {
+    "dataset": "agenttrove",
+    "description": "Capture traces where a second distinct tool or environment error appears before the agent revises strategy or closes the run.",
+    "notes": [
+      "This profile is wiring for reproducible targeted evidence collection, not an activation surface.",
+      "The current wrapper records the profile in the run manifest and summary so later passes can specialize ingestion without manual module calls."
+    ],
+    "query": "second unresolved tool or environment error before continued attempt without revised plan",
+    "signals": {
+      "exclude": [
+        "duplicate_error_only",
+        "low_cost_inspection_after_error",
+        "closure_after_error"
+      ],
+      "prefer": [
+        "multiple_error_events",
+        "continued_attempt_without_strategy_revision",
+        "pre_closure_recovery_opportunity"
+      ],
+      "require": [
+        "tool_or_environment_error",
+        "second_unresolved_error",
+        "recovery_window_open"
+      ]
+    }
+  },
+  "trace_counts": {
+    "ingested": 0,
+    "labeled": 0,
+    "normalized": 0
+  },
+  "uncertain_count": 0
+}

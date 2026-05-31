@@ -1,0 +1,489 @@
+policies:
+- id: require_reflection_after_repeated_errors
+  status: refine
+  status_reason: Historical late-trigger variant preserved for comparison; fires after
+    settlement feedback is already mostly spent.
+  supersedes: null
+  superseded_by: require_reflection_before_continuing_after_second_unresolved_error
+  trigger:
+    error_count_gte: 3
+    errors_are_unresolved: true
+  negative_conditions:
+  - errors_are_resolved_in_subsequent_turns
+  - error_count_is_only_analysis_mentions
+  required_evidence:
+  - at_least_3_error_outputs_from_environment_or_tool
+  - errors_remain_unresolved_at_trace_end_or_last_3_turns
+  action:
+    require_operator: reflection
+    block_next_action_until: revised_plan_exists
+  shadow_action: historical_late_reflection_marker
+  rationale: Repeated unresolved errors from environment/tool feedback indicate settlement
+    feedback is not being metabolized.
+  false_positive_risk: low
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 31
+    supporting_dataset_count: 1
+    supporting_datasets:
+    - agenttrove
+    total_traces_analyzed: 336
+    example_trace_ids:
+    - at-246aacd1cbab
+    - at-61bf56ea495a
+    - at-3c55c9fdb653
+    - at-5f99897f51c6
+    - at-1fa6dff6686c
+    observed_failure_patterns:
+    - tool_thrashing
+    - payment_spiral
+    - failed_recovery
+    proportion: 0.092
+    avg_label_confidence: 0.8
+    confidence_distribution:
+      min: 0.8
+      max: 0.8
+      mean: 0.8
+    meets_min_supporting_count: true
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: require_reflection_before_continuing_after_second_unresolved_error
+  status: proposed
+  status_reason: null
+  supersedes: require_reflection_after_repeated_errors
+  superseded_by: null
+  trigger:
+    second_unresolved_error_before_continuing: true
+  negative_conditions:
+  - duplicate_error_signals_only
+  - strategy_revision_after_latest_error
+  - low_cost_inspection_after_latest_error
+  - closure_or_settlement_after_latest_error
+  required_evidence:
+  - at_least_2_distinct_error_outputs_from_environment_or_tool
+  - continued_attempt_after_second_error_without_strategy_revision
+  - recovery_window_remains_open_after_second_error
+  action:
+    require_operator: reflection
+    block_next_action_until: revised_plan_exists
+  shadow_action: would_require_reflection_or_revised_plan
+  rationale: The second distinct unresolved error is the earliest spendable point
+    to require reflection before the same path continues.
+  false_positive_risk: low
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 31
+    supporting_dataset_count: 1
+    supporting_datasets:
+    - agenttrove
+    total_traces_analyzed: 336
+    example_trace_ids:
+    - at-246aacd1cbab
+    - at-61bf56ea495a
+    - at-3c55c9fdb653
+    - at-5f99897f51c6
+    - at-1fa6dff6686c
+    observed_failure_patterns:
+    - tool_thrashing
+    - payment_spiral
+    - failed_recovery
+    proportion: 0.092
+    avg_label_confidence: 0.8
+    confidence_distribution:
+      min: 0.8
+      max: 0.8
+      mean: 0.8
+    meets_min_supporting_count: true
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: require_constraint_match_before_multi_option_selection
+  status: proposed
+  status_reason: null
+  supersedes: compare_constraints_before_selection
+  superseded_by: null
+  trigger:
+    selection_action: true
+    multiple_viable_options_present: true
+    explicit_constraints_exist: true
+    no_constraint_match_evidence: true
+  negative_conditions:
+  - only_one_viable_option_exists
+  - no_explicit_constraints_in_instruction
+  - selection_is_exploratory_not_final
+  - selected_option_has_explicit_match_evidence
+  required_evidence:
+  - at_least_2_viable_candidates_observed_before_selection
+  - user_instruction_contains_explicit_constraints
+  - no_evidence_that_selected_item_matches_all_constraints
+  action:
+    require_operator: constraint_verification
+    block: selection_without_comparison
+  shadow_action: null
+  rationale: When multiple options exist and constraints are explicit, selection without
+    constraint comparison leads to constraint misses.
+  false_positive_risk: low
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
+    observed_failure_patterns:
+    - constraint_miss
+    - premature_choice
+    proportion: 0.0
+    avg_label_confidence: 0.0
+    confidence_distribution:
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: compare_constraints_before_selection
+  status: superseded
+  status_reason: null
+  supersedes: null
+  superseded_by: require_constraint_match_before_multi_option_selection
+  trigger:
+    selection_action: true
+    prior_comparison: false
+  negative_conditions: []
+  required_evidence:
+  - selection_action_present
+  - no_prior_comparison_step_detected
+  action:
+    require_operator: constraint_verification
+    block: selection_without_comparison
+  shadow_action: null
+  rationale: Selection without comparing against constraints leads to constraint misses.
+  false_positive_risk: high
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
+    observed_failure_patterns:
+    - constraint_miss
+    - premature_choice
+    - premature_closure
+    proportion: 0.0
+    avg_label_confidence: 0.0
+    confidence_distribution:
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: require_test_or_settlement_evidence_before_final_for_code_patch
+  status: proposed
+  status_reason: null
+  supersedes: test_before_final_answer
+  superseded_by: null
+  trigger:
+    domain_is_code: true
+    action_history_includes_edit: true
+    final_answer_attempted: true
+    no_settlement_evidence: true
+  negative_conditions:
+  - domain_is_not_code
+  - no_code_edit_in_action_history
+  - test_output_already_present
+  - task_complete_marker_is_true
+  - explicit_evaluator_success_exists
+  - successful_command_output_relevant_to_task
+  required_evidence:
+  - action_history_includes_code_edit_patch_or_implementation
+  - final_answer_or_task_complete_attempted_after_edit
+  - no_passing_test_output_between_last_edit_and_final_answer
+  - no_task_complete_true_marker
+  - no_explicit_success_signal_from_evaluator
+  action:
+    require_operator: verification_step
+    block: answer_without_test_or_settlement_signal
+  shadow_action: null
+  rationale: Code patches without test output or settlement evidence before final
+    answer risk brittle or premature closure.
+  false_positive_risk: low
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
+    observed_failure_patterns:
+    - brittle_success
+    - premature_closure
+    proportion: 0.0
+    avg_label_confidence: 0.0
+    confidence_distribution:
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: test_before_final_answer
+  status: superseded
+  status_reason: null
+  supersedes: null
+  superseded_by: require_test_or_settlement_evidence_before_final_for_code_patch
+  trigger:
+    final_answer_action: true
+    prior_verification: false
+  negative_conditions: []
+  required_evidence:
+  - final_answer_or_completion_attempted
+  - no_prior_verification_signal_detected
+  action:
+    require_operator: verification_step
+    block: answer_without_test
+  shadow_action: null
+  rationale: Final answers without verification produce brittle or premature settlements.
+  false_positive_risk: high
+  payment_risk: medium
+  evidence:
+    supporting_trace_count: 0
+    supporting_dataset_count: 0
+    supporting_datasets: []
+    total_traces_analyzed: 336
+    example_trace_ids: []
+    observed_failure_patterns:
+    - brittle_success
+    - premature_closure
+    proportion: 0.0
+    avg_label_confidence: 0.0
+    confidence_distribution:
+      min: 0.0
+      max: 0.0
+      mean: 0.0
+    meets_min_supporting_count: false
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: require_explicit_settlement_for_failure
+  status: refine
+  status_reason: Historical late-trigger variant preserved for comparison; it labels
+    settled failure rather than intervening before closure.
+  supersedes: null
+  superseded_by: require_failure_evidence_before_stopping_on_test_failure
+  trigger:
+    settlement_quality: failure_with_signal
+    has_failure_condition_evidence: true
+  negative_conditions:
+  - settlement_quality_is_not_failure_with_signal
+  - no_failure_condition_evidence_available
+  required_evidence:
+  - settlement_quality_is_failure_with_signal
+  - failure_condition_has_observable_evidence_test_output_error_message_or_tool_feedback
+  action:
+    require_operator: failure_analysis
+    record: error_correction_signal
+  shadow_action: historical_failure_settlement_marker
+  rationale: Failures with observable signals should produce explicit error-correction
+    data backed by actual failure condition evidence.
+  false_positive_risk: low
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 8
+    supporting_dataset_count: 2
+    supporting_datasets:
+    - agenttrove
+    - swegym
+    total_traces_analyzed: 336
+    example_trace_ids:
+    - at-a3d8c2e58d88
+    - at-4e190fe45dac
+    - at-efa503e29895
+    - freelancer_askllm_filtered-0105
+    - task_1090
+    observed_failure_patterns:
+    - failed_recovery
+    - test_failure
+    proportion: 0.024
+    avg_label_confidence: 0.775
+    confidence_distribution:
+      min: 0.7
+      max: 0.8
+      mean: 0.775
+    meets_min_supporting_count: true
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: require_failure_evidence_before_stopping_on_test_failure
+  status: proposed
+  status_reason: null
+  supersedes: require_explicit_settlement_for_failure
+  superseded_by: null
+  trigger:
+    closure_without_failure_evidence_after_test_failure: true
+  negative_conditions:
+  - domain_is_not_code
+  - failure_evidence_already_present
+  - task_already_settled
+  required_evidence:
+  - code_domain_test_failure_signal_detected_before_closure
+  - closure_or_stop_attempt_after_test_failure
+  - no_explicit_failure_evidence_recorded_before_closure
+  action:
+    require_operator: failure_analysis
+    record: error_correction_signal
+  shadow_action: would_require_explicit_failure_evidence_before_closure
+  rationale: A failing test should produce explicit failure evidence before the agent
+    closes the run, while recovery opportunity still exists.
+  false_positive_risk: low
+  payment_risk: low
+  evidence:
+    supporting_trace_count: 8
+    supporting_dataset_count: 2
+    supporting_datasets:
+    - agenttrove
+    - swegym
+    total_traces_analyzed: 336
+    example_trace_ids:
+    - at-a3d8c2e58d88
+    - at-4e190fe45dac
+    - at-efa503e29895
+    - freelancer_askllm_filtered-0105
+    - task_1090
+    observed_failure_patterns:
+    - failed_recovery
+    - test_failure
+    proportion: 0.024
+    avg_label_confidence: 0.775
+    confidence_distribution:
+      min: 0.7
+      max: 0.8
+      mean: 0.775
+    meets_min_supporting_count: true
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: prevent_high_payment_action_when_constraints_unknown
+  status: proposed
+  status_reason: null
+  supersedes: prevent_premature_concretion
+  superseded_by: null
+  trigger:
+    constraints_missing_or_ambiguous: true
+    high_payment_or_irreversible_action: true
+    no_intermediate_representation: true
+    no_user_feedback_resolved_ambiguity: true
+  negative_conditions:
+  - constraints_are_explicit_and_clear
+  - action_is_low_cost_exploratory
+  - intermediate_representation_exists_in_prior_turns
+  - user_or_environment_feedback_has_resolved_ambiguity
+  required_evidence:
+  - task_constraints_are_missing_or_ambiguous
+  - action_is_high_payment_edit_delete_commit_submit_purchase_or_irreversible_api
+  - no_analysis_plan_or_intermediate_step_between_task_start_and_action
+  - no_environment_or_user_feedback_between_task_and_action
+  action:
+    require_operator: intermediate_representation
+    block: direct_high_payment_action_with_unknown_constraints
+  shadow_action: null
+  rationale: High-payment or irreversible actions when constraints are unknown risk
+    premature concretion without affordance for correction.
+  false_positive_risk: low
+  payment_risk: medium
+  evidence:
+    supporting_trace_count: 23
+    supporting_dataset_count: 1
+    supporting_datasets:
+    - agenttrove
+    total_traces_analyzed: 336
+    example_trace_ids:
+    - at-8f9b3adcff0d
+    - at-fca5603bdf7f
+    - at-715c8de72a8c
+    - at-698352d3c52a
+    - at-7fad4f91d5c1
+    observed_failure_patterns:
+    - premature_concretion
+    - premature_closure
+    - constraint_miss
+    proportion: 0.068
+    avg_label_confidence: 0.8
+    confidence_distribution:
+      min: 0.8
+      max: 0.8
+      mean: 0.8
+    meets_min_supporting_count: true
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false
+- id: prevent_premature_concretion
+  status: superseded
+  status_reason: null
+  supersedes: null
+  superseded_by: prevent_high_payment_action_when_constraints_unknown
+  trigger:
+    early_specific_action: true
+    turn_index_lt: 3
+  negative_conditions: []
+  required_evidence:
+  - early_specific_action_taken
+  - action_occurs_before_intermediate_representation
+  action:
+    require_operator: intermediate_representation
+    block: direct_jump
+  shadow_action: null
+  rationale: Jumping to specific action without analysis leads to premature concretion.
+  false_positive_risk: high
+  payment_risk: medium
+  evidence:
+    supporting_trace_count: 23
+    supporting_dataset_count: 1
+    supporting_datasets:
+    - agenttrove
+    total_traces_analyzed: 336
+    example_trace_ids:
+    - at-8f9b3adcff0d
+    - at-fca5603bdf7f
+    - at-715c8de72a8c
+    - at-698352d3c52a
+    - at-7fad4f91d5c1
+    observed_failure_patterns:
+    - premature_concretion
+    - premature_closure
+    proportion: 0.068
+    avg_label_confidence: 0.8
+    confidence_distribution:
+      min: 0.8
+      max: 0.8
+      mean: 0.8
+    meets_min_supporting_count: true
+  risk:
+    false_positive_concern: Deterministic heuristics may misclassify some traces.
+    recommended_review: Human review before activation in production harness.
+  activation_status: proposed
+  active_by_default: false

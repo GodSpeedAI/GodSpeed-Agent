@@ -1,0 +1,11 @@
+policy_id,supporting_trace_count,would_fire_count,likely_helpful_count,likely_harmful_count,uncertain_count,false_positive_rate_estimate,uncertainty_reason_distribution,fire_timing_distribution,recovery_opportunity_count,helpful_with_recovery_opportunity_count,uncertain_with_recovery_opportunity_count,fires_after_failure_settled_count,payment_risk_distribution,domains_observed,datasets_observed,recommendation,recommendation_rationale
+require_reflection_after_repeated_errors,2,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+require_reflection_before_continuing_after_second_unresolved_error,2,4,0,0,4,0.0,{'no_recovery_opportunity': 4},{'final_turn': 4},0,0,0,0,{'high': 4},['code'],['agenttrove'],keep_proposed,Insufficient evidence for promotion.
+require_constraint_match_before_multi_option_selection,0,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+compare_constraints_before_selection,0,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+require_test_or_settlement_evidence_before_final_for_code_patch,0,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+test_before_final_answer,0,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+require_explicit_settlement_for_failure,0,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+require_failure_evidence_before_stopping_on_test_failure,0,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.
+prevent_high_payment_action_when_constraints_unknown,0,1,0,0,1,0.0,{'no_recovery_opportunity': 1},{'final_turn': 1},0,0,0,0,{'high': 1},['code'],['agenttrove'],keep_proposed,Insufficient evidence for promotion.
+prevent_premature_concretion,0,0,0,0,0,0.0,{},{},0,0,0,0,{},[],[],needs_more_evidence,Policy never fires on evaluated records.

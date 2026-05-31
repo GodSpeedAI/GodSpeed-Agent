@@ -1,0 +1,223 @@
+policy_status_recommendations:
+- policy_id: require_reflection_after_repeated_errors
+  current_status: refine
+  recommended_status: needs_more_evidence
+  rationale: 'Policy never fires on evaluated records. Semantic replay support: semantic=33.3%,
+    partial=66.7%, raw=0.0%.'
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.333
+      partial_match_rate: 0.667
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 1
+      excluded_unknown_count: 1
+      available: true
+- policy_id: require_reflection_before_continuing_after_second_unresolved_error
+  current_status: proposed
+  recommended_status: keep_proposed
+  rationale: 'Insufficient evidence for promotion. Semantic replay support: semantic=33.3%,
+    partial=66.7%, raw=0.0%.'
+  evidence:
+    would_fire_count: 4
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 4
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution:
+      high: 4
+    domains_observed:
+    - code
+    datasets_observed:
+    - agenttrove
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.333
+      partial_match_rate: 0.667
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 1
+      excluded_unknown_count: 1
+      available: true
+- policy_id: require_constraint_match_before_multi_option_selection
+  current_status: proposed
+  recommended_status: needs_more_evidence
+  rationale: Policy never fires on evaluated records.
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.0
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 0
+      excluded_unknown_count: 0
+      available: false
+- policy_id: compare_constraints_before_selection
+  current_status: superseded
+  recommended_status: superseded
+  rationale: Historical policy retained as superseded after refinement.
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.0
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 0
+      excluded_unknown_count: 0
+      available: true
+- policy_id: require_test_or_settlement_evidence_before_final_for_code_patch
+  current_status: proposed
+  recommended_status: needs_more_evidence
+  rationale: 'Policy never fires on evaluated records. Semantic replay support: semantic=50.0%,
+    partial=0.0%, raw=0.0%.'
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.5
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 0
+      excluded_unknown_count: 0
+      available: true
+- policy_id: test_before_final_answer
+  current_status: superseded
+  recommended_status: superseded
+  rationale: Historical policy retained as superseded after refinement.
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.5
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 0
+      excluded_unknown_count: 0
+      available: true
+- policy_id: require_explicit_settlement_for_failure
+  current_status: refine
+  recommended_status: needs_more_evidence
+  rationale: 'Policy never fires on evaluated records. Semantic replay support: semantic=0.0%,
+    partial=0.0%, raw=0.0%.'
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.0
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 1
+      excluded_unknown_count: 1
+      available: true
+- policy_id: require_failure_evidence_before_stopping_on_test_failure
+  current_status: proposed
+  recommended_status: needs_more_evidence
+  rationale: 'Policy never fires on evaluated records. Semantic replay support: semantic=0.0%,
+    partial=0.0%, raw=0.0%.'
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.0
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 1
+      excluded_unknown_count: 1
+      available: true
+- policy_id: prevent_high_payment_action_when_constraints_unknown
+  current_status: proposed
+  recommended_status: keep_proposed
+  rationale: 'Insufficient evidence for promotion. Semantic replay support: semantic=0.0%,
+    partial=0.0%, raw=0.0%.'
+  evidence:
+    would_fire_count: 1
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 1
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution:
+      high: 1
+    domains_observed:
+    - code
+    datasets_observed:
+    - agenttrove
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.0
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 0
+      excluded_unknown_count: 0
+      available: true
+- policy_id: prevent_premature_concretion
+  current_status: superseded
+  recommended_status: superseded
+  rationale: Historical policy retained as superseded after refinement.
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.0
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 0
+      excluded_unknown_count: 0
+      available: true

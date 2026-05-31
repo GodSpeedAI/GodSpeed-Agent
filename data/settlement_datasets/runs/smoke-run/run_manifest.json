@@ -1,0 +1,107 @@
+{
+  "run_id": "smoke-run",
+  "created_at": "2026-05-31T12:19:40Z",
+  "commands": [
+    {
+      "stage": "ingest",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "profile",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "label",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "export-ledger",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "mine-policies",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "shadow-eval",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "replay",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "policy-status",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "metabolization-candidates",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "metabolization-status",
+      "planned": true,
+      "executed": false
+    },
+    {
+      "stage": "live-shadow",
+      "planned": true,
+      "executed": false
+    }
+  ],
+  "datasets": [
+    "agenttrove"
+  ],
+  "limits": {
+    "limit": 10,
+    "start_stage": "ingest",
+    "end_stage": "summary"
+  },
+  "min_confidence": 0.65,
+  "input_paths": {
+    "input": null,
+    "input_run_dir": "data/settlement_datasets/runs/smoke-run",
+    "eval_dir": "data/settlement_datasets/evals/"
+  },
+  "output_paths": {
+    "run_dir": "data/settlement_datasets/runs/smoke-run",
+    "raw": "data/settlement_datasets/runs/smoke-run/raw/agenttrove.jsonl",
+    "normalized": "data/settlement_datasets/runs/smoke-run/normalized/agenttrove.jsonl",
+    "profile": "data/settlement_datasets/runs/smoke-run/profiles/agenttrove_profile.json",
+    "settlements": "data/settlement_datasets/runs/smoke-run/settlements/agenttrove.jsonl",
+    "ledger": "data/settlement_datasets/runs/smoke-run/ledger/settlement_ledger.sqlite",
+    "policies": "data/settlement_datasets/runs/smoke-run/policies/policies.yaml",
+    "shadow_dir": "data/settlement_datasets/runs/smoke-run/shadow",
+    "replay_dir": "data/settlement_datasets/runs/smoke-run/replay",
+    "policy_status": "data/settlement_datasets/runs/smoke-run/adjudication/policy_status_recommendations.yaml",
+    "candidates": "data/settlement_datasets/runs/smoke-run/metabolization/candidates.jsonl",
+    "candidates_updated": "data/settlement_datasets/runs/smoke-run/metabolization/candidates_updated.jsonl"
+  },
+  "artifact_counts": {
+    "raw_records": 0,
+    "normalized_records": 0,
+    "labeled_records": 0,
+    "policy_fires": 0,
+    "replay_results": 0,
+    "live_shadow_fires": 0,
+    "metabolization_candidates": 0
+  },
+  "policy_counts": {
+    "total": 0
+  },
+  "eval_counts": {
+    "shadow_results": 0,
+    "replay_results": 0,
+    "live_shadow_fires": 0
+  },
+  "test_status": null
+}

@@ -1,8 +1,9 @@
 # require_reflection_after_repeated_errors
 
-## Policy Definition
+## Historical Late-Trigger Variant
 
 ```yaml
+id: require_reflection_after_repeated_errors
 trigger:
   error_count_gte: 3
   errors_are_unresolved: true
@@ -17,72 +18,61 @@ action:
   block_next_action_until: revised_plan_exists
 ```
 
-## Intended Intervention
+This historical variant remains useful as a late diagnostic marker, but it does not qualify as a harness intervention on the expanded adjudication surface.
 
-Repeated unresolved errors from environment/tool feedback indicate settlement feedback is not being metabolized.
+Historical late-trigger evidence on the expanded settlement surface:
 
-## Current Support Counts
+- Mined support: `31`
+- Would-fire events: `2`
+- Likely helpful: `0`
+- Uncertain: `2`
+- Harmful: `0`
+- Fire timing: `{"final_turn": 2}`
+- Recovery opportunity: `{"no_recovery_opportunity": 2}`
+- Recommendation: `refine`
 
-- Mined support: 31
-- Supporting datasets: 1 (`agenttrove`)
-- Confidence distribution on supporting traces: `min=0.80`, `max=0.80`, `mean=0.80`
-- Would-fire events: 2
-- Likely helpful: 0
-- Uncertain: 2
-- Harmful: 0
-- False-positive estimate: `0.0%`
-- Semantic replay support: `semantic=33.3%`, `partial=66.7%`, `raw=0.0%`
+The controlling problem did not change: both fires land on the final available turn, so reflection cannot be observed while recovery still exists.
 
-## Would-Fire Examples
+## Refined Pre-Settlement Variant
 
-- `task_1119` dataset=agenttrove assessment=uncertain timing=final_turn recovery=False evidence=['error_count=4>=3', 'errors_unresolved=4_of_4']
-- `swe-failed-004` dataset=swegym assessment=uncertain timing=final_turn recovery=False evidence=['error_count=3>=3', 'errors_unresolved=3_of_3']
+```yaml
+id: require_reflection_before_continuing_after_second_unresolved_error
+trigger:
+  second_unresolved_error_before_continuing: true
+negative_conditions:
+  - duplicate_error_signals_only
+  - strategy_revision_after_latest_error
+  - low_cost_inspection_after_latest_error
+  - closure_or_settlement_after_latest_error
+required_evidence:
+  - at_least_2_distinct_error_outputs_from_environment_or_tool
+  - continued_attempt_after_second_error_without_strategy_revision
+  - recovery_window_remains_open_after_second_error
+action:
+  require_operator: reflection
+  block_next_action_until: revised_plan_exists
+```
 
-## Likely Helpful Examples
+This refined variant now counts only tool or environment feedback as error evidence and suppresses the cases that previously made the heuristic harmful on successful SWE traces.
 
-- None observed.
+Refined pre-settlement evidence on the expanded settlement surface:
 
-## Uncertain Examples By Reason
+- Mined support: `31`
+- Would-fire events: `0`
+- Likely helpful: `0`
+- Uncertain: `0`
+- Harmful: `0`
+- Fire timing: `{}`
+- Recovery opportunity: `{}`
+- Recommendation: `needs_more_evidence`
 
-### no_recovery_opportunity
+## Evidence Comparison
 
-- `task_1119` dataset=agenttrove assessment=uncertain timing=final_turn recovery=False evidence=['error_count=4>=3', 'errors_unresolved=4_of_4']
-- `swe-failed-004` dataset=swegym assessment=uncertain timing=final_turn recovery=False evidence=['error_count=3>=3', 'errors_unresolved=3_of_3']
+- The historical variant still fires, but only on final-turn traces with no remaining recovery window.
+- The refined variant no longer overfires on successful SWE traces because assistant analysis text is no longer treated as spendable error evidence.
+- On the expanded evidence surface, no trace currently shows the exact combination this refined policy requires: a second distinct tool or environment error, continued same-path action, no strategy revision, no low-cost inspection, and remaining recovery window.
+- The result is an honest absence of qualifying intervention evidence, not a claim that the historical late marker was already good enough.
 
-Both uncertain cases are dominated by the same adjudication problem: the trigger lands on the final available turn, so the evaluator cannot observe whether reflection plus a revised plan would have changed anything.
+## Current Recommendation
 
-## Harmful Examples
-
-- None observed.
-
-## Fire Timing Distribution
-
-`{"final_turn": 2}`
-
-## Recovery Opportunity Distribution
-
-`{"no_recovery_opportunity": 2}`
-
-## Representative Trace Excerpts
-
-- Trace `task_1119`: settlement=recovered_success, failure_mode=failed_recovery, trigger_evidence=['error_count=4>=3', 'errors_unresolved=4_of_4'], uncertainty=no_recovery_opportunity.
-- Trace `swe-failed-004`: settlement=failure_with_signal, failure_mode=test_failure, trigger_evidence=['error_count=3>=3', 'errors_unresolved=3_of_3'], uncertainty=no_recovery_opportunity.
-
-## What Evidence Is Still Missing
-
-- More likely-helpful shadow fires with recovery opportunity.
-- Earlier trigger points on traces with unresolved repeated errors and at least one or two turns left to recover.
-- Clearer separation between true unresolved tool or environment errors and generic failed attempts.
-- Evidence that the intervention is not just generic reflection but reflection plus an explicit revised plan.
-
-## Policy-Specific Refinement Check
-
-- Repeated errors should remain constrained to unresolved tool or environment errors.
-- Final-turn fires: 2.
-- Recovery-opportunity fires: 0.
-- The current action surface is too broad if interpreted as generic reflection alone; the evidence supports a more explicit revised-plan intervention.
-- The lack of helpfulness is at least partly an evaluator and trace-timing problem, not direct evidence that reflection is harmful.
-
-## Recommendation
-
-`refine`: keep the policy inactive, but narrow it toward earlier unresolved-error accumulation and make the intervention explicitly require a revised plan before more action.
+Keep the historical variant at `refine` for archival comparison only. Keep the refined variant `proposed`, but treat it as `needs_more_evidence` rather than activation-ready. No activation is justified until real traces show the refined trigger firing before closure with recovery opportunity still open.

@@ -1,8 +1,9 @@
 # require_explicit_settlement_for_failure
 
-## Policy Definition
+## Historical Late-Trigger Variant
 
 ```yaml
+id: require_explicit_settlement_for_failure
 trigger:
   settlement_quality: failure_with_signal
   has_failure_condition_evidence: true
@@ -17,74 +18,64 @@ action:
   record: error_correction_signal
 ```
 
-## Intended Intervention
+This historical variant identifies real failure-analysis need, but it does so only after the evaluator has already settled the trace as a failure.
 
-Failures with observable signals should produce explicit error-correction data backed by actual failure condition evidence.
+Historical late-trigger evidence on the expanded settlement surface:
 
-## Current Support Counts
+- Mined support: `8`
+- Would-fire events: `3`
+- Likely helpful: `2`
+- Uncertain: `1`
+- Harmful: `0`
+- Fire timing: `{"after_failure_already_settled": 3}`
+- Recovery opportunity: `{"no_recovery_opportunity": 3}`
+- Recommendation: `refine`
 
-- Mined support: 8
-- Supporting datasets: 2 (`agenttrove`, `swegym`)
-- Confidence distribution on supporting traces: `min=0.70`, `max=0.80`, `mean=0.775`
-- Would-fire events: 3
-- Likely helpful: 2
-- Uncertain: 1
-- Harmful: 0
-- False-positive estimate: `0.0%`
-- Semantic replay support: `semantic=0.0%`, `partial=0.0%`, `raw=0.0%`
+The likely-helpful examples stay useful as diagnosis, but they are still postmortem labels rather than harness interventions.
 
-## Would-Fire Examples
+## Refined Pre-Settlement Variant
 
-- `api-wrong-tool-003` dataset=apibank assessment=uncertain timing=after_failure_already_settled recovery=False evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present']
-- `swe-failed-004` dataset=swegym assessment=likely_helpful timing=after_failure_already_settled recovery=False evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present']
-- `swe-premature-005` dataset=swegym assessment=likely_helpful timing=after_failure_already_settled recovery=False evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present']
+```yaml
+id: require_failure_evidence_before_stopping_on_test_failure
+trigger:
+  closure_without_failure_evidence_after_test_failure: true
+negative_conditions:
+  - domain_is_not_code
+  - failure_evidence_already_present
+  - task_already_settled
+required_evidence:
+  - code_domain_test_failure_signal_detected_before_closure
+  - closure_or_stop_attempt_after_test_failure
+  - no_explicit_failure_evidence_recorded_before_closure
+action:
+  require_operator: failure_analysis
+  record: error_correction_signal
+```
 
-## Likely Helpful Examples
+The refined variant uses code/test-failure-specific timing. It can now fire at the second failed test when the run still has turns left, rather than waiting for a settled failure label.
 
-- `swe-failed-004` dataset=swegym assessment=likely_helpful timing=after_failure_already_settled recovery=False evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present']
-- `swe-premature-005` dataset=swegym assessment=likely_helpful timing=after_failure_already_settled recovery=False evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present']
+Refined pre-settlement evidence on the expanded settlement surface:
 
-## Uncertain Examples By Reason
+- Mined support: `8`
+- Would-fire events: `1`
+- Likely helpful: `1`
+- Uncertain: `0`
+- Harmful: `0`
+- Fire timing: `{"late": 1}`
+- Recovery opportunity: `{"has_recovery_opportunity": 1}`
+- Recommendation: `keep_proposed`
 
-### policy_would_fire_too_late
+Representative refined fire:
 
-- `api-wrong-tool-003` dataset=apibank assessment=uncertain timing=after_failure_already_settled recovery=False evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present']
+- `swe-failed-004` dataset=swegym assessment=likely_helpful timing=`late` recovery=`True` evidence=`['test_failure_signal_detected', 'test_failure_turn=4', 'repeated_test_failure_signal_detected', 'repeated_failure_turn=9']`
 
-The uncertain example is not weak because it is noisy; it is uncertain because the trigger depends on a settled failure label, so the fire arrives after the evaluator has already decided the trace failed.
+## Evidence Comparison
 
-## Harmful Examples
+- The historical variant fires `3` times, but every fire arrives `after_failure_already_settled` with zero recovery opportunity.
+- The refined variant drops the broad cross-domain late label and recovers one code-domain trace as an actual pre-closure intervention surface.
+- The key movement is not count inflation; it is timing movement from settled failure to a still-open recovery window on `swe-failed-004`.
+- The remaining evidence is narrow: one helpful code trace is enough to justify keeping the refined variant proposed, but not enough to justify activation.
 
-- None observed.
+## Current Recommendation
 
-## Fire Timing Distribution
-
-`{"after_failure_already_settled": 3}`
-
-## Recovery Opportunity Distribution
-
-`{"no_recovery_opportunity": 3}`
-
-## Representative Trace Excerpts
-
-- Trace `api-wrong-tool-003`: settlement=failure_with_signal, failure_mode=wrong_tool, trigger_evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present'], uncertainty=policy_would_fire_too_late.
-- Trace `swe-failed-004`: settlement=failure_with_signal, failure_mode=test_failure, trigger_evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present'], uncertainty=n/a.
-- Trace `swe-premature-005`: settlement=failure_with_signal, failure_mode=test_failure, trigger_evidence=['settlement_quality=failure_with_signal', 'failure_condition_evidence_present'], uncertainty=n/a.
-
-## What Evidence Is Still Missing
-
-- More likely-helpful shadow fires with recovery opportunity.
-- Traces where the policy would fire before failure is fully settled.
-- More cross-domain support outside `swegym` `test_failure` traces.
-- Cases where the agent is explicitly claiming or implying failure in-line, rather than only failing by final evaluator judgment.
-
-## Policy-Specific Refinement Check
-
-The trigger is tied to observed `failure_with_signal` settlement and explicit failure-condition evidence.
-Recovery opportunity fires: 0.
-Domain distribution of current fires: `apibank=1`, `swegym=2`.
-The two likely-helpful examples are both `swegym` `test_failure` traces, so a code/test-failure variant is plausible.
-The broad cross-domain trigger currently lands too late to serve as strong intervention evidence.
-
-## Recommendation
-
-`refine`: keep the policy inactive, but move the trigger earlier or split out a narrower code/test-failure variant so the intervention can be observed before failure is already settled.
+Keep the historical variant at `refine` for comparison only. Keep the refined code/test-failure variant `proposed` with `keep_proposed` status. It is not activation-ready, but it is the first version of this policy family that produces a likely-helpful fire before settlement closes and while recovery opportunity still exists.

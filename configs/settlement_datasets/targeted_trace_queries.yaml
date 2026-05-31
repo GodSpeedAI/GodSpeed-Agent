@@ -1,0 +1,28 @@
+reflection_second_unresolved_error:
+  dataset: agenttrove
+  description: Capture traces where a second distinct tool or environment error appears before the agent revises strategy or closes the run.
+  query: second unresolved tool or environment error before continued attempt without revised plan
+  signals:
+    require:
+      - tool_or_environment_error
+      - second_unresolved_error
+      - recovery_window_open
+    prefer:
+      - command_or_action_trace
+      - multiple_error_events
+      - same_path_continuation_after_second_error
+      - no_strategy_revision_after_latest_error
+      - recovery_actions_after_error
+      - continued_attempt_without_strategy_revision
+      - pre_closure_recovery_opportunity
+      - task_complete_marker
+    exclude:
+      - final_turn_only_error
+      - duplicate_error_only
+      - no_action_after_error
+      - low_cost_inspection_after_error
+      - closure_after_error
+  notes:
+    - This profile now applies operational filtering to normalized records before labeling and shadow evaluation.
+    - Raw sampling remains unfiltered so sampled-versus-matched counts stay visible in the run manifest and summary.
+    - This is still evidence collection only, not an activation surface.

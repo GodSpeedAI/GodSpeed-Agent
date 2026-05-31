@@ -1,6 +1,6 @@
 policy_status_recommendations:
 - policy_id: require_reflection_after_repeated_errors
-  current_status: proposed
+  current_status: refine
   recommended_status: keep_proposed
   rationale: Insufficient evidence for promotion.
   evidence:
@@ -23,24 +23,19 @@ policy_status_recommendations:
       unknown_eval_behavior_count: 0
       excluded_unknown_count: 0
       available: false
-- policy_id: search_before_patch
+- policy_id: require_reflection_before_continuing_after_second_unresolved_error
   current_status: proposed
-  recommended_status: keep_proposed
-  rationale: Insufficient evidence for promotion.
+  recommended_status: needs_more_evidence
+  rationale: Policy never fires on evaluated records.
   evidence:
-    would_fire_count: 5
+    would_fire_count: 0
     likely_helpful_count: 0
     likely_harmful_count: 0
-    uncertain_count: 5
+    uncertain_count: 0
     false_positive_rate_estimate: 0.0
-    payment_risk_distribution:
-      low: 3
-      medium: 2
-    domains_observed:
-    - code
-    datasets_observed:
-    - agenttrove
-    - swegym
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
     semantic_replay:
       raw_match_rate: 0.0
       semantic_match_rate: 0.0
@@ -94,51 +89,6 @@ policy_status_recommendations:
       unknown_eval_behavior_count: 0
       excluded_unknown_count: 0
       available: false
-- policy_id: inspect_api_schema_before_call
-  current_status: proposed
-  recommended_status: needs_more_evidence
-  rationale: Policy never fires on evaluated records.
-  evidence:
-    would_fire_count: 0
-    likely_helpful_count: 0
-    likely_harmful_count: 0
-    uncertain_count: 0
-    false_positive_rate_estimate: 0.0
-    payment_risk_distribution: {}
-    domains_observed: []
-    datasets_observed: []
-    semantic_replay:
-      raw_match_rate: 0.0
-      semantic_match_rate: 0.0
-      partial_match_rate: 0.0
-      unknown_policy_action_count: 0
-      unknown_eval_behavior_count: 0
-      excluded_unknown_count: 0
-      available: false
-- policy_id: reset_plan_after_payment_spiral
-  current_status: proposed
-  recommended_status: keep_proposed
-  rationale: Insufficient evidence for promotion.
-  evidence:
-    would_fire_count: 1
-    likely_helpful_count: 0
-    likely_harmful_count: 0
-    uncertain_count: 1
-    false_positive_rate_estimate: 0.0
-    payment_risk_distribution:
-      high: 1
-    domains_observed:
-    - code
-    datasets_observed:
-    - swegym
-    semantic_replay:
-      raw_match_rate: 0.0
-      semantic_match_rate: 0.0
-      partial_match_rate: 0.0
-      unknown_policy_action_count: 0
-      unknown_eval_behavior_count: 0
-      excluded_unknown_count: 0
-      available: false
 - policy_id: require_test_or_settlement_evidence_before_final_for_code_patch
   current_status: proposed
   recommended_status: needs_more_evidence
@@ -182,7 +132,7 @@ policy_status_recommendations:
       excluded_unknown_count: 0
       available: false
 - policy_id: require_explicit_settlement_for_failure
-  current_status: proposed
+  current_status: refine
   recommended_status: keep_proposed
   rationale: Helpful on 2 traces but below activation threshold (need 5+).
   evidence:
@@ -202,6 +152,27 @@ policy_status_recommendations:
     - agenttrove
     - apibank
     - swegym
+    semantic_replay:
+      raw_match_rate: 0.0
+      semantic_match_rate: 0.0
+      partial_match_rate: 0.0
+      unknown_policy_action_count: 0
+      unknown_eval_behavior_count: 0
+      excluded_unknown_count: 0
+      available: false
+- policy_id: require_failure_evidence_before_stopping_on_test_failure
+  current_status: proposed
+  recommended_status: needs_more_evidence
+  rationale: Policy never fires on evaluated records.
+  evidence:
+    would_fire_count: 0
+    likely_helpful_count: 0
+    likely_harmful_count: 0
+    uncertain_count: 0
+    false_positive_rate_estimate: 0.0
+    payment_risk_distribution: {}
+    domains_observed: []
+    datasets_observed: []
     semantic_replay:
       raw_match_rate: 0.0
       semantic_match_rate: 0.0

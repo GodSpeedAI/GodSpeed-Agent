@@ -1,0 +1,112 @@
+{
+  "run_id": "reflection-target-001",
+  "created_at": "2026-05-31T12:49:43Z",
+  "commands": [
+    {
+      "stage": "ingest",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "profile",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "label",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "export-ledger",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "mine-policies",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "shadow-eval",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "replay",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "policy-status",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "metabolization-candidates",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "metabolization-status",
+      "planned": true,
+      "executed": true
+    },
+    {
+      "stage": "live-shadow",
+      "planned": true,
+      "executed": true
+    }
+  ],
+  "datasets": [
+    "agenttrove"
+  ],
+  "limits": {
+    "limit": 500,
+    "start_stage": "ingest",
+    "end_stage": "summary"
+  },
+  "min_confidence": 0.65,
+  "input_paths": {
+    "input": "data/settlement_datasets/evidence_accumulation_run/raw_samples/agenttrove.jsonl",
+    "input_run_dir": "data/settlement_datasets/runs/reflection-target-001",
+    "eval_dir": "data/settlement_datasets/evals/"
+  },
+  "output_paths": {
+    "run_dir": "data/settlement_datasets/runs/reflection-target-001",
+    "raw": "data/settlement_datasets/runs/reflection-target-001/raw/agenttrove.jsonl",
+    "normalized": "data/settlement_datasets/runs/reflection-target-001/normalized/agenttrove.jsonl",
+    "profile": "data/settlement_datasets/runs/reflection-target-001/profiles/agenttrove_profile.json",
+    "settlements": "data/settlement_datasets/runs/reflection-target-001/settlements/agenttrove.jsonl",
+    "ledger": "data/settlement_datasets/runs/reflection-target-001/ledger/settlement_ledger.sqlite",
+    "policies": "data/settlement_datasets/runs/reflection-target-001/policies/policies.yaml",
+    "shadow_dir": "data/settlement_datasets/runs/reflection-target-001/shadow",
+    "replay_dir": "data/settlement_datasets/runs/reflection-target-001/replay",
+    "policy_status": "data/settlement_datasets/runs/reflection-target-001/adjudication/policy_status_recommendations.yaml",
+    "candidates": "data/settlement_datasets/runs/reflection-target-001/metabolization/candidates.jsonl",
+    "candidates_updated": "data/settlement_datasets/runs/reflection-target-001/metabolization/candidates_updated.jsonl"
+  },
+  "artifact_counts": {
+    "raw_records": 500,
+    "normalized_records": 4,
+    "labeled_records": 4,
+    "policy_fires": 5,
+    "replay_results": 24,
+    "live_shadow_fires": 0,
+    "metabolization_candidates": 7
+  },
+  "policy_counts": {
+    "refine": 2,
+    "proposed": 5,
+    "superseded": 3,
+    "total": 10
+  },
+  "eval_counts": {
+    "shadow_results": 28,
+    "replay_results": 24,
+    "live_shadow_fires": 0
+  },
+  "target_profile": "reflection_second_unresolved_error",
+  "target_profile_analysis": "data/settlement_datasets/runs/reflection-target-001/summaries/target_profile_analysis.json",
+  "test_status": null
+}

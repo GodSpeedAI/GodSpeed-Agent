@@ -13,6 +13,10 @@ from scripts.settlement_datasets.adapter_base import (
     write_records_jsonl,
 )
 from scripts.settlement_datasets.registry import available_datasets
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 
 CANDIDATE_TEMPLATES = [
@@ -276,13 +280,26 @@ def main() -> None:
         default="data/settlement_datasets/metabolization_candidates/candidates.jsonl",
     )
     parser.add_argument("--min-confidence", type=float, default=0.65)
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
     datasets = available_datasets() if args.dataset == "all" else [args.dataset]
 
     all_records = []
     for ds in datasets:
-        input_path = args.input or f"data/settlement_datasets/settlements/{ds}.jsonl"
+        input_path = args.input or (
+            str(scope.dataset_jsonl_path("settlements", ds, input_surface=True))
+            if scope is not None
+            else f"data/settlement_datasets/settlements/{ds}.jsonl"
+        )
         p = Path(input_path)
         if p.exists():
             all_records.extend(read_records_jsonl(str(p)))
@@ -290,7 +307,12 @@ def main() -> None:
     candidates = mine_metabolization_candidates(
         all_records, min_confidence=args.min_confidence
     )
-    path = write_records_jsonl(candidates, args.output)
+    output_path = (
+        str(scope.named_path("metabolization", "candidates.jsonl"))
+        if scope is not None
+        else args.output
+    )
+    path = write_records_jsonl(candidates, output_path)
 
     print(
         f"Mined {len(candidates)} metabolization candidates from {len(all_records)} records -> {path}"

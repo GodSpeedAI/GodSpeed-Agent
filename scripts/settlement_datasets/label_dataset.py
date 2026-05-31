@@ -9,6 +9,10 @@ from scripts.settlement_datasets.adapter_base import (
     write_records_jsonl,
 )
 from scripts.settlement_datasets.registry import get_adapter, available_datasets
+from scripts.settlement_datasets.run_scoped_paths import (
+    add_run_scope_arguments,
+    ensure_run_surface,
+)
 
 
 def label_records(
@@ -56,15 +60,34 @@ def main() -> None:
         default=0.0,
         help="Minimum confidence to include",
     )
+    add_run_scope_arguments(parser)
 
     args = parser.parse_args()
+    scope = None
+    if any([args.run_id, args.run_dir, args.input_run_dir, args.output_run_dir]):
+        scope = ensure_run_surface(
+            run_id=args.run_id,
+            run_dir=args.run_dir,
+            input_run_dir=args.input_run_dir,
+            output_run_dir=args.output_run_dir,
+        )
     datasets = available_datasets() if args.dataset == "all" else [args.dataset]
 
     for ds in datasets:
+        input_path = args.input or (
+            str(scope.dataset_jsonl_path("normalized", ds, input_surface=True))
+            if scope is not None
+            else None
+        )
+        output_path = args.output or (
+            str(scope.dataset_jsonl_path("settlements", ds))
+            if scope is not None
+            else None
+        )
         path = label_dataset(
             ds,
-            input_path=args.input,
-            output_path=args.output,
+            input_path=input_path,
+            output_path=output_path,
             min_confidence=args.min_confidence,
         )
         records = read_records_jsonl(str(path))
