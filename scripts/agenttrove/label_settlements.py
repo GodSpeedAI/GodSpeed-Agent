@@ -331,7 +331,7 @@ def _detect_context_loss(
     messages: list[dict[str, Any]], profile: dict[str, Any]
 ) -> dict[str, Any]:
     turn_count = profile.get("turn_count", 0)
-    if turn_count <= 10:
+    if turn_count < 4:
         return {"detected": False, "evidence": ""}
 
     task_content = extract_user_task_content(messages)

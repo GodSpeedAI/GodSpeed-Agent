@@ -653,3 +653,284 @@ class TestSFTExport:
                     for conv in item["conversations"]:
                         assert "from" in conv
                         assert "value" in conv
+
+
+CORRECTION_FIXTURES = FIXTURES / "correction_traces.jsonl"
+
+
+def _load_correction_traces() -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    with CORRECTION_FIXTURES.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                records.append(json.loads(line))
+    return records
+
+
+class TestJSONCommandParsing:
+    def test_single_json_command(self):
+        from scripts.agenttrove.parsing import parse_assistant_content
+
+        content = '{"commands": [{"keystrokes": "ls -la\\n"}], "task_complete": false}'
+        result = parse_assistant_content(content)
+        assert result["parsed"] is True
+        assert len(result["commands"]) == 1
+        assert result["commands"][0]["content"] == "ls -la\n"
+
+    def test_multiple_json_commands(self):
+        from scripts.agenttrove.parsing import parse_assistant_content
+
+        content = '{"commands": [{"keystrokes": "python test.py\\n"}, {"keystrokes": "cat output.txt\\n"}]}'
+        result = parse_assistant_content(content)
+        assert result["parsed"] is True
+        assert len(result["commands"]) == 2
+
+    def test_empty_commands_array(self):
+        from scripts.agenttrove.parsing import parse_assistant_content
+
+        content = '{"commands": [], "task_complete": true}'
+        result = parse_assistant_content(content)
+        assert result["parsed"] is True
+        assert len(result["commands"]) == 0
+        assert result["task_complete"] is True
+
+    def test_malformed_json_falls_back(self):
+        from scripts.agenttrove.parsing import parse_assistant_content
+
+        content = "I'll run that command for you.\n```bash\nls -la\n```"
+        result = parse_assistant_content(content)
+        assert result["parsed"] is False
+        assert result["source"] == "regex_fallback"
+
+
+class TestTaskCompletionDetection:
+    def test_task_complete_true(self):
+        from scripts.agenttrove.parsing import detect_task_complete
+
+        messages = [
+            {"role": "user", "content": "Do something"},
+            {"role": "assistant", "content": '{"commands": [], "task_complete": true}'},
+        ]
+        result = detect_task_complete(messages)
+        assert result["has_marker"] is True
+        assert result["value"] is True
+        assert result["source"] == "assistant_json"
+
+    def test_task_complete_false(self):
+        from scripts.agenttrove.parsing import detect_task_complete
+
+        messages = [
+            {"role": "user", "content": "Do something"},
+            {
+                "role": "assistant",
+                "content": '{"commands": [], "task_complete": false}',
+            },
+        ]
+        result = detect_task_complete(messages)
+        assert result["has_marker"] is True
+        assert result["value"] is False
+
+    def test_prose_final_answer(self):
+        from scripts.agenttrove.parsing import detect_task_complete
+
+        messages = [
+            {"role": "user", "content": "What is 2+2?"},
+            {"role": "assistant", "content": "The answer is 4."},
+        ]
+        result = detect_task_complete(messages)
+        assert result["has_marker"] is True
+        assert result["value"] is True
+        assert result["source"] == "prose"
+
+
+class TestCorrectedProfiles:
+    def test_json_command_count(self):
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        traces = _load_correction_traces()
+        trace = traces[0]
+        profile = profile_trace(trace)
+        assert profile["json_command_count"] == 2
+        assert profile["command_like_action_count"] >= 2
+        assert profile["has_task_complete_marker"] is True
+        assert profile["task_complete_value"] is True
+
+    def test_multi_command_count(self):
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        traces = _load_correction_traces()
+        trace = traces[1]
+        profile = profile_trace(trace)
+        assert profile["json_command_count"] == 3
+
+    def test_task_complete_profile_fields(self):
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        traces = _load_correction_traces()
+        true_trace = traces[2]
+        false_trace = traces[3]
+        true_profile = profile_trace(true_trace)
+        false_profile = profile_trace(false_trace)
+        assert true_profile["has_task_complete_marker"] is True
+        assert true_profile["task_complete_value"] is True
+        assert false_profile["has_task_complete_marker"] is True
+        assert false_profile["task_complete_value"] is False
+
+    def test_malformed_json_uses_regex(self):
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        traces = _load_correction_traces()
+        trace = traces[8]
+        profile = profile_trace(trace)
+        assert profile["regex_command_like_action_count"] >= 1
+
+
+class TestCorrectedSettlementLabels:
+    @pytest.fixture()
+    def rules(self):
+        from scripts.agenttrove.label_settlements import load_rules
+
+        return load_rules("configs/agenttrove/settlement_label_rules.yaml")
+
+    @pytest.fixture()
+    def correction_traces(self):
+        return _load_correction_traces()
+
+    def test_null_reward_with_task_complete_true(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        profile = profile_trace(correction_traces[4])
+        settlement = label_trace(correction_traces[4], profile, rules)
+        assert settlement["outcome"]["settlement_quality"] == "clean_success"
+        assert settlement["outcome"]["confidence"] >= 0.6
+
+    def test_null_reward_with_unresolved_error(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        profile = profile_trace(correction_traces[5])
+        settlement = label_trace(correction_traces[5], profile, rules)
+        assert settlement["outcome"]["settlement_quality"] in (
+            "failure_with_signal",
+            "failure_without_signal",
+        )
+
+    def test_boilerplate_no_context_loss(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        profile = profile_trace(correction_traces[6])
+        settlement = label_trace(correction_traces[6], profile, rules)
+        fm = settlement["cognitive_os_labels"]["failure_mode"]
+        modes = fm if isinstance(fm, list) else [fm]
+        assert "context_loss" not in modes
+
+    def test_real_context_loss_detected(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        profile = profile_trace(correction_traces[7])
+        settlement = label_trace(correction_traces[7], profile, rules)
+        fm = settlement["cognitive_os_labels"]["failure_mode"]
+        modes = fm if isinstance(fm, list) else [fm]
+        assert "context_loss" in modes
+
+    def test_evidence_attached_to_labels(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        profile = profile_trace(correction_traces[0])
+        settlement = label_trace(correction_traces[0], profile, rules)
+        assert "label_evidence" in settlement
+        assert "settlement_quality" in settlement["label_evidence"]
+        assert len(settlement["label_evidence"]["settlement_quality"]) > 0
+
+    def test_confidence_score_present(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        for i, trace in enumerate(correction_traces[:5]):
+            profile = profile_trace(trace)
+            settlement = label_trace(trace, profile, rules)
+            assert "confidence" in settlement["outcome"], (
+                f"Trace {i} missing confidence"
+            )
+            assert 0.0 <= settlement["outcome"]["confidence"] <= 1.0, (
+                f"Trace {i} bad confidence"
+            )
+
+    def test_json_commands_in_payment(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        profile = profile_trace(correction_traces[0])
+        settlement = label_trace(correction_traces[0], profile, rules)
+        assert settlement["payment"]["json_command_count"] == 2
+
+    def test_malformed_json_settlement(self, rules, correction_traces):
+        from scripts.agenttrove.label_settlements import label_trace
+        from scripts.agenttrove.profile_traces import profile_trace
+
+        profile = profile_trace(correction_traces[8])
+        settlement = label_trace(correction_traces[8], profile, rules)
+        assert settlement["outcome"]["settlement_quality"] in (
+            "clean_success",
+            "unknown",
+        )
+
+
+class TestSystemPromptBoilerplate:
+    def test_detects_boilerplate(self):
+        from scripts.agenttrove.parsing import is_system_prompt_boilerplate
+
+        assert is_system_prompt_boilerplate(
+            "You are an AI assistant tasked with solving command-line tasks in a Linux environment."
+        )
+        assert is_system_prompt_boilerplate("You are a helpful assistant.")
+        assert not is_system_prompt_boilerplate("Check if the file exists in /tmp.")
+
+
+class TestStructuralSettlement:
+    def test_structural_inference_success(self):
+        from scripts.agenttrove.parsing import infer_settlement_from_structure
+
+        messages = [
+            {"role": "user", "content": "Do something"},
+            {
+                "role": "assistant",
+                "content": '{"commands": [{"keystrokes": "echo done\\n"}], "task_complete": false}',
+            },
+            {"role": "user", "content": "New Terminal Output:\necho done"},
+            {"role": "assistant", "content": '{"commands": [], "task_complete": true}'},
+        ]
+        profile = {"json_command_count": 1, "error_like_output_count": 0}
+        result = infer_settlement_from_structure(messages, profile)
+        assert result["settlement_quality"] == "clean_success"
+        assert result["confidence"] >= 0.6
+        assert len(result["evidence"]) > 0
+
+    def test_structural_inference_failure(self):
+        from scripts.agenttrove.parsing import infer_settlement_from_structure
+
+        messages = [
+            {"role": "user", "content": "Do something"},
+            {
+                "role": "assistant",
+                "content": '{"commands": [{"keystrokes": "python broken.py\\n"}], "task_complete": false}',
+            },
+            {
+                "role": "user",
+                "content": "New Terminal Output:\nError: module not found",
+            },
+            {
+                "role": "assistant",
+                "content": '{"commands": [], "task_complete": false}',
+            },
+        ]
+        profile = {"json_command_count": 1, "error_like_output_count": 1}
+        result = infer_settlement_from_structure(messages, profile)
+        assert result["settlement_quality"] in (
+            "failure_with_signal",
+            "failure_without_signal",
+        )
