@@ -1,0 +1,33 @@
+target_usable_settlements: 500
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+
+stopping:
+  stop_when_target_reached: true
+  max_adapter_error_rate: 0.20
+  require_success_and_failure_classes: true
+
+datasets:
+  - name: swegym_openhands
+    source_uri: SWE-Gym/OpenHands-Sampled-Trajectories
+    adapter: swegym_openhands
+    split: train.raw
+    max_rows: 3000
+    priority: 1
+    streaming: true
+
+  - name: agenttrove
+    source_uri: open-thoughts/AgentTrove
+    adapter: agenttrove
+    split: train
+    max_rows: 5000
+    priority: 2
+    streaming: true
+
+  - name: nebius_swe_agent
+    source_uri: nebius/SWE-agent-trajectories
+    adapter: nebius_swe_agent
+    split: train
+    max_rows: 5000
+    priority: 3
+    streaming: true
