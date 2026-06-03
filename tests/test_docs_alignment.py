@@ -23,7 +23,10 @@ def test_skill_descriptions_include_trigger_context_and_task_purpose():
         frontmatter = yaml.safe_load(text.split("---", 2)[1])
         description = frontmatter["description"].lower()
         assert "use this skill when" in description
-        assert any(term in description for term in ["horizon", "payment", "settlement", "substrate", "absorb"])
+        assert any(
+            term in description
+            for term in ["horizon", "payment", "settlement", "substrate", "absorb"]
+        )
 
 
 def test_skill_bodies_include_operational_sections():
@@ -122,11 +125,27 @@ def test_operator_reference_docs_exist_and_use_normalized_directory():
 
     required_docs = {
         "ledger-reference.md": ["LedgerStore", "append_event", "read_events"],
-        "schema-index.md": ["schemas/", "desired_direction.schema.json", "settlement.schema.json"],
-        "cli-reference.md": ["start-direction", "developmental-report", "predictive-extensions"],
-        "policy-reference.md": ["HARNESS.md", "block_unaffordable_actions", "require_human_review_for_absorption"],
+        "schema-index.md": [
+            "schemas/",
+            "desired_direction.schema.json",
+            "settlement.schema.json",
+        ],
+        "cli-reference.md": [
+            "start-direction",
+            "developmental-report",
+            "predictive-extensions",
+        ],
+        "policy-reference.md": [
+            "HARNESS.md",
+            "block_unaffordable_actions",
+            "require_human_review_for_absorption",
+        ],
         "report-interpretation.md": ["partial", "unaffordable", "circular_motion"],
-        "runtime-workflow-example.md": ["start-direction", "review-horizon", "record-settlement"],
+        "runtime-workflow-example.md": [
+            "start-direction",
+            "review-horizon",
+            "record-settlement",
+        ],
     }
 
     for filename, terms in required_docs.items():
@@ -136,7 +155,9 @@ def test_operator_reference_docs_exist_and_use_normalized_directory():
 
 
 def test_runtime_workflow_doc_distinguishes_visible_destinations_from_spendable_paths():
-    text = (ROOT / "docs" / "references" / "runtime-workflow-example.md").read_text(encoding="utf-8")
+    text = (ROOT / "docs" / "references" / "runtime-workflow-example.md").read_text(
+        encoding="utf-8"
+    )
 
     assert "visible destination" in text.lower()
     assert "spendable path" in text.lower()
@@ -144,18 +165,33 @@ def test_runtime_workflow_doc_distinguishes_visible_destinations_from_spendable_
 
 
 def test_report_interpretation_doc_covers_capability_lifecycle_and_identity_state():
-    text = (ROOT / "docs" / "references" / "report-interpretation.md").read_text(encoding="utf-8")
+    text = (ROOT / "docs" / "references" / "report-interpretation.md").read_text(
+        encoding="utf-8"
+    )
 
-    for term in ["latent", "active", "repeated", "metabolized", "brittle", "retired", "identity state"]:
+    for term in [
+        "latent",
+        "active",
+        "repeated",
+        "metabolized",
+        "brittle",
+        "retired",
+        "identity state",
+    ]:
         assert term in text.lower()
 
 
 def test_policy_and_evaluator_docs_cover_self_critique_and_simulation_limits():
-    policy = (ROOT / "docs" / "references" / "policy-reference.md").read_text(encoding="utf-8")
+    policy = (ROOT / "docs" / "references" / "policy-reference.md").read_text(
+        encoding="utf-8"
+    )
     evaluator = (ROOT / "agents" / "evaluator.md").read_text(encoding="utf-8")
 
     assert "self-critique" in policy.lower()
-    assert "simulation is not settlement" in policy.lower() or "simulation is not capability evidence" in policy.lower()
+    assert (
+        "simulation is not settlement" in policy.lower()
+        or "simulation is not capability evidence" in policy.lower()
+    )
     assert "intent-only" in evaluator.lower()
     assert "simulation" in evaluator.lower()
 
@@ -172,7 +208,9 @@ def test_current_state_is_compact_index_with_structured_state_ledgers():
     assert "state/current_state.json" in current_state
     assert "state/milestones.jsonl" in current_state
 
-    snapshot = json.loads((ROOT / "state" / "current_state.json").read_text(encoding="utf-8"))
+    snapshot = json.loads(
+        (ROOT / "state" / "current_state.json").read_text(encoding="utf-8")
+    )
     for key in [
         "updated_at",
         "active_desired_direction",
@@ -185,7 +223,12 @@ def test_current_state_is_compact_index_with_structured_state_ledgers():
     assert snapshot["last_settlement"]["summary"]
     assert snapshot["next_steps"]
 
-    for ledger_name in ["milestones.jsonl", "lessons.jsonl", "missing.jsonl", "decisions.jsonl"]:
+    for ledger_name in [
+        "milestones.jsonl",
+        "lessons.jsonl",
+        "missing.jsonl",
+        "decisions.jsonl",
+    ]:
         ledger_path = ROOT / "state" / ledger_name
         assert ledger_path.exists()
         for line in ledger_path.read_text(encoding="utf-8").splitlines():
@@ -198,9 +241,19 @@ def test_current_state_is_compact_index_with_structured_state_ledgers():
 def test_absorber_and_disintegrator_docs_describe_review_artifacts():
     absorber = (ROOT / "agents" / "absorber.md").read_text(encoding="utf-8")
     disintegrator = (ROOT / "agents" / "disintegrator.md").read_text(encoding="utf-8")
-    configuration = (ROOT / "docs" / "runbooks" / "configuration.md").read_text(encoding="utf-8")
+    configuration = (ROOT / "docs" / "runbooks" / "configuration.md").read_text(
+        encoding="utf-8"
+    )
 
     assert "human review" in absorber.lower()
     assert "settlement plan" in absorber.lower()
     assert "salvage" in disintegrator.lower()
     assert "positive disintegration" in configuration.lower()
+
+
+def test_calibration_operator_agent_documents_external_proxy_boundary():
+    text = Path("agents/calibration_operator.md").read_text(encoding="utf-8")
+    assert "GLM 5.1" in text
+    assert "external-proxy-settlement" in text
+    assert "must not promote local capabilities" in text
+    assert "run_calibration_pipeline" in text

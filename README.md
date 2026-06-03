@@ -172,6 +172,10 @@ Implementation-defined defaults are documented in `HARNESS.md`. This implementat
 
 No external API calls by default. MCP tools and hook scripts operate on local input, local computation, and configured local storage.
 
+## Calibration Pipeline
+
+The calibration pipeline can stream external agent trajectory datasets into `external-proxy-settlement` records. A GLM 5.1 operator agent may run and monitor the pipeline, but deterministic scripts own labels and filtering. External proxy records calibrate models; they do not prove local capability.
+
 ## Repository Guide
 
 - `AGENTS.md` defines how human and machine agents should work in this repository.
