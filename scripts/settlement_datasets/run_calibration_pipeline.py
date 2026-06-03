@@ -112,27 +112,55 @@ def external_record_to_model_calibration(record: dict[str, Any]) -> dict[str, An
 
     The output is compatible with
     ``godspeed_nav.cognitive_model.build_calibration_frame``.
+
+    **Label hygiene:** ``horizon_delta`` is derived from pre-outcome proxy
+    signals (payment efficiency, inverse risk) — never from
+    ``outcome.success``, ``settlement_quality``, or ``settlement_score``.
+    ``settlement_success`` and ``settlement_score`` are labels only.
     """
     payment = record.get("payment", {})
     outcome = record.get("outcome", {})
+
+    elapsed_steps = max(payment.get("elapsed_steps", 1), 1)
+    error_count = payment.get("error_count", 0)
+    turns = payment.get("turns", 0)
+    tool_calls = payment.get("tool_calls", 0)
+    commands = payment.get("commands", 0)
+
+    # Pre-outcome proxy signals only
+    error_rate = error_count / elapsed_steps
+    payment_efficiency = (turns + tool_calls + commands) / max(elapsed_steps, 1)
+    inverse_risk = 1.0 - min(error_rate, 1.0)
+
+    # horizon_delta: proxy for "how much perception-action space opened up"
+    # based on payment signals, NOT outcome.success.
+    # High efficiency + low error rate -> higher horizon_delta.
+    raw_delta = (inverse_risk * 0.6) + (min(payment_efficiency, 1.0) * 0.4)
+    horizon_delta = round(min(max(raw_delta, 0.0), 1.0), 4)
+
+    risk_estimate = min(1.0, error_rate)
+
+    # Debt estimate: proxy for unresolved payment burden
+    # Higher when many turns but few tool calls (wasted effort)
+    debt_estimate = 0.0
+    if turns > 0 and tool_calls == 0:
+        debt_estimate = min(turns / 20.0, 1.0)
+
     return {
         "id": f"{record.get('dataset', 'unknown')}:{record.get('task_id', '')}",
         "model_calibration": {
             "payment_predicted": {"steps": payment.get("elapsed_steps", 0)},
             "payment_actual": {
-                "turns": payment.get("turns", 0),
-                "tool_calls": payment.get("tool_calls", 0),
-                "commands": payment.get("commands", 0),
-                "errors": payment.get("error_count", 0),
+                "turns": turns,
+                "tool_calls": tool_calls,
+                "commands": commands,
+                "errors": error_count,
             },
             "settlement_success": bool(outcome.get("success")),
             "settlement_score": 1.0 if outcome.get("success") else 0.0,
-            "horizon_delta": 1.0 if outcome.get("success") else 0.0,
-            "risk_estimate": min(
-                1.0,
-                payment.get("error_count", 0) / max(payment.get("elapsed_steps", 1), 1),
-            ),
-            "debt_estimate": 0.0,
+            "horizon_delta": horizon_delta,
+            "risk_estimate": risk_estimate,
+            "debt_estimate": round(debt_estimate, 4),
         },
         "metadata": {
             "settlement_classification": "external-proxy-settlement",
@@ -349,6 +377,38 @@ def run_pipeline(
             baseline_rate, 4
         )
 
+    # ------------------------------------------------------------------
+    # Leakage audit: flag features with near-perfect correlation to label
+    # ------------------------------------------------------------------
+    leakage_audit: dict[str, Any] = {
+        "feature_correlations": {},
+        "leaked_features": [],
+        "leakage_detected": False,
+    }
+    if len(cal_frame) > 1:
+        feature_cols = [
+            "payment_predicted_total",
+            "payment_actual_total",
+            "payment_error",
+            "horizon_delta",
+            "risk_estimate",
+            "debt_estimate",
+        ]
+        available_features = [c for c in feature_cols if c in cal_frame.columns]
+        y = cal_frame["settlement_success"].astype(float)
+        for col in available_features:
+            series = cal_frame[col]
+            if series.std() == 0:
+                corr = 0.0
+            else:
+                corr = round(abs(float(series.corr(y))), 4)
+            leakage_audit["feature_correlations"][col] = corr
+            if corr >= 0.95:
+                leakage_audit["leaked_features"].append(col)
+        if leakage_audit["leaked_features"]:
+            leakage_audit["leakage_detected"] = True
+    model_evaluation["leakage_audit"] = leakage_audit
+
     if provider == "sklearn" and len(cal_frame) >= 10:
         try:
             from godspeed_nav.ml import SklearnPredictiveModelAdapter
@@ -362,12 +422,22 @@ def run_pipeline(
                         "id": "eval_candidate",
                         "risk": 0.5,
                         "debt": 0.0,
-                        "expected_horizon_delta": 1.0,
+                        "expected_horizon_delta": 0.7,
                     }
                 ],
                 payment_estimates={"eval_candidate": {"payment_burden": 1.0}},
             )
             model_evaluation["sklearn_evaluation"] = preds
+
+            if leakage_audit["leakage_detected"]:
+                model_evaluation["sklearn_metrics_valid"] = False
+                model_evaluation["sklearn_invalid_reason"] = (
+                    f"Label leakage detected in features: "
+                    f"{leakage_audit['leaked_features']}. "
+                    f"sklearn predictions are not meaningful."
+                )
+            else:
+                model_evaluation["sklearn_metrics_valid"] = True
         except RuntimeError as exc:
             model_evaluation["sklearn_extra_required"] = str(exc)
     elif provider == "sklearn":

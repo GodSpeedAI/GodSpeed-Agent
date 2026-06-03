@@ -351,3 +351,106 @@ datasets:
     assert "external-proxy-settlement" in text
     assert "usable settlements" in text
     assert "Proof Classification" in text
+
+
+# ---------------------------------------------------------------------------
+# Label leakage fix: horizon_delta must not encode the target
+# ---------------------------------------------------------------------------
+
+
+def test_horizon_delta_does_not_leak_success_label():
+    """horizon_delta must be derived from pre-outcome proxy signals,
+    not from outcome.success or settlement_success."""
+    from scripts.settlement_datasets.run_calibration_pipeline import (
+        external_record_to_model_calibration,
+    )
+
+    # A failure record with low error rate and moderate payment
+    failure_record = {
+        "dataset": "test",
+        "task_id": "leak-check-fail",
+        "payment": {
+            "turns": 3,
+            "tool_calls": 2,
+            "commands": 3,
+            "elapsed_steps": 10,
+            "error_count": 1,
+        },
+        "outcome": {"success": False, "confidence": 0.8},
+    }
+
+    # A success record with high error rate and high payment
+    success_record = {
+        "dataset": "test",
+        "task_id": "leak-check-success",
+        "payment": {
+            "turns": 8,
+            "tool_calls": 7,
+            "commands": 8,
+            "elapsed_steps": 20,
+            "error_count": 5,
+        },
+        "outcome": {"success": True, "confidence": 0.9},
+    }
+
+    fail_cal = external_record_to_model_calibration(failure_record)
+    succ_cal = external_record_to_model_calibration(success_record)
+
+    fail_hd = fail_cal["model_calibration"]["horizon_delta"]
+    succ_hd = succ_cal["model_calibration"]["horizon_delta"]
+
+    # Labels must remain correct
+    assert fail_cal["model_calibration"]["settlement_success"] is False
+    assert succ_cal["model_calibration"]["settlement_success"] is True
+
+    # horizon_delta must NOT be a perfect function of success.
+    # If success=False -> 0.0 and success=True -> 1.0, that is leakage.
+    assert not (fail_hd == 0.0 and succ_hd == 1.0), (
+        "horizon_delta directly encodes settlement_success (label leakage)"
+    )
+
+    # horizon_delta must be non-negative
+    assert fail_hd >= 0.0
+    assert succ_hd >= 0.0
+
+
+def test_leakage_audit_flags_perfect_correlation(tmp_path):
+    """The pipeline must detect and flag features that perfectly correlate
+    with settlement_success."""
+    from scripts.settlement_datasets.run_calibration_pipeline import (
+        run_pipeline,
+    )
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+target_usable_settlements: 2
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+datasets:
+  - name: swegym_openhands
+    source_uri: local-fixture
+    adapter: swegym_openhands
+    split: train
+    input_path: tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl
+    max_rows: 10
+    priority: 1
+    streaming: false
+""",
+        encoding="utf-8",
+    )
+
+    result = run_pipeline(
+        manifest_path=str(manifest),
+        run_id="leakage-audit-test",
+        output_run_dir=tmp_path / "run",
+        target_usable_settlements=2,
+        min_confidence=0.65,
+        provider="disabled",
+    )
+
+    model_eval = result["model_evaluation"]
+    assert "leakage_audit" in model_eval
+    audit = model_eval["leakage_audit"]
+    assert "feature_correlations" in audit
+    assert "leaked_features" in audit
