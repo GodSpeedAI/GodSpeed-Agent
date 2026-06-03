@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository implements Godspeed Agent Harness, a local-first cybernetic navigation runtime for agents that is evolving toward the fuller Cognitive Operating System described in `tmp/cogos.md`. The project is developmental rather than arrival-centric: agents should optimize for horizon expansion through the next affordable affordance, not for static outcome completion.
+This repository implements Godspeed Agent Harness, a local-first cybernetic navigation runtime for agents that is evolving toward the fuller Cognitive Operating System described in `tmp/cogos.md` and the computational core described in `tmp/math.md`. The project is developmental rather than arrival-centric: agents should optimize for horizon expansion through the next affordable affordance, not for static outcome completion.
 
 When working in this repo, treat outcomes as temporary attractors. Once an outcome settles, its value is that it becomes substrate and exposes new affordances.
 

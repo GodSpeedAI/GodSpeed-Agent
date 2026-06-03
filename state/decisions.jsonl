@@ -1,0 +1,2 @@
+{"date":"2026-06-03","kind":"decision","summary":"Split CURRENT_STATE.md into a compact agent entrypoint plus structured ledgers under state/ so agents can inspect the current horizon without loading the full historical context."}
+{"date":"2026-06-03","kind":"decision","summary":"Use JSONL rather than one large JSON file for append-only developmental memory because each settlement record is independently parseable and merge-friendly."}

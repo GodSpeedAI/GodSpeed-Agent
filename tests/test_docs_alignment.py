@@ -160,6 +160,41 @@ def test_policy_and_evaluator_docs_cover_self_critique_and_simulation_limits():
     assert "simulation" in evaluator.lower()
 
 
+def test_current_state_is_compact_index_with_structured_state_ledgers():
+    current_state_path = ROOT / "CURRENT_STATE.md"
+    current_state = current_state_path.read_text(encoding="utf-8")
+
+    assert len(current_state.splitlines()) <= 80
+    assert "## Last Settlement" in current_state
+    assert "## Active Desired Direction" in current_state
+    assert "## Next Spendable Affordance" in current_state
+    assert "## Detailed State Ledgers" in current_state
+    assert "state/current_state.json" in current_state
+    assert "state/milestones.jsonl" in current_state
+
+    snapshot = json.loads((ROOT / "state" / "current_state.json").read_text(encoding="utf-8"))
+    for key in [
+        "updated_at",
+        "active_desired_direction",
+        "last_settlement",
+        "next_steps",
+        "still_missing",
+        "lessons_learned",
+    ]:
+        assert key in snapshot
+    assert snapshot["last_settlement"]["summary"]
+    assert snapshot["next_steps"]
+
+    for ledger_name in ["milestones.jsonl", "lessons.jsonl", "missing.jsonl", "decisions.jsonl"]:
+        ledger_path = ROOT / "state" / ledger_name
+        assert ledger_path.exists()
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            assert line.strip()
+            record = json.loads(line)
+            assert "date" in record
+            assert "summary" in record
+
+
 def test_absorber_and_disintegrator_docs_describe_review_artifacts():
     absorber = (ROOT / "agents" / "absorber.md").read_text(encoding="utf-8")
     disintegrator = (ROOT / "agents" / "disintegrator.md").read_text(encoding="utf-8")

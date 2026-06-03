@@ -1,0 +1,40 @@
+{
+  "active_desired_direction": "Keep the project state surface easy for agents to traverse without loading the full developmental history.",
+  "detailed_ledgers": {
+    "decisions": "state/decisions.jsonl",
+    "lessons": "state/lessons.jsonl",
+    "milestones": "state/milestones.jsonl",
+    "missing": "state/missing.jsonl"
+  },
+  "last_settlement": {
+    "artifacts": [
+      ".claude/skills",
+      ".github/skills",
+      "state/current_state.json",
+      "state/milestones.jsonl"
+    ],
+    "summary": "Linked the repository skills directory into `.claude/skills` for Claude pickup and `.github/skills` for GitHub Copilot agent skills pickup.",
+    "verification": [
+      "find -L .claude/skills .github/skills -maxdepth 2 -name SKILL.md -print",
+      "test -f .claude/skills/horizon-review/SKILL.md && test -f .github/skills/horizon-review/SKILL.md"
+    ]
+  },
+  "lessons_learned": [
+    ".github/copilot-instructions.md exists in this checkout and remains the first project-specific context surface after AGENTS.md.",
+    "CURRENT_STATE.md should describe the latest horizon and point to detailed ledgers instead of carrying all developmental memory inline.",
+    "Use JSONL for append-only settlement history because each record can be parsed, appended, diffed, and recovered independently.",
+    "Use state/current_state.json for low-payment agent reads of next steps, still-missing gaps, lessons, and the last settlement.",
+    "Do not treat migrated history as new capability; it is preserved substrate until queried and used in future work."
+  ],
+  "next_steps": [
+    "For future milestones, update state/current_state.json, append one record to the relevant state/*.jsonl ledger, and keep CURRENT_STATE.md compact.",
+    "Keep `.claude/skills` and `.github/skills` as symlinks to the root `skills/` directory so one local skill substrate feeds both agent surfaces.",
+    "When deeper history is needed, query state/milestones.jsonl by date, artifact, status, or desired direction rather than reading the whole ledger.",
+    "Use the harness in real agent work, collect real settlement history, and compare any future provider against the built-in heuristic adapter before promoting it beyond the config-controlled port."
+  ],
+  "still_missing": [
+    "No known gaps in the local-first enterprise hardening scope described by docs/plans/2026-05-29-enterprise-hardening.md.",
+    "Future productization may add packaged distribution, hosted multi-user services, or richer ML once settlement history exists."
+  ],
+  "updated_at": "2026-06-03"
+}

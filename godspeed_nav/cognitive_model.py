@@ -302,6 +302,17 @@ def rank_candidates_by_controller(
 
     Lower objective ranks first.  Rejected candidates remain rejected
     regardless of expected horizon delta.
+
+    Expected candidate dict fields (missing keys default to 0.0):
+
+    - ``error_cost``: expected remaining error magnitude after action.
+      Populate via ``compute_error(desired_state, expected_post_action_state)["error_magnitude"]``
+      when available; defaults to 0.0 (dormant).
+    - ``burden``: representational burden (from ``compute_representational_burden``).
+    - ``risk``: compensable risk estimate.
+    - ``debt``: expected future payment burden.
+    - ``expected_horizon_delta``: expected horizon expansion.
+    - ``direction_score``: alignment with active non-gated directions.
     """
     ranked: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []

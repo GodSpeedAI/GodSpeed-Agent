@@ -17,6 +17,12 @@ The current repository implements the local-first developmental harness and the 
 - Exposes runtime and review workflows through a Python CLI, hooks, MCP servers, and skill packages.
 - Keeps the system open to self-critique so doctrine can be revised when it fails settlement.
 
+## Computational Model Layer
+
+The planned computational core in `docs/plans/2026-06-03-cognitive-model-computational-core.md` turns the mathematical model in `tmp/math.md` into executable decision support. Once implemented, the harness will have a computational model layer for representational burden, payment fit, hard gates, spendability, risk, debt, controller ranking, settlement calibration records, and calibration datasets.
+
+That makes the model computational, not automatically authoritative. Deterministic gates run first. Learned prediction through the built-in scikit-learn provider remains dormant until configured settlement-history thresholds are met, and even then it stays advisory. Settlement evidence determines whether calibrated weights or learned predictions deserve more influence.
+
 ## Doctrine Alignment
 
 The manifesto in `tmp/cogos.md` sharpens several rules that govern this repository:

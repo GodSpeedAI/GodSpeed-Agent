@@ -1,0 +1,5 @@
+{"date":"2026-06-03","kind":"lesson","summary":".github/copilot-instructions.md exists in this checkout and remains the first project-specific context surface after AGENTS.md."}
+{"date":"2026-06-03","kind":"lesson","summary":"CURRENT_STATE.md should stay a compact horizon index and should not carry the full developmental memory inline."}
+{"date":"2026-06-03","kind":"lesson","summary":"JSONL is the right append-only format for milestone settlement history because records can be parsed, appended, diffed, and recovered independently."}
+{"date":"2026-06-03","kind":"lesson","summary":"state/current_state.json is the low-payment read path for next steps, still-missing gaps, lessons learned, and the last settlement."}
+{"date":"2026-06-03","kind":"lesson","summary":"Migrated history is preserved substrate, not new metabolized capability; future agents should query it only when the active desired direction requires it."}
