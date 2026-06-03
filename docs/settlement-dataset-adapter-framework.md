@@ -405,3 +405,21 @@ uv run pytest tests/test_settlement_datasets.py -v
 - Each pipeline stage is independently runnable.
 - Outputs are reproducible from the same input.
 - Cross-dataset operations use the canonical schema, not adapter-specific fields.
+
+## Calibration Pipeline
+
+The calibration pipeline streams external agent trajectory datasets into `external-proxy-settlement` records for model calibration. It does not prove local capability.
+
+```bash
+uv sync --extra dev --extra ml
+uv run python -m scripts.settlement_datasets.run_calibration_pipeline \
+  --manifest configs/settlement_datasets/calibration_sources.yaml \
+  --run-id hf-calibration-001 \
+  --target-usable-settlements 500 \
+  --min-confidence 0.65 \
+  --provider sklearn
+```
+
+All imported records carry the `external-proxy-settlement` classification. They are valid for calibration experiments, baseline comparison, and model warm-starting only. They must not promote local capabilities, metabolization, or enterprise readiness.
+
+Colab TPU is not useful for scikit-learn/pandas pipeline acceleration; use streaming and CPU.

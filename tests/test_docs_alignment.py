@@ -257,3 +257,14 @@ def test_calibration_operator_agent_documents_external_proxy_boundary():
     assert "external-proxy-settlement" in text
     assert "must not promote local capabilities" in text
     assert "run_calibration_pipeline" in text
+
+
+def test_docs_include_calibration_pipeline_smoke_command():
+    framework = Path("docs/settlement-dataset-adapter-framework.md").read_text(
+        encoding="utf-8"
+    )
+    config = Path("docs/runbooks/configuration.md").read_text(encoding="utf-8")
+    assert "run_calibration_pipeline" in framework
+    assert "--target-usable-settlements 500" in framework
+    assert "external-proxy-settlement" in framework
+    assert "model_provider: sklearn" in config

@@ -57,3 +57,15 @@ To activate:
 3. Ensure settlement history exceeds `ml_event_threshold`.
 
 The sklearn provider trains only from extracted calibration rows with sufficient usable data. If calibration rows are insufficient even though the event-count threshold passed, it returns empty predictions with an explanatory note instead of fabricating confidence.
+
+## Calibration Pipeline Configuration
+
+The calibration pipeline uses `model_provider: sklearn` to evaluate scikit-learn predictions against deterministic baselines. Configure in `HARNESS.md`:
+
+```yaml
+computation:
+  model_provider: sklearn
+  ml_event_threshold: 200
+```
+
+The pipeline streams external datasets classified as `external-proxy-settlement`. These records calibrate models; they do not prove local capability.
