@@ -103,6 +103,45 @@ def _is_usable(record: dict[str, Any], min_confidence: float) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Calibration frame conversion
+# ---------------------------------------------------------------------------
+
+
+def external_record_to_model_calibration(record: dict[str, Any]) -> dict[str, Any]:
+    """Convert an external adapter settlement record into model_calibration shape.
+
+    The output is compatible with
+    ``godspeed_nav.cognitive_model.build_calibration_frame``.
+    """
+    payment = record.get("payment", {})
+    outcome = record.get("outcome", {})
+    return {
+        "id": f"{record.get('dataset', 'unknown')}:{record.get('task_id', '')}",
+        "model_calibration": {
+            "payment_predicted": {"steps": payment.get("elapsed_steps", 0)},
+            "payment_actual": {
+                "turns": payment.get("turns", 0),
+                "tool_calls": payment.get("tool_calls", 0),
+                "commands": payment.get("commands", 0),
+                "errors": payment.get("error_count", 0),
+            },
+            "settlement_success": bool(outcome.get("success")),
+            "settlement_score": 1.0 if outcome.get("success") else 0.0,
+            "horizon_delta": 1.0 if outcome.get("success") else 0.0,
+            "risk_estimate": min(
+                1.0,
+                payment.get("error_count", 0) / max(payment.get("elapsed_steps", 1), 1),
+            ),
+            "debt_estimate": 0.0,
+        },
+        "metadata": {
+            "settlement_classification": "external-proxy-settlement",
+            "source_dataset": record.get("dataset", ""),
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # Pipeline runner
 # ---------------------------------------------------------------------------
 
@@ -250,7 +289,90 @@ def run_pipeline(
 
         state.dataset_counts[ds_name] = ds_counts
 
+    # ------------------------------------------------------------------
+    # Calibration frame export
+    # ------------------------------------------------------------------
+    calibration_dir = scope.root / "calibration"
+    calibration_dir.mkdir(parents=True, exist_ok=True)
+
+    # Collect all settlement records across datasets
+    all_settlements: list[dict[str, Any]] = []
+    for settlement_file in settlements_dir.glob("*.jsonl"):
+        from scripts.settlement_datasets.adapter_base import read_records_jsonl
+
+        all_settlements.extend(read_records_jsonl(str(settlement_file)))
+
+    calibration_records = [
+        external_record_to_model_calibration(rec) for rec in all_settlements
+    ]
+
+    # Write model calibration records
+    cal_records_path = calibration_dir / "model_calibration_records.jsonl"
+    write_records_jsonl(calibration_records, str(cal_records_path))
+
+    # Build calibration frame via cognitive_model
+    from godspeed_nav.cognitive_model import build_calibration_frame
+
+    cal_frame = build_calibration_frame(calibration_records)
+    cal_frame_path = calibration_dir / "calibration_frame.csv"
+    cal_frame.to_csv(str(cal_frame_path), index=False)
+
+    # ------------------------------------------------------------------
+    # Model evaluation
+    # ------------------------------------------------------------------
+    model_evaluation: dict[str, Any] = {
+        "provider": provider,
+        "calibration_rows": len(cal_frame),
+        "success_class_count": int(cal_frame["settlement_success"].sum())
+        if len(cal_frame) > 0
+        else 0,
+        "failure_class_count": int((~cal_frame["settlement_success"]).sum())
+        if len(cal_frame) > 0
+        else 0,
+    }
+
+    if len(cal_frame) > 0:
+        baseline_rate = float(cal_frame["settlement_success"].mean())
+        model_evaluation["deterministic_baseline_success_rate"] = round(
+            baseline_rate, 4
+        )
+
+    if provider == "sklearn" and len(cal_frame) >= 10:
+        try:
+            from godspeed_nav.ml import SklearnPredictiveModelAdapter
+
+            sklearn_adapter = SklearnPredictiveModelAdapter()
+            # Use calibration records as history for a self-evaluation
+            preds = sklearn_adapter.predict_affordances(
+                settlement_history=calibration_records,
+                candidates=[
+                    {
+                        "id": "eval_candidate",
+                        "risk": 0.5,
+                        "debt": 0.0,
+                        "expected_horizon_delta": 1.0,
+                    }
+                ],
+                payment_estimates={"eval_candidate": {"payment_burden": 1.0}},
+            )
+            model_evaluation["sklearn_evaluation"] = preds
+        except RuntimeError as exc:
+            model_evaluation["sklearn_extra_required"] = str(exc)
+    elif provider == "sklearn":
+        model_evaluation["sklearn_skipped_reason"] = (
+            f"insufficient_data: {len(cal_frame)} rows, need 10"
+        )
+
+    # Write model evaluation
+    model_eval_path = calibration_dir / "model_evaluation.json"
+    model_eval_path.write_text(
+        json.dumps(model_evaluation, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    # ------------------------------------------------------------------
     # Build summary
+    # ------------------------------------------------------------------
     summary = {
         "run_id": run_id,
         "created_at": utc_now_iso(),
@@ -266,6 +388,8 @@ def run_pipeline(
         "dataset_counts": state.dataset_counts,
         "success_count": state.success_count,
         "failure_count": state.failure_count,
+        "calibration_frame_path": str(cal_frame_path),
+        "model_evaluation": model_evaluation,
     }
 
     summary_path = scope.root / "summary.json"

@@ -186,3 +186,43 @@ datasets:
     assert result["usable_settlements"] == 2
     assert (tmp_path / "run" / "settlements" / "swegym_openhands.jsonl").exists()
     assert (tmp_path / "run" / "summary.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# Task 7: Calibration frame export and sklearn evaluation
+# ---------------------------------------------------------------------------
+
+
+def test_calibration_pipeline_writes_calibration_frame_and_model_metrics(tmp_path):
+    from scripts.settlement_datasets.run_calibration_pipeline import run_pipeline
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+target_usable_settlements: 2
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+datasets:
+  - name: swegym_openhands
+    source_uri: local-fixture
+    adapter: swegym_openhands
+    split: train
+    input_path: tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl
+    max_rows: 10
+    priority: 1
+    streaming: false
+""",
+        encoding="utf-8",
+    )
+
+    result = run_pipeline(
+        manifest_path=str(manifest),
+        run_id="fixture-calibration",
+        output_run_dir=tmp_path / "run",
+        target_usable_settlements=2,
+        min_confidence=0.65,
+        provider="disabled",
+    )
+
+    assert "calibration_frame_path" in result
+    assert "model_evaluation" in result
