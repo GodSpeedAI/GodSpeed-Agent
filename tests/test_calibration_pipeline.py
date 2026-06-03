@@ -66,3 +66,27 @@ def test_load_hf_stream_is_lazy_and_patchable(monkeypatch):
     stream = load_hf_stream("repo/name", split="train")
     assert list(stream) == [{"id": "row-1"}]
     assert calls == [("repo/name", "train", True)]
+
+
+# ---------------------------------------------------------------------------
+# Task 3: SWE-Gym OpenHands adapter
+# ---------------------------------------------------------------------------
+
+
+def test_swegym_openhands_adapter_registered_and_validates_fixture():
+    from scripts.settlement_datasets.registry import available_datasets, get_adapter
+
+    assert "swegym_openhands" in available_datasets()
+    adapter = get_adapter("swegym_openhands")
+    fixture = Path("tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl")
+
+    records = [
+        adapter.to_settlement_record(raw)
+        for raw in adapter.stream(input_path=str(fixture))
+    ]
+
+    assert len(records) == 2
+    assert records[0]["dataset"] == "swegym_openhands"
+    assert records[0]["outcome"]["success"] is True
+    assert records[1]["outcome"]["success"] is False
+    assert all(adapter.validate_record(record) == [] for record in records)

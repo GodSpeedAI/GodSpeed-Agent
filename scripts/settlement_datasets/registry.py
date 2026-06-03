@@ -40,10 +40,14 @@ def _lazy_load() -> None:
 
     from scripts.settlement_datasets.agenttrove_adapter import AgentTroveAdapter
     from scripts.settlement_datasets.swegym_adapter import SWEGymAdapter
+    from scripts.settlement_datasets.swegym_openhands_adapter import (
+        SWEGymOpenHandsAdapter,
+    )
     from scripts.settlement_datasets.apibank_adapter import APIBankAdapter
     from scripts.settlement_datasets.webshop_adapter import WebShopAdapter
 
     register_adapter("agenttrove", AgentTroveAdapter)
     register_adapter("swegym", SWEGymAdapter)
+    register_adapter("swegym_openhands", SWEGymOpenHandsAdapter)
     register_adapter("apibank", APIBankAdapter)
     register_adapter("webshop", WebShopAdapter)

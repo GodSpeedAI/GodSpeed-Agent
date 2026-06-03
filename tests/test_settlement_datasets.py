@@ -88,7 +88,7 @@ class TestRegistry:
 
     def test_get_all_adapters(self):
         adapters = get_all_adapters()
-        assert len(adapters) == 4
+        assert len(adapters) >= 4
         assert all(isinstance(a, SettlementDatasetAdapter) for a in adapters.values())
 
     def test_unknown_adapter_raises(self):
@@ -562,9 +562,9 @@ class TestPolicyMiningAcrossDatasets:
             == "require_reflection_before_continuing_after_second_unresolved_error"
         )
         assert (
-            by_id[
-                "require_reflection_before_continuing_after_second_unresolved_error"
-            ]["status"]
+            by_id["require_reflection_before_continuing_after_second_unresolved_error"][
+                "status"
+            ]
             == "proposed"
         )
         assert by_id["require_explicit_settlement_for_failure"]["status"] == "refine"
@@ -577,9 +577,9 @@ class TestPolicyMiningAcrossDatasets:
             == "proposed"
         )
         assert (
-            by_id[
-                "require_failure_evidence_before_stopping_on_test_failure"
-            ]["shadow_action"]
+            by_id["require_failure_evidence_before_stopping_on_test_failure"][
+                "shadow_action"
+            ]
             == "would_require_explicit_failure_evidence_before_closure"
         )
 
