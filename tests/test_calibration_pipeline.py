@@ -145,3 +145,44 @@ def test_should_stop_for_target_when_enough_usable_settlements():
     state = CalibrationRunState(target_usable_settlements=500)
     state.usable_settlements = 500
     assert should_stop_for_target(state) is True
+
+
+# ---------------------------------------------------------------------------
+# Task 6: Dataset iteration, filtering, and resumable outputs
+# ---------------------------------------------------------------------------
+
+
+def test_calibration_pipeline_processes_fixture_sources_until_target(tmp_path):
+    from scripts.settlement_datasets.run_calibration_pipeline import run_pipeline
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+target_usable_settlements: 2
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+datasets:
+  - name: swegym_openhands
+    source_uri: local-fixture
+    adapter: swegym_openhands
+    split: train
+    input_path: tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl
+    max_rows: 10
+    priority: 1
+    streaming: false
+""",
+        encoding="utf-8",
+    )
+
+    result = run_pipeline(
+        manifest_path=str(manifest),
+        run_id="fixture-calibration",
+        output_run_dir=tmp_path / "run",
+        target_usable_settlements=2,
+        min_confidence=0.65,
+        provider="disabled",
+    )
+
+    assert result["usable_settlements"] == 2
+    assert (tmp_path / "run" / "settlements" / "swegym_openhands.jsonl").exists()
+    assert (tmp_path / "run" / "summary.json").exists()
