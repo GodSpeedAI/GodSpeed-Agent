@@ -1,0 +1,28 @@
+{
+  "calibration_rows": 500,
+  "deterministic_baseline_success_rate": 0.106,
+  "failure_class_count": 447,
+  "leakage_audit": {
+    "feature_correlations": {
+      "debt_estimate": 0.0,
+      "horizon_delta": 0.0793,
+      "payment_actual_total": 0.0312,
+      "payment_error": 0.0744,
+      "payment_predicted_total": 0.0245,
+      "risk_estimate": 0.0612
+    },
+    "leakage_detected": false,
+    "leaked_features": []
+  },
+  "provider": "sklearn",
+  "sklearn_evaluation": [
+    {
+      "candidate_id": "eval_candidate",
+      "predicted_horizon_delta": 0.1181,
+      "rationale": "sklearn_logistic_regression",
+      "success_probability": 0.1687
+    }
+  ],
+  "sklearn_metrics_valid": true,
+  "success_class_count": 53
+}

@@ -1,0 +1,54 @@
+{
+  "adapter_errors": 0,
+  "calibration_frame_path": "data/settlement_datasets/runs/hf-calibration-002/calibration/calibration_frame.csv",
+  "created_at": "2026-06-03T16:53:52Z",
+  "dataset_counts": {
+    "swegym_openhands": {
+      "adapter_errors": 0,
+      "normalized": 799,
+      "rejected": 299,
+      "scanned": 799,
+      "usable": 500
+    }
+  },
+  "failure_count": 447,
+  "manifest_path": "configs/settlement_datasets/calibration_sources.yaml",
+  "min_confidence": 0.65,
+  "model_evaluation": {
+    "calibration_rows": 500,
+    "deterministic_baseline_success_rate": 0.106,
+    "failure_class_count": 447,
+    "leakage_audit": {
+      "feature_correlations": {
+        "debt_estimate": 0.0,
+        "horizon_delta": 0.0793,
+        "payment_actual_total": 0.0312,
+        "payment_error": 0.0744,
+        "payment_predicted_total": 0.0245,
+        "risk_estimate": 0.0612
+      },
+      "leakage_detected": false,
+      "leaked_features": []
+    },
+    "provider": "sklearn",
+    "sklearn_evaluation": [
+      {
+        "candidate_id": "eval_candidate",
+        "predicted_horizon_delta": 0.1181,
+        "rationale": "sklearn_logistic_regression",
+        "success_probability": 0.1687
+      }
+    ],
+    "sklearn_metrics_valid": true,
+    "success_class_count": 53
+  },
+  "normalized": 799,
+  "provider": "sklearn",
+  "rejected": 299,
+  "report_path": "data/settlement_datasets/runs/hf-calibration-002/docs/hf-calibration-002-report.md",
+  "run_id": "hf-calibration-002",
+  "scanned": 799,
+  "success_count": 53,
+  "target_usable_settlements": 500,
+  "usable_settlements": 500
+}

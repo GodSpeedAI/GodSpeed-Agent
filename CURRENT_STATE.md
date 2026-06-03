@@ -8,16 +8,20 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-06-03
-- Summary: Promoted calibration pipeline from `external-proxy-calibration-smoke`
-  to `external-proxy-calibration`. Full run: 799 rows scanned from
-  SWE-Gym/OpenHands-Sampled-Trajectories, 500 usable settlements (53 success /
-  447 failure), 0 adapter errors. sklearn logistic regression evaluated but
-  found to have data leakage: `horizon_delta` directly encodes the target
-  variable in 500/500 records, making the sklearn prediction circular.
-  Deterministic baseline success rate: 10.6%. sklearn remains advisory-only.
-- Settlement evidence: 531 tests pass, full calibration run exits 0, all
-  artifacts written under `data/settlement_datasets/runs/hf-calibration-001/`.
+- Summary: Fixed calibration label leakage in `external_record_to_model_calibration`.
+  `horizon_delta` now derives from pre-outcome proxy signals (inverse risk,
+  payment efficiency) instead of `outcome.success`. Added leakage audit that
+  flags features with >= 0.95 correlation to the label. Re-ran as
+  hf-calibration-002: 500 usable settlements, 0 adapter errors, 0 leaked
+  features. sklearn success_probability dropped from 0.8964 (leaked) to
+  0.1687 (honest), vs deterministic baseline 0.106. sklearn is now meaningful
+  but weak due to class imbalance (10.6% success).
+- Settlement evidence: 533 tests pass, hf-calibration-002 exits 0, leakage
+  audit clean, sklearn metrics valid.
 - Proof classification: `external-proxy-calibration`.
+- Known limit: class imbalance (10.6% success) makes sklearn predictions
+  weak. Next move: include agenttrove and nebius_swe_agent datasets for
+  better class balance, or apply stratified sampling.
 - Known limit: class imbalance (10.6% success) and horizon_delta leakage
   mean sklearn predictions are not yet meaningful for affordance ranking.
   Next move: fix `external_record_to_model_calibration` to derive
