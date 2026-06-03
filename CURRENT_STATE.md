@@ -8,13 +8,14 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-06-03
-- Summary: Linked the root `skills/` directory into `.claude/skills` for Claude
-  pickup and `.github/skills` for GitHub Copilot agent skills pickup.
-- Settlement evidence: both symlinks resolve to `../skills`, and traversal finds
-  each repository `SKILL.md` through both agent-facing paths.
-- Verification:
-  - `find -L .claude/skills .github/skills -maxdepth 2 -name SKILL.md -print`
-  - `test -f .claude/skills/horizon-review/SKILL.md && test -f .github/skills/horizon-review/SKILL.md`
+- Summary: Implemented the agentic calibration pipeline: manifest, HF streaming
+  helper, SWE-Gym OpenHands adapter, Nebius SWE-Agent adapter, pipeline
+  orchestrator with dataset iteration/filtering, calibration frame export,
+  sklearn evaluation, CLI entry point with resume support, GLM 5.1 operator
+  agent contract, evidence report generation, and documentation.
+- Settlement evidence: 530 tests pass, fixture pipeline exits 0, all artifacts
+  written under `data/settlement_datasets/runs/fixture-calibration-smoke/`.
+- Proof classification: `local-confidence` (fixture-only; no live HF smoke yet).
 
 ## Active Desired Direction
 

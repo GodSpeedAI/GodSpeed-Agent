@@ -201,6 +201,18 @@ def run_pipeline(
         adapter_name = source["adapter"]
         max_rows = source.get("max_rows")
 
+        # In dry-run mode, skip datasets without a local input_path
+        if dry_run and not source.get("input_path"):
+            state.dataset_counts[ds_name] = {
+                "scanned": 0,
+                "normalized": 0,
+                "usable": 0,
+                "rejected": 0,
+                "adapter_errors": 0,
+                "skipped_reason": "dry_run_no_local_input",
+            }
+            continue
+
         ds_counts: dict[str, int] = {
             "scanned": 0,
             "normalized": 0,
