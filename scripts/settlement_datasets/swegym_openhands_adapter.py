@@ -107,14 +107,19 @@ class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
     def extract_outcome(self, raw: dict[str, Any]) -> dict[str, Any]:
         resolved = raw.get("resolved", False)
         test_result = raw.get("test_result", {})
-        test_passed = (
-            test_result.get("passed") if isinstance(test_result, dict) else None
-        )
 
-        evidence: list[str] = []
-        evidence.append(f"resolved={resolved}")
+        # Handle both flat schema (test_result.passed) and nested HF schema
+        # (test_result.report.resolved).
+        test_passed: bool | None = None
+        if isinstance(test_result, dict):
+            if "passed" in test_result:
+                test_passed = test_result["passed"]
+            elif isinstance(test_result.get("report"), dict):
+                test_passed = test_result["report"].get("resolved")
+
+        evidence: list[str] = [f"resolved={resolved}"]
         if test_passed is not None:
-            evidence.append(f"test_result.passed={test_passed}")
+            evidence.append(f"test_passed={test_passed}")
 
         if resolved:
             return {
@@ -149,15 +154,18 @@ class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
         bash_mentions = sum(
             1
             for m in messages
-            if m.get("role") == "assistant" and "bash" in m.get("content", "").lower()
+            if m.get("role") == "assistant"
+            and m.get("content") is not None
+            and "bash" in (m.get("content") or "").lower()
         )
 
         error_count = sum(
             1
             for m in messages
             if m.get("role") == "tool"
+            and m.get("content") is not None
             and any(
-                kw in m.get("content", "").lower()
+                kw in (m.get("content") or "").lower()
                 for kw in (
                     "error",
                     "failed",
@@ -215,6 +223,22 @@ class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
     # Record assembly
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _extract_tool_names(tools: list[Any]) -> list[str]:
+        """Extract tool names from both flat and nested HF tool schemas.
+
+        Flat:  ``[{"name": "bash"}, ...]``
+        Nested: ``[{"function": {"name": "execute_bash"}, "type": "function"}, ...]``
+        """
+        names: list[str] = []
+        for t in tools:
+            if isinstance(t, dict):
+                if "name" in t:
+                    names.append(t["name"])
+                elif isinstance(t.get("function"), dict) and "name" in t["function"]:
+                    names.append(t["function"]["name"])
+        return names
+
     def to_settlement_record(self, raw: dict[str, Any]) -> dict[str, Any]:
         payment = self.extract_payment(raw)
         extracted = {
@@ -269,6 +293,6 @@ class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
                 "settlement_classification": "external-proxy-settlement",
                 "source_run_id": raw.get("run_id", ""),
                 "raw_source_uri": self.source_uri,
-                "tool_names": [t.get("name", "") for t in raw.get("tools", [])],
+                "tool_names": self._extract_tool_names(raw.get("tools", [])),
             },
         }

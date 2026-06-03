@@ -92,9 +92,36 @@ def test_swegym_openhands_adapter_registered_and_validates_fixture():
     assert all(adapter.validate_record(record) == [] for record in records)
 
 
-# ---------------------------------------------------------------------------
-# Task 4: Nebius SWE-Agent adapter
-# ---------------------------------------------------------------------------
+def test_swegym_openhands_adapter_handles_hf_schema_with_none_content_and_nested_test_result():
+    """Verify the adapter handles the real HF schema where:
+    - message content can be None (assistant messages with tool calls)
+    - test_result is nested: test_result.report.resolved (not test_result.passed)
+    - tools are {'function': {'name': ...}, 'type': 'function'}
+    """
+    from scripts.settlement_datasets.registry import get_adapter
+
+    adapter = get_adapter("swegym_openhands")
+    fixture = Path("tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl")
+
+    records = [
+        adapter.to_settlement_record(raw)
+        for raw in adapter.stream(input_path=str(fixture))
+    ]
+
+    assert len(records) == 2
+    # Row 0: resolved=true via test_result.report.resolved
+    assert records[0]["outcome"]["success"] is True
+    assert records[0]["outcome"]["confidence"] >= 0.65
+    # Row 1: resolved=false
+    assert records[1]["outcome"]["success"] is False
+    assert records[1]["outcome"]["confidence"] >= 0.65
+    # Payment should handle None content without crashing
+    assert records[0]["payment"]["turns"] >= 0
+    assert records[1]["payment"]["turns"] >= 0
+    # Tools should be extracted from nested function structure
+    tool_names = records[0]["metadata"].get("tool_names", [])
+    assert any("bash" in str(t).lower() for t in tool_names)
+    assert all(adapter.validate_record(record) == [] for record in records)
 
 
 def test_nebius_swe_agent_adapter_registered_and_validates_fixture():
