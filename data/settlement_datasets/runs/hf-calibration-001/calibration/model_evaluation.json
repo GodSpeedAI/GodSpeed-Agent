@@ -1,0 +1,15 @@
+{
+  "calibration_rows": 500,
+  "deterministic_baseline_success_rate": 0.106,
+  "failure_class_count": 447,
+  "provider": "sklearn",
+  "sklearn_evaluation": [
+    {
+      "candidate_id": "eval_candidate",
+      "predicted_horizon_delta": 0.8964,
+      "rationale": "sklearn_logistic_regression",
+      "success_probability": 0.8964
+    }
+  ],
+  "success_class_count": 53
+}

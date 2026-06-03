@@ -8,14 +8,21 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-06-03
-- Summary: Promoted calibration pipeline from `local-confidence` to
-  `external-proxy-calibration-smoke`. Patched SWE-Gym OpenHands adapter
-  for real HF schema (None content, nested test_result.report.resolved,
-  nested tool function names). Live HF smoke: 116 scanned, 50 usable
-  settlements (6 success / 44 failure), 0 adapter errors.
-- Settlement evidence: 531 tests pass, live HF smoke exits 0 with both
-  outcome classes present and 0% adapter error rate.
-- Proof classification: `external-proxy-calibration-smoke`.
+- Summary: Promoted calibration pipeline from `external-proxy-calibration-smoke`
+  to `external-proxy-calibration`. Full run: 799 rows scanned from
+  SWE-Gym/OpenHands-Sampled-Trajectories, 500 usable settlements (53 success /
+  447 failure), 0 adapter errors. sklearn logistic regression evaluated but
+  found to have data leakage: `horizon_delta` directly encodes the target
+  variable in 500/500 records, making the sklearn prediction circular.
+  Deterministic baseline success rate: 10.6%. sklearn remains advisory-only.
+- Settlement evidence: 531 tests pass, full calibration run exits 0, all
+  artifacts written under `data/settlement_datasets/runs/hf-calibration-001/`.
+- Proof classification: `external-proxy-calibration`.
+- Known limit: class imbalance (10.6% success) and horizon_delta leakage
+  mean sklearn predictions are not yet meaningful for affordance ranking.
+  Next move: fix `external_record_to_model_calibration` to derive
+  `horizon_delta` from payment/error signals rather than the success label,
+  then re-evaluate sklearn.
 
 ## Active Desired Direction
 

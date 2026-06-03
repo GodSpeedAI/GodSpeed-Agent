@@ -1,0 +1,41 @@
+{
+  "adapter_errors": 0,
+  "calibration_frame_path": "data/settlement_datasets/runs/hf-calibration-001/calibration/calibration_frame.csv",
+  "created_at": "2026-06-03T15:37:43Z",
+  "dataset_counts": {
+    "swegym_openhands": {
+      "adapter_errors": 0,
+      "normalized": 799,
+      "rejected": 299,
+      "scanned": 799,
+      "usable": 500
+    }
+  },
+  "failure_count": 447,
+  "manifest_path": "configs/settlement_datasets/calibration_sources.yaml",
+  "min_confidence": 0.65,
+  "model_evaluation": {
+    "calibration_rows": 500,
+    "deterministic_baseline_success_rate": 0.106,
+    "failure_class_count": 447,
+    "provider": "sklearn",
+    "sklearn_evaluation": [
+      {
+        "candidate_id": "eval_candidate",
+        "predicted_horizon_delta": 0.8964,
+        "rationale": "sklearn_logistic_regression",
+        "success_probability": 0.8964
+      }
+    ],
+    "success_class_count": 53
+  },
+  "normalized": 799,
+  "provider": "sklearn",
+  "rejected": 299,
+  "report_path": "data/settlement_datasets/runs/hf-calibration-001/docs/hf-calibration-001-report.md",
+  "run_id": "hf-calibration-001",
+  "scanned": 799,
+  "success_count": 53,
+  "target_usable_settlements": 500,
+  "usable_settlements": 500
+}
