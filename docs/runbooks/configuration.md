@@ -34,3 +34,26 @@ uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .go
 Treat provider changes and predictive threshold changes as governed `HARNESS.md` edits so validation can confirm the new operating contract.
 
 Treat storage-evolution settings the same way. They do not authorize an immediate migration on their own; they only define the approved path once the current JSONL truth surface no longer satisfies retrieval or ML needs.
+
+## Built-In Predictive Providers
+
+### `heuristic` (default)
+
+The default provider. Uses local heuristic scoring based on settlement count, payment burden, and risk. No external dependencies. Always available.
+
+### `sklearn`
+
+A built-in scikit-learn provider that uses logistic regression for settlement success prediction. This provider is:
+
+- **Registered** in the provider registry but **dormant** below the configured `ml_event_threshold`.
+- **Dependency-gated**: requires scikit-learn installed via `uv sync --extra ml`. If scikit-learn is not installed, the provider raises a clear error directing the operator to install the `ml` extra.
+- **Threshold-gated**: `build_predictive_extension_plan` returns `stage: deterministic_only` below `ml_event_threshold` (default 200) and never calls the sklearn provider.
+- **Advisory only**: ML predictions never override deterministic ranking, hard gates, governance, payment, settlement-access, risk, or debt gates.
+
+To activate:
+
+1. Install the `ml` extra: `uv sync --extra ml`
+2. Set `computation.model_provider: sklearn` in `HARNESS.md` front matter.
+3. Ensure settlement history exceeds `ml_event_threshold`.
+
+The sklearn provider trains only from extracted calibration rows with sufficient usable data. If calibration rows are insufficient even though the event-count threshold passed, it returns empty predictions with an explanatory note instead of fabricating confidence.

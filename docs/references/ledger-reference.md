@@ -79,3 +79,19 @@ These ledgers are written by hook surfaces and use `append_event`.
 - Read `horizon_reviews` and `trajectories` together when judging whether the system is expanding the horizon or rotating in place.
 - Prefer `read_events` over raw line parsing for event ledgers because it enforces checksum validation.
 - Use `query_developmental_memory` when the operator needs lineage answers such as what path was paid for, what failed to settle, which capabilities became substrate, or which critique findings were later revised.
+
+## Model Calibration Fields
+
+Settlement records now include a `model_calibration` object that captures the data needed for later calibration of the cognitive model burden, risk, and debt estimates. These fields support the calibration schedule described in the mathematical specification (Section 17).
+
+Fields:
+
+- `payment_predicted`: the payment dimensions recorded during horizon review, or `None` if no prediction was captured.
+- `payment_actual`: the actual payment vector supplied at settlement time.
+- `settlement_success`: boolean indicating whether the settlement scored as success.
+- `settlement_score`: the continuous settlement score.
+- `horizon_delta`: the horizon expansion recorded for this settlement.
+- `risk_estimate`: the risk value from the matched affordance, or `None`.
+- `debt_estimate`: the debt value from the matched affordance, or `None`.
+
+These fields are **calibration data**, not proof of capability. They exist to support future weight fitting and threshold tuning after enough settlement history accumulates. Do not treat the presence of calibration fields as evidence that the model is calibrated or that predictions are accurate.

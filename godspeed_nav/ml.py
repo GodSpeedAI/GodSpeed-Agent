@@ -120,10 +120,161 @@ class DisabledPredictiveModelAdapter(PredictiveModelPort):
         return []
 
 
+class SklearnPredictiveModelAdapter(PredictiveModelPort):
+    """Built-in scikit-learn predictive provider.
+
+    Registered through ``resolve_model_provider("sklearn")`` but kept
+    dormant behind dependency checks, configuration, the existing
+    predictive model port, and settlement-history thresholds.
+
+    - Below ``ml_event_threshold``, ``build_predictive_extension_plan``
+      returns ``stage: deterministic_only`` and never calls this provider.
+    - If scikit-learn is not installed, ``_require_sklearn`` raises a
+      clear ``RuntimeError`` directing the operator to install the
+      ``ml`` extra.
+    - Predictions are advisory only; deterministic ranking and hard gates
+      remain required.
+    """
+
+    provider_name = "sklearn"
+
+    def _require_sklearn(self) -> None:
+        """Lazily import scikit-learn; raise if unavailable."""
+        try:
+            import sklearn  # noqa: F401 – import check only
+        except ImportError as exc:
+            raise RuntimeError(
+                "sklearn_extra_required: install with uv sync --extra ml"
+            ) from exc
+
+    def predict_affordances(
+        self,
+        settlement_history: list[dict[str, Any]],
+        candidates: list[dict[str, Any]],
+        payment_estimates: dict[str, dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        self._require_sklearn()
+
+        from godspeed_nav.cognitive_model import build_calibration_frame
+
+        # Extract calibration rows from settlement history.
+        frame = build_calibration_frame(settlement_history)
+
+        # If calibration rows are insufficient even though the event-count
+        # threshold passed, return empty predictions with an explanatory note.
+        if len(frame) < 10:
+            return [
+                {
+                    "candidate_id": c.get("id"),
+                    "success_probability": None,
+                    "predicted_horizon_delta": None,
+                    "rationale": "insufficient_calibration_data",
+                    "note": (
+                        f"Calibration frame has {len(frame)} rows; "
+                        "need at least 10 for sklearn fitting. "
+                        "Continuing with deterministic ranking."
+                    ),
+                }
+                for c in candidates
+            ]
+
+        # Use simple, inspectable models: logistic regression for
+        # settlement success prediction.
+        from sklearn.linear_model import LogisticRegression
+
+        feature_cols = [
+            "payment_predicted_total",
+            "horizon_delta",
+            "risk_estimate",
+            "debt_estimate",
+        ]
+        available_cols = [c for c in feature_cols if c in frame.columns]
+        X = frame[available_cols].fillna(0).values
+        y = frame["settlement_success"].astype(int).values
+
+        # Need both classes for logistic regression.
+        if len(set(y)) < 2:
+            return [
+                {
+                    "candidate_id": c.get("id"),
+                    "success_probability": None,
+                    "predicted_horizon_delta": None,
+                    "rationale": "single_class_calibration_data",
+                }
+                for c in candidates
+            ]
+
+        model = LogisticRegression(max_iter=200, solver="lbfgs")
+        model.fit(X, y)
+
+        predictions: list[dict[str, Any]] = []
+        for candidate in candidates:
+            cid = candidate["id"]
+            payment_burden = max(
+                payment_estimates.get(cid, {}).get("payment_burden", 1.0), 1.0
+            )
+            risk = float(candidate.get("risk", 0))
+            debt = float(candidate.get("debt", 0))
+            horizon_delta = float(candidate.get("expected_horizon_delta", 0))
+
+            # Build feature vector matching training columns.
+            feature_values = {
+                "payment_predicted_total": payment_burden,
+                "horizon_delta": horizon_delta,
+                "risk_estimate": risk,
+                "debt_estimate": debt,
+            }
+            x_row = [[feature_values.get(c, 0) for c in available_cols]]
+            prob = float(model.predict_proba(x_row)[0][1])
+
+            predictions.append(
+                {
+                    "candidate_id": cid,
+                    "success_probability": round(prob, 4),
+                    "predicted_horizon_delta": round(horizon_delta * prob, 4),
+                    "rationale": "sklearn_logistic_regression",
+                }
+            )
+
+        predictions.sort(key=lambda p: p["success_probability"] or 0, reverse=True)
+        return predictions
+
+    def simulate_affordances(
+        self,
+        settlement_history: list[dict[str, Any]],
+        candidates: list[dict[str, Any]],
+        payment_estimates: dict[str, dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        self._require_sklearn()
+        simulations: list[dict[str, Any]] = []
+        for prediction in self.predict_affordances(
+            settlement_history, candidates, payment_estimates
+        ):
+            probability = prediction.get("success_probability")
+            if probability is None:
+                status = "unknown"
+            elif probability >= 0.7:
+                status = "success"
+            elif probability >= 0.35:
+                status = "partial"
+            else:
+                status = "failed"
+            simulations.append(
+                {
+                    "candidate_id": prediction["candidate_id"],
+                    "simulated_status": status,
+                    "confidence": round(min(0.99, (probability or 0) + 0.1), 4),
+                    "notes": "simulation_suggestion_not_settlement",
+                }
+            )
+        return simulations
+
+
 def resolve_model_provider(provider_name: str) -> PredictiveModelPort:
     registry = {
         "disabled": DisabledPredictiveModelAdapter,
         "heuristic": HeuristicPredictiveModelAdapter,
+        "sklearn": SklearnPredictiveModelAdapter,
         "testing": TestingPredictiveModelAdapter,
     }
     normalized = provider_name.strip().lower()
@@ -232,6 +383,7 @@ __all__ = [
     "DisabledPredictiveModelAdapter",
     "HeuristicPredictiveModelAdapter",
     "PredictiveModelPort",
+    "SklearnPredictiveModelAdapter",
     "TestingPredictiveModelAdapter",
     "build_predictive_extension_plan",
     "ensure_ml_allowed",

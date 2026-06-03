@@ -72,7 +72,9 @@ def test_runtime_completes_connected_developmental_cycle(tmp_path: Path):
 
 def test_runtime_marks_unaffordable_candidates_as_possibilities(tmp_path: Path):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
-    direction = runtime.start_direction(label="Reduce payment debt", statement="Avoid unsafe work")
+    direction = runtime.start_direction(
+        label="Reduce payment debt", statement="Avoid unsafe work"
+    )
 
     review = runtime.review_horizon(
         direction_id=direction["id"],
@@ -160,7 +162,9 @@ def test_runtime_truth_ledgers_use_event_envelopes(tmp_path: Path):
     assert runtime.store.read("settlements")[0]["affordance_id"] == "durable-loop"
 
 
-def test_runtime_persists_representational_state_and_surfaces_it_in_snapshot(tmp_path: Path):
+def test_runtime_persists_representational_state_and_surfaces_it_in_snapshot(
+    tmp_path: Path,
+):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
 
     direction = runtime.start_direction(
@@ -186,7 +190,9 @@ def test_runtime_persists_representational_state_and_surfaces_it_in_snapshot(tmp
     assert snapshot["latest_representational_state"]["quadrant"] == "general_abstract"
 
 
-def test_runtime_reviews_representational_transition_and_persists_result(tmp_path: Path):
+def test_runtime_reviews_representational_transition_and_persists_result(
+    tmp_path: Path,
+):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
 
     review = runtime.review_representational_transition(
@@ -208,7 +214,9 @@ def test_runtime_reviews_representational_transition_and_persists_result(tmp_pat
     assert runtime.store.read("representational_transitions")[-1]["status"] == "blocked"
 
 
-def test_runtime_persists_explicit_affordance_paths_and_ranks_by_pathway_quality(tmp_path: Path):
+def test_runtime_persists_explicit_affordance_paths_and_ranks_by_pathway_quality(
+    tmp_path: Path,
+):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
     direction = runtime.start_direction(
         label="Spendable path review",
@@ -238,7 +246,11 @@ def test_runtime_persists_explicit_affordance_paths_and_ranks_by_pathway_quality
                 "statement": "Add the next local runtime slice",
                 "pathway": "edit runtime and tests",
                 "required_preconditions": ["failing tests"],
-                "transition_sequence": ["write failing tests", "patch runtime", "rerun focused tests"],
+                "transition_sequence": [
+                    "write failing tests",
+                    "patch runtime",
+                    "rerun focused tests",
+                ],
                 "expected_settlement": {"focused_tests": "pass"},
                 "lifecycle_status": "ready",
                 "pathway_quality": 0.9,
@@ -264,7 +276,9 @@ def test_runtime_persists_explicit_affordance_paths_and_ranks_by_pathway_quality
     assert affordance_paths[-1]["lifecycle_status"] == "ready"
 
 
-def test_runtime_settlement_records_environment_identity_and_future_state_deltas(tmp_path: Path):
+def test_runtime_settlement_records_environment_identity_and_future_state_deltas(
+    tmp_path: Path,
+):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
 
     settlement = runtime.record_settlement(
@@ -294,7 +308,9 @@ def test_runtime_settlement_records_environment_identity_and_future_state_deltas
     assert stored["future_affordances_created"] == ["tighten policy-reference doc"]
 
 
-def test_runtime_schedules_repetition_after_successful_non_metabolized_settlement(tmp_path: Path):
+def test_runtime_schedules_repetition_after_successful_non_metabolized_settlement(
+    tmp_path: Path,
+):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
 
     runtime.record_settlement(
@@ -316,7 +332,9 @@ def test_runtime_schedules_repetition_after_successful_non_metabolized_settlemen
     assert schedule["critique_escalation"] is None
 
 
-def test_runtime_escalates_repetition_schedule_when_circular_motion_repeats(tmp_path: Path):
+def test_runtime_escalates_repetition_schedule_when_circular_motion_repeats(
+    tmp_path: Path,
+):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
     runtime.store.append("trajectories", {"new_theta": 0.0, "new_radius": 1.0})
     runtime.store.append("trajectories", {"new_theta": 7.0, "new_radius": 1.01})
@@ -333,3 +351,75 @@ def test_runtime_escalates_repetition_schedule_when_circular_motion_repeats(tmp_
     schedule = runtime.store.read("repetition_schedules")[-1]
 
     assert schedule["critique_escalation"] == "circular_motion"
+
+
+def test_runtime_horizon_review_includes_advisory_cognitive_model(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path)
+    direction = runtime.start_direction("Core model", "Use advisory cognitive model")
+
+    review = runtime.review_horizon(
+        direction_id=direction["id"],
+        candidates=[
+            {
+                "id": "candidate-1",
+                "statement": "Run focused model test",
+                "pathway": "write failing test then implement",
+                "costs": {"time": 1},
+                "capacities": {"time": 5},
+                "payment_required": {"time": 1},
+                "payment_capacity": {"time": 5},
+                "expected_horizon_delta": 3,
+                "risk": 0.1,
+                "debt": 0.1,
+            }
+        ],
+    )
+
+    assert review["next_affordance"]["id"] == "candidate-1"
+    assert review["cognitive_model"]["ranked"][0]["candidate_id"] == "candidate-1"
+    assert review["cognitive_model"]["mode"] == "advisory"
+
+
+# ---------------------------------------------------------------------------
+# Task 5: Settlement calibration fields
+# ---------------------------------------------------------------------------
+
+
+def test_record_settlement_persists_cognitive_model_calibration_fields(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path)
+    direction = runtime.start_direction(
+        "Calibrate model", "Record predicted and actual payment"
+    )
+    runtime.review_horizon(
+        direction_id=direction["id"],
+        candidates=[
+            {
+                "id": "aff-1",
+                "statement": "Patch model",
+                "pathway": "edit code",
+                "costs": {"time": 1},
+                "capacities": {"time": 5},
+                "payment_required": {"time": 1},
+                "payment_capacity": {"time": 5},
+                "expected_horizon_delta": 2,
+                "risk": 0.1,
+                "debt": 0.1,
+            }
+        ],
+    )
+
+    settlement = runtime.record_settlement(
+        affordance_id="aff-1",
+        before_state={"tests": 0},
+        after_state={"tests": 1},
+        desired_direction={"desired_state": {"tests": 1}},
+        payment_actual={"time": 1.5},
+        evidence=["pytest passed"],
+        horizon_delta=2,
+    )
+
+    calibration = settlement["model_calibration"]
+    assert calibration["payment_actual"] == {"time": 1.5}
+    assert calibration["settlement_success"] is True
+    assert "payment_predicted" in calibration
+    assert "horizon_delta" in calibration

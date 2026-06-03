@@ -16,6 +16,7 @@ from godspeed_nav.ml import (
     TestingPredictiveModelAdapter,
     build_predictive_extension_plan,
     ensure_ml_allowed,
+    resolve_model_provider,
 )
 from godspeed_nav.trajectory import detect_circular_motion, update_trajectory
 
@@ -351,3 +352,205 @@ def test_predictive_extensions_auto_activate_ml_and_simulation_at_thresholds():
     assert simulation_ready["stage"] == "simulation_assisted"
     assert simulation_ready["active_extensions"] == ["ml_prediction", "simulation"]
     assert simulation_ready["simulation_results"][0]["candidate_id"] == "aff-1"
+
+
+# ---------------------------------------------------------------------------
+# Task 1: Cognitive model – deterministic burden kernel
+# ---------------------------------------------------------------------------
+
+from godspeed_nav.cognitive_model import (
+    BurdenParameters,
+    RepresentationalCoordinates,
+    build_calibration_frame,
+    compute_representational_burden,
+    evaluate_candidate_model,
+    rank_candidates_by_controller,
+)
+
+
+def test_cognitive_model_computes_default_representational_burden():
+    result = compute_representational_burden(
+        current=RepresentationalCoordinates(scope=0.2, givenness=0.2),
+        target=RepresentationalCoordinates(scope=0.7, givenness=0.6),
+        distinctions_current=14,
+        distinctions_max=20,
+        parameters=BurdenParameters(),
+    )
+
+    assert result["delta"] == {
+        "scope": pytest.approx(0.5),
+        "givenness": pytest.approx(0.4),
+    }
+    assert result["scope_overflow"] == 0.0
+    assert result["burden"] > 0
+    assert result["burden_max"] == pytest.approx(2**0.5)
+    assert result["matrix_floor"] == pytest.approx(0.05)
+
+
+# ---------------------------------------------------------------------------
+# Task 2: Cognitive model – hard gates and spendability scoring
+# ---------------------------------------------------------------------------
+
+
+def test_cognitive_model_blocks_failed_hard_gate_before_scoring():
+    result = evaluate_candidate_model(
+        candidate={
+            "id": "unsafe",
+            "governance_allowed": False,
+            "settlement_accessible": True,
+            "payment_required": {"time": 1},
+            "payment_capacity": {"time": 5},
+            "risk": 0.1,
+            "debt": 0.1,
+        },
+        context="production",
+    )
+
+    assert result["allowed"] is False
+    assert result["blocking_reasons"] == ["governance_blocked"]
+    assert result["spendability_score"] is None
+
+
+def test_cognitive_model_scores_allowed_candidate_spendability():
+    result = evaluate_candidate_model(
+        candidate={
+            "id": "path",
+            "governance_allowed": True,
+            "settlement_accessible": True,
+            "payment_required": {"time": 1},
+            "payment_capacity": {"time": 5},
+            "required_preconditions": ["tests", "docs"],
+            "met_preconditions": ["tests"],
+            "required_capabilities": ["python", "pytest"],
+            "active_capabilities": ["python"],
+            "pathway": "run focused test and patch code",
+            "expected_settlement": {"tests": "pass"},
+            "risk": 0.1,
+            "debt": 0.1,
+        },
+        context="production",
+    )
+
+    assert result["allowed"] is True
+    assert result["blocking_reasons"] == []
+    assert result["spendability_score"] >= 0.5
+    assert result["factors"]["visibility"] == 1.0
+
+
+# ---------------------------------------------------------------------------
+# Task 3: Cognitive model – advisory controller ranking
+# ---------------------------------------------------------------------------
+
+
+def test_cognitive_model_controller_ranks_allowed_paths_without_overriding_gates():
+    result = rank_candidates_by_controller(
+        candidates=[
+            {
+                "id": "blocked",
+                "governance_allowed": False,
+                "settlement_accessible": True,
+                "payment_required": {"time": 1},
+                "payment_capacity": {"time": 10},
+                "risk": 0.0,
+                "debt": 0.0,
+                "expected_horizon_delta": 100,
+            },
+            {
+                "id": "steady",
+                "governance_allowed": True,
+                "settlement_accessible": True,
+                "payment_required": {"time": 1},
+                "payment_capacity": {"time": 10},
+                "risk": 0.1,
+                "debt": 0.1,
+                "expected_horizon_delta": 3,
+                "direction_score": 0.8,
+            },
+        ],
+        context="production",
+    )
+
+    assert result["ranked"][0]["candidate_id"] == "steady"
+    assert result["rejected"][0]["candidate_id"] == "blocked"
+
+
+# ---------------------------------------------------------------------------
+# Task 6: Calibration dataset builder
+# ---------------------------------------------------------------------------
+
+
+def test_build_calibration_frame_extracts_settlement_model_fields():
+    frame = build_calibration_frame(
+        settlements=[
+            {
+                "id": "set-1",
+                "model_calibration": {
+                    "payment_predicted": {"time": 1},
+                    "payment_actual": {"time": 1.5},
+                    "settlement_success": True,
+                    "settlement_score": 0.8,
+                    "horizon_delta": 2,
+                    "risk_estimate": 0.1,
+                    "debt_estimate": 0.2,
+                },
+            }
+        ]
+    )
+
+    assert list(frame.columns) == [
+        "settlement_id",
+        "payment_predicted_total",
+        "payment_actual_total",
+        "payment_error",
+        "settlement_success",
+        "settlement_score",
+        "horizon_delta",
+        "risk_estimate",
+        "debt_estimate",
+    ]
+    assert frame.iloc[0]["payment_error"] == pytest.approx(0.5)
+
+
+# ---------------------------------------------------------------------------
+# Task 7: Built-in sklearn provider behind evidence gate
+# ---------------------------------------------------------------------------
+
+
+def test_sklearn_provider_is_registered_but_threshold_gated():
+    result = build_predictive_extension_plan(
+        settlement_history=[{"id": f"set-{index}"} for index in range(199)],
+        candidates=[],
+        ml_event_threshold=200,
+        simulation_threshold=1000,
+        model_port=resolve_model_provider("sklearn"),
+    )
+
+    assert result["stage"] == "deterministic_only"
+    assert result["ml_predictions"] == []
+
+
+def test_sklearn_provider_is_builtin_and_reports_provider_name():
+    provider = resolve_model_provider("sklearn")
+    assert provider.provider_name == "sklearn"
+
+
+def test_sklearn_provider_reports_clear_missing_dependency(monkeypatch):
+    provider = resolve_model_provider("sklearn")
+
+    def missing_import():
+        raise RuntimeError("sklearn_extra_required: install with uv sync --extra ml")
+
+    monkeypatch.setattr(provider, "_require_sklearn", missing_import)
+
+    with pytest.raises(RuntimeError, match="sklearn_extra_required"):
+        provider.predict_affordances(
+            settlement_history=[{"id": f"set-{index}"} for index in range(200)],
+            candidates=[
+                {
+                    "id": "candidate-1",
+                    "expected_horizon_delta": 2,
+                    "risk": 0.1,
+                }
+            ],
+            payment_estimates={"candidate-1": {"payment_burden": 1}},
+        )
