@@ -90,3 +90,27 @@ def test_swegym_openhands_adapter_registered_and_validates_fixture():
     assert records[0]["outcome"]["success"] is True
     assert records[1]["outcome"]["success"] is False
     assert all(adapter.validate_record(record) == [] for record in records)
+
+
+# ---------------------------------------------------------------------------
+# Task 4: Nebius SWE-Agent adapter
+# ---------------------------------------------------------------------------
+
+
+def test_nebius_swe_agent_adapter_registered_and_validates_fixture():
+    from scripts.settlement_datasets.registry import available_datasets, get_adapter
+
+    assert "nebius_swe_agent" in available_datasets()
+    adapter = get_adapter("nebius_swe_agent")
+    fixture = Path("tests/fixtures/settlement_datasets/nebius_swe_agent/sample.jsonl")
+
+    records = [
+        adapter.to_settlement_record(raw)
+        for raw in adapter.stream(input_path=str(fixture))
+    ]
+
+    assert len(records) == 2
+    assert records[0]["outcome"]["success"] is True
+    assert records[1]["outcome"]["success"] is False
+    assert records[0]["payment"]["commands"] >= 0
+    assert all(adapter.validate_record(record) == [] for record in records)
