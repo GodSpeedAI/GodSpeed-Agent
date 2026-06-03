@@ -36,3 +36,33 @@ def test_calibration_sources_manifest_declares_priority_and_external_proxy_class
         assert source["split"]
         assert source["max_rows"] > 0
         assert source["priority"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Task 2: Hugging Face streaming helper
+# ---------------------------------------------------------------------------
+
+
+def test_iter_limited_stops_after_limit():
+    from scripts.settlement_datasets.hf_stream import iter_limited
+
+    rows = list(iter_limited(iter([{"id": 1}, {"id": 2}, {"id": 3}]), limit=2))
+    assert rows == [{"id": 1}, {"id": 2}]
+
+
+def test_load_hf_stream_is_lazy_and_patchable(monkeypatch):
+    from scripts.settlement_datasets.hf_stream import load_hf_stream
+
+    calls = []
+
+    def fake_load_dataset(source_uri, split, streaming=True):
+        calls.append((source_uri, split, streaming))
+        return iter([{"id": "row-1"}])
+
+    monkeypatch.setattr(
+        "scripts.settlement_datasets.hf_stream.load_dataset", fake_load_dataset
+    )
+
+    stream = load_hf_stream("repo/name", split="train")
+    assert list(stream) == [{"id": "row-1"}]
+    assert calls == [("repo/name", "train", True)]
