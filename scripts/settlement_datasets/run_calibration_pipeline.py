@@ -399,3 +399,88 @@ def run_pipeline(
     )
 
     return summary
+
+
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    """CLI entry point for the calibration pipeline."""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Run the agentic calibration pipeline."
+    )
+    parser.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to calibration source manifest YAML",
+    )
+    parser.add_argument("--run-id", default=None, help="Run identifier")
+    parser.add_argument(
+        "--run-dir", default=None, help="Run directory (input and output)"
+    )
+    parser.add_argument(
+        "--input-run-dir", default=None, help="Existing run directory to resume from"
+    )
+    parser.add_argument("--output-run-dir", default=None, help="Output run directory")
+    parser.add_argument(
+        "--target-usable-settlements",
+        type=int,
+        default=500,
+        help="Target number of usable settlements",
+    )
+    parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.65,
+        help="Minimum confidence threshold for usable records",
+    )
+    parser.add_argument(
+        "--provider",
+        default="disabled",
+        choices=["disabled", "heuristic", "sklearn"],
+        help="Predictive model provider",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from an existing run directory",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Process fixtures only, do not contact Hugging Face",
+    )
+
+    args = parser.parse_args()
+
+    run_id = args.run_id or f"calibration-run"
+
+    # Resume support: if resuming, load existing summary for counts
+    if args.resume and args.input_run_dir:
+        existing_summary_path = Path(args.input_run_dir) / "summary.json"
+        if existing_summary_path.exists():
+            existing = json.loads(existing_summary_path.read_text(encoding="utf-8"))
+            print(
+                f"Resuming from existing run with {existing.get('usable_settlements', 0)} usable settlements"
+            )
+
+    result = run_pipeline(
+        manifest_path=args.manifest,
+        run_id=run_id,
+        output_run_dir=args.output_run_dir,
+        target_usable_settlements=args.target_usable_settlements,
+        min_confidence=args.min_confidence,
+        provider=args.provider,
+        dry_run=args.dry_run,
+    )
+
+    # Print summary to stdout for CLI consumers
+    print(json.dumps(result, indent=2, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

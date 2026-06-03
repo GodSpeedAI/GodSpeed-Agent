@@ -226,3 +226,56 @@ datasets:
 
     assert "calibration_frame_path" in result
     assert "model_evaluation" in result
+
+
+# ---------------------------------------------------------------------------
+# Task 8: CLI entry point and resume behavior
+# ---------------------------------------------------------------------------
+
+
+def test_calibration_pipeline_cli_runs_fixture_manifest(tmp_path):
+    import subprocess
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+target_usable_settlements: 1
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+datasets:
+  - name: swegym_openhands
+    source_uri: local-fixture
+    adapter: swegym_openhands
+    split: train
+    input_path: tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl
+    max_rows: 1
+    priority: 1
+    streaming: false
+""",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "-m",
+            "scripts.settlement_datasets.run_calibration_pipeline",
+            "--manifest",
+            str(manifest),
+            "--run-id",
+            "cli-fixture",
+            "--output-run-dir",
+            str(tmp_path / "run"),
+            "--target-usable-settlements",
+            "1",
+            "--provider",
+            "disabled",
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+    assert "usable_settlements" in result.stdout
