@@ -398,6 +398,107 @@ def run_pipeline(
         encoding="utf-8",
     )
 
+    # ------------------------------------------------------------------
+    # Evidence report
+    # ------------------------------------------------------------------
+    report_dir_resolved = Path(report_dir) if report_dir else scope.root / "docs"
+    report_dir_resolved.mkdir(parents=True, exist_ok=True)
+    report_path = report_dir_resolved / f"{run_id}-report.md"
+
+    class_balance = ""
+    if state.success_count + state.failure_count > 0:
+        total = state.success_count + state.failure_count
+        class_balance = (
+            f"- Success: {state.success_count} ({state.success_count / total:.1%})\n"
+            f"- Failure: {state.failure_count} ({state.failure_count / total:.1%})\n"
+        )
+    else:
+        class_balance = "- No class data available\n"
+
+    model_eval_summary = ""
+    me = model_evaluation
+    if me.get("provider") == "disabled":
+        model_eval_summary = "- Provider: disabled (deterministic only)\n"
+    elif me.get("sklearn_evaluation"):
+        model_eval_summary = f"- Provider: sklearn\n- Evaluation: {json.dumps(me['sklearn_evaluation'])}\n"
+    elif me.get("sklearn_extra_required"):
+        model_eval_summary = f"- Provider: sklearn (not installed)\n- Note: {me['sklearn_extra_required']}\n"
+    elif me.get("sklearn_skipped_reason"):
+        model_eval_summary = (
+            f"- Provider: sklearn\n- Skipped: {me['sklearn_skipped_reason']}\n"
+        )
+    else:
+        model_eval_summary = f"- Provider: {me.get('provider', 'unknown')}\n"
+
+    report_lines = [
+        f"# Calibration Run Report: {run_id}",
+        "",
+        f"**Date:** {summary['created_at']}",
+        f"**Manifest:** {str(manifest_path)}",
+        "",
+        "## Dataset Counts",
+        "",
+    ]
+    for ds_name, counts in state.dataset_counts.items():
+        report_lines.append(f"### {ds_name}")
+        report_lines.append(f"- Scanned: {counts.get('scanned', 0)}")
+        report_lines.append(f"- Normalized: {counts.get('normalized', 0)}")
+        report_lines.append(f"- Usable: {counts.get('usable', 0)}")
+        report_lines.append(f"- Rejected: {counts.get('rejected', 0)}")
+        report_lines.append(f"- Adapter errors: {counts.get('adapter_errors', 0)}")
+        report_lines.append("")
+
+    report_lines.extend(
+        [
+            "## Summary",
+            "",
+            f"- Raw rows scanned: {state.scanned}",
+            f"- Normalized records: {state.normalized}",
+            f"- usable settlements: {state.usable_settlements}",
+            f"- Rejected records: {state.rejected}",
+            f"- Adapter errors: {state.adapter_errors}",
+            "",
+            "## Class Balance",
+            "",
+            class_balance,
+            f"## Calibration Frame",
+            "",
+            f"- Path: `{cal_frame_path}`",
+            f"- Rows: {len(cal_frame)}",
+            "",
+            "## Model Evaluation",
+            "",
+            model_eval_summary,
+            "## Proof Classification",
+            "",
+            "external-proxy-calibration",
+            "",
+            "All imported dataset records are classified as `external-proxy-settlement`.",
+            "They are valid for calibration experiments, baseline comparison, and model",
+            "warm-starting. They are not local Godspeed settlement evidence.",
+            "",
+            "## Non-Claims",
+            "",
+            "This report does not claim local capability, metabolization, enterprise readiness,",
+            "or local settlement proof from external proxy data.",
+            "",
+            "## Next Move",
+            "",
+            "Run the fixture path first, then live HF only after local tests pass.",
+            "",
+        ]
+    )
+
+    report_path.write_text("\n".join(report_lines), encoding="utf-8")
+
+    summary["report_path"] = str(report_path)
+
+    # Re-write summary with report_path
+    summary_path.write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     return summary
 
 

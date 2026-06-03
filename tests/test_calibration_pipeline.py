@@ -279,3 +279,48 @@ datasets:
     )
 
     assert "usable_settlements" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# Task 10: Evidence report generation
+# ---------------------------------------------------------------------------
+
+
+def test_calibration_pipeline_writes_docs_report(tmp_path):
+    from scripts.settlement_datasets.run_calibration_pipeline import run_pipeline
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+target_usable_settlements: 2
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+datasets:
+  - name: swegym_openhands
+    source_uri: local-fixture
+    adapter: swegym_openhands
+    split: train
+    input_path: tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl
+    max_rows: 10
+    priority: 1
+    streaming: false
+""",
+        encoding="utf-8",
+    )
+
+    result = run_pipeline(
+        manifest_path=str(manifest),
+        run_id="fixture-report",
+        output_run_dir=tmp_path / "run",
+        target_usable_settlements=2,
+        min_confidence=0.65,
+        provider="disabled",
+        report_dir=tmp_path / "docs",
+    )
+
+    report_path = Path(result["report_path"])
+    assert report_path.exists()
+    text = report_path.read_text(encoding="utf-8")
+    assert "external-proxy-settlement" in text
+    assert "usable settlements" in text
+    assert "Proof Classification" in text
