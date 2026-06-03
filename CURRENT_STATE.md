@@ -8,14 +8,14 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-06-03
-- Summary: Implemented the agentic calibration pipeline: manifest, HF streaming
-  helper, SWE-Gym OpenHands adapter, Nebius SWE-Agent adapter, pipeline
-  orchestrator with dataset iteration/filtering, calibration frame export,
-  sklearn evaluation, CLI entry point with resume support, GLM 5.1 operator
-  agent contract, evidence report generation, and documentation.
-- Settlement evidence: 530 tests pass, fixture pipeline exits 0, all artifacts
-  written under `data/settlement_datasets/runs/fixture-calibration-smoke/`.
-- Proof classification: `local-confidence` (fixture-only; no live HF smoke yet).
+- Summary: Promoted calibration pipeline from `local-confidence` to
+  `external-proxy-calibration-smoke`. Patched SWE-Gym OpenHands adapter
+  for real HF schema (None content, nested test_result.report.resolved,
+  nested tool function names). Live HF smoke: 116 scanned, 50 usable
+  settlements (6 success / 44 failure), 0 adapter errors.
+- Settlement evidence: 531 tests pass, live HF smoke exits 0 with both
+  outcome classes present and 0% adapter error rate.
+- Proof classification: `external-proxy-calibration-smoke`.
 
 ## Active Desired Direction
 

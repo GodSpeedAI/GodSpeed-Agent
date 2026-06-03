@@ -1,0 +1,7 @@
+{
+  "calibration_rows": 50,
+  "deterministic_baseline_success_rate": 0.12,
+  "failure_class_count": 44,
+  "provider": "disabled",
+  "success_class_count": 6
+}
