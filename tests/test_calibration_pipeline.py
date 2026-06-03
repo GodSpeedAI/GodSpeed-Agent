@@ -114,3 +114,34 @@ def test_nebius_swe_agent_adapter_registered_and_validates_fixture():
     assert records[1]["outcome"]["success"] is False
     assert records[0]["payment"]["commands"] >= 0
     assert all(adapter.validate_record(record) == [] for record in records)
+
+
+# ---------------------------------------------------------------------------
+# Task 5: Calibration pipeline orchestrator
+# ---------------------------------------------------------------------------
+
+
+def test_load_calibration_manifest_orders_sources_by_priority():
+    from scripts.settlement_datasets.run_calibration_pipeline import (
+        load_calibration_manifest,
+    )
+
+    manifest = load_calibration_manifest(
+        "configs/settlement_datasets/calibration_sources.yaml"
+    )
+    assert [source["name"] for source in manifest["datasets"]][:3] == [
+        "swegym_openhands",
+        "agenttrove",
+        "nebius_swe_agent",
+    ]
+
+
+def test_should_stop_for_target_when_enough_usable_settlements():
+    from scripts.settlement_datasets.run_calibration_pipeline import (
+        CalibrationRunState,
+        should_stop_for_target,
+    )
+
+    state = CalibrationRunState(target_usable_settlements=500)
+    state.usable_settlements = 500
+    assert should_stop_for_target(state) is True
