@@ -454,3 +454,139 @@ datasets:
     audit = model_eval["leakage_audit"]
     assert "feature_correlations" in audit
     assert "leaked_features" in audit
+
+
+# ---------------------------------------------------------------------------
+# Task: Held-out evaluation, balanced class_weight, sampling strategy, min-datasets
+# ---------------------------------------------------------------------------
+
+
+def test_held_out_evaluation_with_sklearn(tmp_path):
+    """Pipeline with sklearn provider must produce held-out metrics
+    when sufficient data exists and leakage is not detected."""
+    from scripts.settlement_datasets.run_calibration_pipeline import (
+        _evaluate_sklearn_held_out,
+    )
+    import pandas as pd
+    import numpy as np
+
+    np.random.seed(42)
+    n = 100
+    df = pd.DataFrame(
+        {
+            "settlement_id": [f"id-{i}" for i in range(n)],
+            "payment_predicted_total": np.random.uniform(10, 60, n),
+            "payment_actual_total": np.random.uniform(5, 50, n),
+            "payment_error": np.random.uniform(0, 20, n),
+            "settlement_success": np.random.choice([True, False], n, p=[0.3, 0.7]),
+            "settlement_score": np.random.uniform(0, 1, n),
+            "horizon_delta": np.random.uniform(0.5, 1.0, n),
+            "risk_estimate": np.random.uniform(0, 0.5, n),
+            "debt_estimate": np.random.uniform(0, 0.3, n),
+        }
+    )
+
+    leakage_audit = {
+        "feature_correlations": {"horizon_delta": 0.1, "risk_estimate": 0.2},
+        "leaked_features": [],
+        "leakage_detected": False,
+    }
+
+    result = _evaluate_sklearn_held_out(df, leakage_audit, "natural")
+    assert result["sklearn_metrics_valid"] is True
+    assert "held_out_metrics" in result
+    assert "baseline_metrics" in result
+    assert result["class_weight"] == "balanced"
+    assert result["train_size"] > 0
+    assert result["test_size"] > 0
+    assert "roc_auc" in result["held_out_metrics"]
+    assert "balanced_accuracy" in result["held_out_metrics"]
+    assert "brier_score" in result["held_out_metrics"]
+    assert "majority_class_accuracy" in result["baseline_metrics"]
+
+
+def test_sampling_strategy_balanced_option(tmp_path):
+    """Pipeline accepts sampling_strategy='balanced' without error."""
+    from scripts.settlement_datasets.run_calibration_pipeline import run_pipeline
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+target_usable_settlements: 2
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+datasets:
+  - name: swegym_openhands
+    source_uri: local-fixture
+    adapter: swegym_openhands
+    split: train
+    input_path: tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl
+    max_rows: 10
+    priority: 1
+    streaming: false
+""",
+        encoding="utf-8",
+    )
+
+    result = run_pipeline(
+        manifest_path=str(manifest),
+        run_id="balanced-test",
+        output_run_dir=tmp_path / "run",
+        target_usable_settlements=2,
+        min_confidence=0.65,
+        provider="sklearn",
+        sampling_strategy="balanced",
+    )
+
+    model_eval = result["model_evaluation"]
+    if "held_out_evaluation" in model_eval:
+        assert model_eval["held_out_evaluation"]["sampling_strategy"] == "balanced"
+
+
+def test_min_datasets_processes_multiple_sources(tmp_path):
+    """With min_datasets=2, pipeline must process at least 2 datasets
+    even if target is reached from the first."""
+    from scripts.settlement_datasets.run_calibration_pipeline import run_pipeline
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+target_usable_settlements: 1
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+datasets:
+  - name: swegym_openhands
+    source_uri: local-fixture
+    adapter: swegym_openhands
+    split: train
+    input_path: tests/fixtures/settlement_datasets/swegym_openhands/sample.jsonl
+    max_rows: 10
+    priority: 1
+    streaming: false
+  - name: nebius_swe_agent
+    source_uri: local-fixture
+    adapter: nebius_swe_agent
+    split: train
+    input_path: tests/fixtures/settlement_datasets/nebius_swe_agent/sample.jsonl
+    max_rows: 10
+    priority: 2
+    streaming: false
+""",
+        encoding="utf-8",
+    )
+
+    result = run_pipeline(
+        manifest_path=str(manifest),
+        run_id="min-ds-test",
+        output_run_dir=tmp_path / "run",
+        target_usable_settlements=1,
+        min_confidence=0.65,
+        provider="disabled",
+        min_datasets=2,
+    )
+
+    # Both datasets must appear in dataset_counts
+    assert "swegym_openhands" in result["dataset_counts"]
+    assert "nebius_swe_agent" in result["dataset_counts"]
+    # Both must have been scanned
+    assert result["dataset_counts"]["nebius_swe_agent"]["scanned"] > 0

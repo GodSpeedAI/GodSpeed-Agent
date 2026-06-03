@@ -84,9 +84,20 @@ def load_calibration_manifest(path: str | Path) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def should_stop_for_target(state: CalibrationRunState) -> bool:
-    """Return True when the usable-settlement target has been reached."""
-    return state.usable_settlements >= state.target_usable_settlements
+def should_stop_for_target(
+    state: CalibrationRunState,
+    datasets_processed: int = 0,
+    min_datasets: int = 0,
+) -> bool:
+    """Return True when the usable-settlement target has been reached.
+
+    If ``min_datasets > 0``, the target stop is deferred until at least
+    that many datasets have been fully processed.
+    """
+    if state.usable_settlements >= state.target_usable_settlements:
+        if min_datasets <= 0 or datasets_processed >= min_datasets:
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +181,174 @@ def external_record_to_model_calibration(record: dict[str, Any]) -> dict[str, An
 
 
 # ---------------------------------------------------------------------------
+# Held-out sklearn evaluation
+# ---------------------------------------------------------------------------
+
+
+def _evaluate_sklearn_held_out(
+    cal_frame: "pd.DataFrame",
+    leakage_audit: dict[str, Any],
+    sampling_strategy: str,
+) -> dict[str, Any]:
+    """Evaluate a LogisticRegression model on a held-out test split.
+
+    All sklearn imports are performed lazily so the module loads without
+    sklearn installed.  Returns a dict with held-out metrics, baseline
+    metrics, and comparison flags.
+    """
+    if leakage_audit.get("leakage_detected"):
+        return {
+            "sklearn_metrics_valid": False,
+            "sklearn_invalid_reason": (
+                f"Label leakage detected in features: "
+                f"{leakage_audit['leaked_features']}. "
+                f"sklearn predictions are not meaningful."
+            ),
+        }
+
+    import numpy as np
+    import pandas as pd
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import (
+        average_precision_score,
+        balanced_accuracy_score,
+        brier_score_loss,
+        confusion_matrix,
+        f1_score,
+        roc_auc_score,
+    )
+    from sklearn.model_selection import train_test_split
+
+    label_col = "settlement_success"
+    score_col = "settlement_score"
+    exclude_cols = {label_col, score_col}
+
+    feature_cols_all = [
+        "payment_predicted_total",
+        "payment_actual_total",
+        "payment_error",
+        "horizon_delta",
+        "risk_estimate",
+        "debt_estimate",
+    ]
+    leaked = set(leakage_audit.get("leaked_features", []))
+    feature_cols = [
+        c
+        for c in feature_cols_all
+        if c in cal_frame.columns and c not in exclude_cols and c not in leaked
+    ]
+
+    y = cal_frame[label_col].astype(int)
+    X = cal_frame[feature_cols].astype(float)
+
+    if len(cal_frame) < 20:
+        return {
+            "sklearn_metrics_valid": False,
+            "sklearn_skipped_reason": (
+                f"insufficient_data: {len(cal_frame)} rows, need 20"
+            ),
+        }
+
+    if y.nunique() < 2:
+        return {
+            "sklearn_metrics_valid": False,
+            "sklearn_skipped_reason": (
+                f"single_class_only: found class {int(y.iloc[0])}, need both 0 and 1"
+            ),
+        }
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y,
+    )
+
+    if sampling_strategy == "balanced":
+        train_df = X_train.copy()
+        train_df[label_col] = y_train.values
+        class_counts = y_train.value_counts()
+        minority_class = class_counts.idxmin()
+        minority_size = int(class_counts.min())
+        majority_class = class_counts.idxmax()
+
+        minority_df = train_df[train_df[label_col] == minority_class]
+        majority_df = train_df[train_df[label_col] == majority_class]
+        majority_downsampled = majority_df.sample(
+            n=minority_size,
+            random_state=42,
+        )
+        balanced_train = (
+            pd.concat([minority_df, majority_downsampled])
+            .sample(frac=1, random_state=42)
+            .reset_index(drop=True)
+        )
+        X_train = balanced_train[feature_cols]
+        y_train = balanced_train[label_col].astype(int)
+
+    clf = LogisticRegression(
+        class_weight="balanced",
+        max_iter=200,
+        solver="lbfgs",
+        random_state=42,
+    )
+    clf.fit(X_train, y_train)
+
+    y_pred = clf.predict(X_test)
+    y_prob = clf.predict_proba(X_test)[:, 1]
+
+    both_classes_in_test = y_test.nunique() >= 2
+
+    held_out: dict[str, Any] = {
+        "balanced_accuracy": round(float(balanced_accuracy_score(y_test, y_pred)), 4),
+        "brier_score": round(float(brier_score_loss(y_test, y_prob)), 4),
+        "confusion_matrix": confusion_matrix(y_test, y_pred).tolist(),
+        "f1_score": round(float(f1_score(y_test, y_pred)), 4),
+    }
+    if both_classes_in_test:
+        held_out["roc_auc"] = round(float(roc_auc_score(y_test, y_prob)), 4)
+        held_out["average_precision"] = round(
+            float(average_precision_score(y_test, y_prob)), 4
+        )
+
+    train_success_rate = float(y_train.mean())
+    majority_class = int(y_train.value_counts().idxmax())
+    majority_class_accuracy = round(float((y_test == majority_class).mean()), 4)
+    majority_class_f1 = 0.0
+
+    success_rate_preds = (y_prob >= train_success_rate).astype(int)
+    success_rate_predictor_accuracy = round(
+        float((success_rate_preds == y_test).mean()), 4
+    )
+
+    baseline: dict[str, Any] = {
+        "majority_class_accuracy": majority_class_accuracy,
+        "success_rate_predictor_accuracy": success_rate_predictor_accuracy,
+        "majority_class_f1": majority_class_f1,
+    }
+
+    return {
+        "sklearn_metrics_valid": True,
+        "train_size": int(len(X_train)),
+        "test_size": int(len(X_test)),
+        "train_success_rate": round(train_success_rate, 4),
+        "test_success_rate": round(float(y_test.mean()), 4),
+        "sampling_strategy": sampling_strategy,
+        "class_weight": "balanced",
+        "features_used": feature_cols,
+        "held_out_metrics": held_out,
+        "baseline_metrics": baseline,
+        "sklearn_beats_majority_baseline": bool(
+            held_out["balanced_accuracy"] > majority_class_accuracy
+        ),
+        "sklearn_beats_success_rate_baseline": bool(
+            held_out["balanced_accuracy"] > success_rate_predictor_accuracy
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Pipeline runner
 # ---------------------------------------------------------------------------
 
@@ -184,6 +363,8 @@ def run_pipeline(
     provider: str = "disabled",
     dry_run: bool = False,
     report_dir: str | Path | None = None,
+    sampling_strategy: str = "natural",
+    min_datasets: int = 0,
 ) -> dict[str, Any]:
     """Execute the calibration pipeline from manifest to summary.
 
@@ -211,6 +392,8 @@ def run_pipeline(
             "min_confidence": min_confidence,
             "provider": provider,
             "dry_run": dry_run,
+            "sampling_strategy": sampling_strategy,
+            "min_datasets": min_datasets,
         },
     )
 
@@ -221,8 +404,10 @@ def run_pipeline(
     for d in (raw_dir, normalized_dir, settlements_dir):
         d.mkdir(parents=True, exist_ok=True)
 
+    datasets_processed: int = 0
+
     for source in manifest["datasets"]:
-        if should_stop_for_target(state):
+        if should_stop_for_target(state, datasets_processed, min_datasets):
             break
 
         ds_name = source["name"]
@@ -239,6 +424,7 @@ def run_pipeline(
                 "adapter_errors": 0,
                 "skipped_reason": "dry_run_no_local_input",
             }
+            datasets_processed += 1
             continue
 
         ds_counts: dict[str, int] = {
@@ -255,6 +441,7 @@ def run_pipeline(
             state.adapter_errors += 1
             ds_counts["adapter_errors"] = 1
             state.dataset_counts[ds_name] = ds_counts
+            datasets_processed += 1
             continue
 
         raw_records: list[dict[str, Any]] = []
@@ -275,10 +462,11 @@ def run_pipeline(
             state.adapter_errors += 1
             ds_counts["adapter_errors"] = 1
             state.dataset_counts[ds_name] = ds_counts
+            datasets_processed += 1
             continue
 
         for raw in row_iter:
-            if should_stop_for_target(state):
+            if should_stop_for_target(state, datasets_processed, min_datasets):
                 break
 
             state.scanned += 1
@@ -328,6 +516,7 @@ def run_pipeline(
             )
 
         state.dataset_counts[ds_name] = ds_counts
+        datasets_processed += 1
 
     # ------------------------------------------------------------------
     # Calibration frame export
@@ -409,12 +598,23 @@ def run_pipeline(
             leakage_audit["leakage_detected"] = True
     model_evaluation["leakage_audit"] = leakage_audit
 
+    # ------------------------------------------------------------------
+    # Held-out sklearn evaluation
+    # ------------------------------------------------------------------
     if provider == "sklearn" and len(cal_frame) >= 10:
+        held_out_result = _evaluate_sklearn_held_out(
+            cal_frame,
+            leakage_audit,
+            sampling_strategy,
+        )
+        model_evaluation["sklearn_held_out_evaluation"] = held_out_result
+
+        # Keep the existing SklearnPredictiveModelAdapter as a secondary
+        # candidate prediction evaluation.
         try:
             from godspeed_nav.ml import SklearnPredictiveModelAdapter
 
             sklearn_adapter = SklearnPredictiveModelAdapter()
-            # Use calibration records as history for a self-evaluation
             preds = sklearn_adapter.predict_affordances(
                 settlement_history=calibration_records,
                 candidates=[
@@ -427,17 +627,7 @@ def run_pipeline(
                 ],
                 payment_estimates={"eval_candidate": {"payment_burden": 1.0}},
             )
-            model_evaluation["sklearn_evaluation"] = preds
-
-            if leakage_audit["leakage_detected"]:
-                model_evaluation["sklearn_metrics_valid"] = False
-                model_evaluation["sklearn_invalid_reason"] = (
-                    f"Label leakage detected in features: "
-                    f"{leakage_audit['leaked_features']}. "
-                    f"sklearn predictions are not meaningful."
-                )
-            else:
-                model_evaluation["sklearn_metrics_valid"] = True
+            model_evaluation["sklearn_candidate_prediction"] = preds
         except RuntimeError as exc:
             model_evaluation["sklearn_extra_required"] = str(exc)
     elif provider == "sklearn":
@@ -462,6 +652,8 @@ def run_pipeline(
         "target_usable_settlements": target_usable_settlements,
         "min_confidence": min_confidence,
         "provider": provider,
+        "sampling_strategy": sampling_strategy,
+        "min_datasets": min_datasets,
         "scanned": state.scanned,
         "normalized": state.normalized,
         "usable_settlements": state.usable_settlements,
@@ -470,6 +662,7 @@ def run_pipeline(
         "dataset_counts": state.dataset_counts,
         "success_count": state.success_count,
         "failure_count": state.failure_count,
+        "datasets_processed": datasets_processed,
         "calibration_frame_path": str(cal_frame_path),
         "model_evaluation": model_evaluation,
     }
@@ -501,8 +694,8 @@ def run_pipeline(
     me = model_evaluation
     if me.get("provider") == "disabled":
         model_eval_summary = "- Provider: disabled (deterministic only)\n"
-    elif me.get("sklearn_evaluation"):
-        model_eval_summary = f"- Provider: sklearn\n- Evaluation: {json.dumps(me['sklearn_evaluation'])}\n"
+    elif me.get("sklearn_held_out_evaluation"):
+        model_eval_summary = "- Provider: sklearn\n- Held-out evaluation available\n"
     elif me.get("sklearn_extra_required"):
         model_eval_summary = f"- Provider: sklearn (not installed)\n- Note: {me['sklearn_extra_required']}\n"
     elif me.get("sklearn_skipped_reason"):
@@ -511,6 +704,68 @@ def run_pipeline(
         )
     else:
         model_eval_summary = f"- Provider: {me.get('provider', 'unknown')}\n"
+
+    # Held-out metrics report section
+    held_out_section = ""
+    h_eval = me.get("sklearn_held_out_evaluation")
+    if h_eval:
+        held_out_section = "## Held-Out Evaluation\n\n"
+        if not h_eval.get("sklearn_metrics_valid"):
+            reason = h_eval.get(
+                "sklearn_invalid_reason",
+                h_eval.get("sklearn_skipped_reason", "unknown"),
+            )
+            held_out_section += f"- **Status:** invalid\n- **Reason:** {reason}\n"
+        else:
+            held_out_section += (
+                f"- **Train size:** {h_eval['train_size']}\n"
+                f"- **Test size:** {h_eval['test_size']}\n"
+                f"- **Train success rate:** {h_eval['train_success_rate']}\n"
+                f"- **Test success rate:** {h_eval['test_success_rate']}\n"
+                f"- **Sampling strategy:** {h_eval['sampling_strategy']}\n"
+                f"- **Class weight:** {h_eval['class_weight']}\n"
+                f"- **Features used:** {', '.join(h_eval['features_used'])}\n\n"
+                "### Held-Out Metrics\n\n"
+            )
+            hm = h_eval["held_out_metrics"]
+            for metric_name in (
+                "roc_auc",
+                "average_precision",
+                "balanced_accuracy",
+                "brier_score",
+                "f1_score",
+            ):
+                if metric_name in hm:
+                    held_out_section += f"- **{metric_name}:** {hm[metric_name]}\n"
+            if "confusion_matrix" in hm:
+                held_out_section += (
+                    f"- **confusion_matrix:** {hm['confusion_matrix']}\n"
+                )
+
+            held_out_section += "\n### Baseline Metrics\n\n"
+            bm = h_eval["baseline_metrics"]
+            for bname, bval in bm.items():
+                held_out_section += f"- **{bname}:** {bval}\n"
+
+            held_out_section += "\n### Baseline Comparison\n\n"
+            held_out_section += (
+                f"- **sklearn_beats_majority_baseline:**"
+                f" {h_eval['sklearn_beats_majority_baseline']}\n"
+                f"- **sklearn_beats_success_rate_baseline:**"
+                f" {h_eval['sklearn_beats_success_rate_baseline']}\n"
+            )
+
+        # Leakage audit result
+        held_out_section += (
+            "\n### Leakage Audit\n\n"
+            f"- **Leakage detected:** {leakage_audit['leakage_detected']}\n"
+        )
+        if leakage_audit["leaked_features"]:
+            held_out_section += (
+                f"- **Leaked features:**"
+                f" {', '.join(leakage_audit['leaked_features'])}\n"
+            )
+        held_out_section += "\n"
 
     report_lines = [
         f"# Calibration Run Report: {run_id}",
@@ -539,6 +794,9 @@ def run_pipeline(
             f"- usable settlements: {state.usable_settlements}",
             f"- Rejected records: {state.rejected}",
             f"- Adapter errors: {state.adapter_errors}",
+            f"- Datasets processed: {datasets_processed}",
+            f"- Sampling strategy: {sampling_strategy}",
+            f"- Min datasets: {min_datasets}",
             "",
             "## Class Balance",
             "",
@@ -551,6 +809,14 @@ def run_pipeline(
             "## Model Evaluation",
             "",
             model_eval_summary,
+        ]
+    )
+
+    if held_out_section:
+        report_lines.append(held_out_section)
+
+    report_lines.extend(
+        [
             "## Proof Classification",
             "",
             "external-proxy-calibration",
@@ -637,6 +903,18 @@ def main() -> None:
         action="store_true",
         help="Process fixtures only, do not contact Hugging Face",
     )
+    parser.add_argument(
+        "--sampling-strategy",
+        default="natural",
+        choices=["natural", "balanced"],
+        help="Sampling strategy for sklearn training data",
+    )
+    parser.add_argument(
+        "--min-datasets",
+        type=int,
+        default=0,
+        help="Minimum number of datasets to process before stopping for target",
+    )
 
     args = parser.parse_args()
 
@@ -659,6 +937,8 @@ def main() -> None:
         min_confidence=args.min_confidence,
         provider=args.provider,
         dry_run=args.dry_run,
+        sampling_strategy=args.sampling_strategy,
+        min_datasets=args.min_datasets,
     )
 
     # Print summary to stdout for CLI consumers
