@@ -1,0 +1,68 @@
+{
+  "calibration_rows": 1943,
+  "deterministic_baseline_success_rate": 0.1498,
+  "failure_class_count": 1652,
+  "leakage_audit": {
+    "feature_correlations": {
+      "debt_estimate": 0.3406,
+      "horizon_delta": 0.1293,
+      "payment_actual_total": 0.0731,
+      "payment_error": 0.0589,
+      "payment_predicted_total": 0.086,
+      "risk_estimate": 0.0421
+    },
+    "leakage_detected": false,
+    "leaked_features": []
+  },
+  "provider": "sklearn",
+  "sklearn_candidate_prediction": [
+    {
+      "candidate_id": "eval_candidate",
+      "predicted_horizon_delta": 0.1631,
+      "rationale": "sklearn_logistic_regression",
+      "success_probability": 0.233
+    }
+  ],
+  "sklearn_held_out_evaluation": {
+    "baseline_metrics": {
+      "majority_class_accuracy": 0.8509,
+      "majority_class_f1": 0.0,
+      "success_rate_predictor_accuracy": 0.1799
+    },
+    "class_weight": "balanced",
+    "features_used": [
+      "payment_predicted_total",
+      "payment_actual_total",
+      "payment_error",
+      "horizon_delta",
+      "risk_estimate",
+      "debt_estimate"
+    ],
+    "held_out_metrics": {
+      "average_precision": 0.4402,
+      "balanced_accuracy": 0.7015,
+      "brier_score": 0.1977,
+      "confusion_matrix": [
+        [
+          219,
+          112
+        ],
+        [
+          15,
+          43
+        ]
+      ],
+      "f1_score": 0.4038,
+      "roc_auc": 0.7481
+    },
+    "sampling_strategy": "natural",
+    "sklearn_beats_majority_baseline": false,
+    "sklearn_beats_success_rate_baseline": true,
+    "sklearn_metrics_valid": true,
+    "test_size": 389,
+    "test_success_rate": 0.1491,
+    "train_size": 1554,
+    "train_success_rate": 0.1499
+  },
+  "success_class_count": 291
+}
