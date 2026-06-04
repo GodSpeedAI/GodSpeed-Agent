@@ -300,11 +300,17 @@ def _evaluate_sklearn_held_out(
 
     both_classes_in_test = y_test.nunique() >= 2
 
+    # sklearn metrics (all three families)
+    sklearn_raw_accuracy = round(float((y_pred == y_test).mean()), 4)
+    sklearn_balanced_accuracy = round(float(balanced_accuracy_score(y_test, y_pred)), 4)
+    sklearn_f1 = round(float(f1_score(y_test, y_pred)), 4)
+
     held_out: dict[str, Any] = {
-        "balanced_accuracy": round(float(balanced_accuracy_score(y_test, y_pred)), 4),
+        "raw_accuracy": sklearn_raw_accuracy,
+        "balanced_accuracy": sklearn_balanced_accuracy,
+        "f1_score": sklearn_f1,
         "brier_score": round(float(brier_score_loss(y_test, y_prob)), 4),
         "confusion_matrix": confusion_matrix(y_test, y_pred).tolist(),
-        "f1_score": round(float(f1_score(y_test, y_pred)), 4),
     }
     if both_classes_in_test:
         held_out["roc_auc"] = round(float(roc_auc_score(y_test, y_prob)), 4)
@@ -312,20 +318,33 @@ def _evaluate_sklearn_held_out(
             float(average_precision_score(y_test, y_prob)), 4
         )
 
+    # Baseline predictors (matched metric families)
     train_success_rate = float(y_train.mean())
     majority_class = int(y_train.value_counts().idxmax())
-    majority_class_accuracy = round(float((y_test == majority_class).mean()), 4)
-    majority_class_f1 = 0.0
 
-    success_rate_preds = (y_prob >= train_success_rate).astype(int)
-    success_rate_predictor_accuracy = round(
-        float((success_rate_preds == y_test).mean()), 4
+    # Majority-class baseline: always predict the majority class
+    majority_preds = np.full(len(y_test), majority_class)
+    majority_raw_accuracy = round(float((majority_preds == y_test).mean()), 4)
+    majority_balanced_accuracy = round(
+        float(balanced_accuracy_score(y_test, majority_preds)), 4
     )
+    majority_f1 = round(float(f1_score(y_test, majority_preds, zero_division=0.0)), 4)
+
+    # Success-rate baseline: predict success when probability >= training rate
+    success_rate_preds = (y_prob >= train_success_rate).astype(int)
+    sr_raw_accuracy = round(float((success_rate_preds == y_test).mean()), 4)
+    sr_balanced_accuracy = round(
+        float(balanced_accuracy_score(y_test, success_rate_preds)), 4
+    )
+    sr_f1 = round(float(f1_score(y_test, success_rate_preds, zero_division=0.0)), 4)
 
     baseline: dict[str, Any] = {
-        "majority_class_accuracy": majority_class_accuracy,
-        "success_rate_predictor_accuracy": success_rate_predictor_accuracy,
-        "majority_class_f1": majority_class_f1,
+        "majority_class_raw_accuracy": majority_raw_accuracy,
+        "majority_class_balanced_accuracy": majority_balanced_accuracy,
+        "majority_class_f1": majority_f1,
+        "success_rate_raw_accuracy": sr_raw_accuracy,
+        "success_rate_balanced_accuracy": sr_balanced_accuracy,
+        "success_rate_f1": sr_f1,
     }
 
     return {
@@ -339,12 +358,17 @@ def _evaluate_sklearn_held_out(
         "features_used": feature_cols,
         "held_out_metrics": held_out,
         "baseline_metrics": baseline,
-        "sklearn_beats_majority_baseline": bool(
-            held_out["balanced_accuracy"] > majority_class_accuracy
+        "sklearn_beats_majority_on_balanced_accuracy": bool(
+            sklearn_balanced_accuracy > majority_balanced_accuracy
         ),
-        "sklearn_beats_success_rate_baseline": bool(
-            held_out["balanced_accuracy"] > success_rate_predictor_accuracy
+        "sklearn_beats_majority_on_f1": bool(sklearn_f1 > majority_f1),
+        "sklearn_beats_majority_on_raw_accuracy": bool(
+            sklearn_raw_accuracy > majority_raw_accuracy
         ),
+        "sklearn_beats_success_rate_on_balanced_accuracy": bool(
+            sklearn_balanced_accuracy > sr_balanced_accuracy
+        ),
+        "sklearn_beats_success_rate_on_f1": bool(sklearn_f1 > sr_f1),
     }
 
 
@@ -729,11 +753,12 @@ def run_pipeline(
             )
             hm = h_eval["held_out_metrics"]
             for metric_name in (
+                "raw_accuracy",
+                "balanced_accuracy",
+                "f1_score",
                 "roc_auc",
                 "average_precision",
-                "balanced_accuracy",
                 "brier_score",
-                "f1_score",
             ):
                 if metric_name in hm:
                     held_out_section += f"- **{metric_name}:** {hm[metric_name]}\n"
@@ -742,17 +767,23 @@ def run_pipeline(
                     f"- **confusion_matrix:** {hm['confusion_matrix']}\n"
                 )
 
-            held_out_section += "\n### Baseline Metrics\n\n"
+            held_out_section += "\n### Baseline Metrics (matched families)\n\n"
             bm = h_eval["baseline_metrics"]
             for bname, bval in bm.items():
                 held_out_section += f"- **{bname}:** {bval}\n"
 
-            held_out_section += "\n### Baseline Comparison\n\n"
+            held_out_section += "\n### Matched Baseline Comparison\n\n"
             held_out_section += (
-                f"- **sklearn_beats_majority_baseline:**"
-                f" {h_eval['sklearn_beats_majority_baseline']}\n"
-                f"- **sklearn_beats_success_rate_baseline:**"
-                f" {h_eval['sklearn_beats_success_rate_baseline']}\n"
+                f"- **sklearn raw_accuracy vs majority raw_accuracy:**"
+                f" {h_eval.get('sklearn_beats_majority_on_raw_accuracy', 'N/A')}\n"
+                f"- **sklearn balanced_accuracy vs majority balanced_accuracy:**"
+                f" {h_eval.get('sklearn_beats_majority_on_balanced_accuracy', 'N/A')}\n"
+                f"- **sklearn f1 vs majority f1:**"
+                f" {h_eval.get('sklearn_beats_majority_on_f1', 'N/A')}\n"
+                f"- **sklearn balanced_accuracy vs success_rate balanced_accuracy:**"
+                f" {h_eval.get('sklearn_beats_success_rate_on_balanced_accuracy', 'N/A')}\n"
+                f"- **sklearn f1 vs success_rate f1:**"
+                f" {h_eval.get('sklearn_beats_success_rate_on_f1', 'N/A')}\n"
             )
 
         # Leakage audit result

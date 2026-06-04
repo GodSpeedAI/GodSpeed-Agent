@@ -501,8 +501,20 @@ def test_held_out_evaluation_with_sklearn(tmp_path):
     assert result["test_size"] > 0
     assert "roc_auc" in result["held_out_metrics"]
     assert "balanced_accuracy" in result["held_out_metrics"]
+    assert "raw_accuracy" in result["held_out_metrics"]
+    assert "f1_score" in result["held_out_metrics"]
     assert "brier_score" in result["held_out_metrics"]
-    assert "majority_class_accuracy" in result["baseline_metrics"]
+    # Matched baseline metrics
+    assert "majority_class_raw_accuracy" in result["baseline_metrics"]
+    assert "majority_class_balanced_accuracy" in result["baseline_metrics"]
+    assert "majority_class_f1" in result["baseline_metrics"]
+    assert "success_rate_raw_accuracy" in result["baseline_metrics"]
+    assert "success_rate_balanced_accuracy" in result["baseline_metrics"]
+    assert "success_rate_f1" in result["baseline_metrics"]
+    # Matched comparison flags
+    assert "sklearn_beats_majority_on_balanced_accuracy" in result
+    assert "sklearn_beats_majority_on_f1" in result
+    assert "sklearn_beats_majority_on_raw_accuracy" in result
 
 
 def test_sampling_strategy_balanced_option(tmp_path):
