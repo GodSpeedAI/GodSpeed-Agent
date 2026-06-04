@@ -8,25 +8,18 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-06-03
-- Summary: Fixed calibration label leakage in `external_record_to_model_calibration`.
-  `horizon_delta` now derives from pre-outcome proxy signals (inverse risk,
-  payment efficiency) instead of `outcome.success`. Added leakage audit that
-  flags features with >= 0.95 correlation to the label. Re-ran as
-  hf-calibration-002: 500 usable settlements, 0 adapter errors, 0 leaked
-  features. sklearn success_probability dropped from 0.8964 (leaked) to
-  0.1687 (honest), vs deterministic baseline 0.106. sklearn is now meaningful
-  but weak due to class imbalance (10.6% success).
-- Settlement evidence: 533 tests pass, hf-calibration-002 exits 0, leakage
-  audit clean, sklearn metrics valid.
+- Summary: hf-calibration-003 with held-out sklearn evaluation and multi-dataset
+  coverage. 1943 usable settlements from 2 datasets (swegym_openhands: 1892,
+  agenttrove: 51). sklearn ROC AUC: 0.7481, balanced accuracy: 0.7015,
+  F1: 0.4038. Beats success-rate baseline (0.1799) but not majority-class
+  baseline (0.8509). class_weight=balanced helped minority detection.
+  Leakage audit clean. 0 adapter errors across both datasets.
+- Settlement evidence: 536 tests pass, hf-calibration-003 exits 0.
 - Proof classification: `external-proxy-calibration`.
-- Known limit: class imbalance (10.6% success) makes sklearn predictions
-  weak. Next move: include agenttrove and nebius_swe_agent datasets for
-  better class balance, or apply stratified sampling.
-- Known limit: class imbalance (10.6% success) and horizon_delta leakage
-  mean sklearn predictions are not yet meaningful for affordance ranking.
-  Next move: fix `external_record_to_model_calibration` to derive
-  `horizon_delta` from payment/error signals rather than the success label,
-  then re-evaluate sklearn.
+- Known limit: class imbalance (15% success) still limits sklearn. nebius_swe_agent
+  not yet exercised (target reached from first 2 datasets). Next move: add richer
+  pre-outcome features (tool diversity, action sequence patterns, error recovery
+  signals) and exercise nebius_swe_agent.
 
 ## Active Desired Direction
 
