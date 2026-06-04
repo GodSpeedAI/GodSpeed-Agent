@@ -1,0 +1,11 @@
+{
+  "run_id": "hf-calibration-004-natural",
+  "manifest_path": "configs/settlement_datasets/calibration_sources.yaml",
+  "created_at": "2026-06-04T03:02:03Z",
+  "target_usable_settlements": 1500,
+  "min_confidence": 0.65,
+  "provider": "sklearn",
+  "dry_run": false,
+  "sampling_strategy": "natural",
+  "min_datasets": 3
+}

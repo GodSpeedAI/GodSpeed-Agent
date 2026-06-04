@@ -1,0 +1,75 @@
+{
+  "calibration_rows": 6497,
+  "deterministic_baseline_success_rate": 0.1984,
+  "failure_class_count": 5208,
+  "leakage_audit": {
+    "feature_correlations": {
+      "debt_estimate": 0.156,
+      "horizon_delta": 0.1855,
+      "payment_actual_total": 0.1575,
+      "payment_error": 0.1491,
+      "payment_predicted_total": 0.1621,
+      "risk_estimate": 0.1824
+    },
+    "leakage_detected": false,
+    "leaked_features": []
+  },
+  "provider": "sklearn",
+  "sklearn_candidate_prediction": [
+    {
+      "candidate_id": "eval_candidate",
+      "predicted_horizon_delta": 0.0211,
+      "rationale": "sklearn_logistic_regression",
+      "success_probability": 0.0301
+    }
+  ],
+  "sklearn_held_out_evaluation": {
+    "baseline_metrics": {
+      "majority_class_balanced_accuracy": 0.5,
+      "majority_class_f1": 0.0,
+      "majority_class_raw_accuracy": 0.8015,
+      "success_rate_balanced_accuracy": 0.7172,
+      "success_rate_f1": 0.4937,
+      "success_rate_raw_accuracy": 0.6892
+    },
+    "class_weight": "balanced",
+    "features_used": [
+      "payment_predicted_total",
+      "payment_actual_total",
+      "payment_error",
+      "horizon_delta",
+      "risk_estimate",
+      "debt_estimate"
+    ],
+    "held_out_metrics": {
+      "average_precision": 0.5854,
+      "balanced_accuracy": 0.7172,
+      "brier_score": 0.1891,
+      "confusion_matrix": [
+        [
+          699,
+          343
+        ],
+        [
+          61,
+          197
+        ]
+      ],
+      "f1_score": 0.4937,
+      "raw_accuracy": 0.6892,
+      "roc_auc": 0.7982
+    },
+    "sampling_strategy": "balanced",
+    "sklearn_beats_majority_on_balanced_accuracy": true,
+    "sklearn_beats_majority_on_f1": true,
+    "sklearn_beats_majority_on_raw_accuracy": false,
+    "sklearn_beats_success_rate_on_balanced_accuracy": false,
+    "sklearn_beats_success_rate_on_f1": false,
+    "sklearn_metrics_valid": true,
+    "test_size": 1300,
+    "test_success_rate": 0.1985,
+    "train_size": 2062,
+    "train_success_rate": 0.5
+  },
+  "success_class_count": 1289
+}
