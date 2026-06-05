@@ -602,3 +602,153 @@ datasets:
     assert "nebius_swe_agent" in result["dataset_counts"]
     # Both must have been scanned
     assert result["dataset_counts"]["nebius_swe_agent"]["scanned"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Richer pre-outcome features
+# ---------------------------------------------------------------------------
+
+
+def test_new_features_are_pre_outcome_and_present():
+    """New features must be derived from payment/affordance_path/metadata
+    only, never from outcome.success or settlement labels."""
+    from scripts.settlement_datasets.run_calibration_pipeline import (
+        external_record_to_model_calibration,
+    )
+
+    # A record with rich affordance_path data
+    record = {
+        "dataset": "swegym_openhands",
+        "task_id": "feat-test-1",
+        "payment": {
+            "turns": 5,
+            "tool_calls": 4,
+            "commands": 5,
+            "elapsed_steps": 12,
+            "error_count": 2,
+        },
+        "outcome": {"success": True, "confidence": 0.9},
+        "affordance_path": {
+            "actions": [
+                {
+                    "turn_index": 0,
+                    "role": "assistant",
+                    "action_type": "message",
+                    "content": "edit file",
+                },
+                {
+                    "turn_index": 2,
+                    "role": "assistant",
+                    "action_type": "message",
+                    "content": "run tests",
+                },
+                {
+                    "turn_index": 4,
+                    "role": "assistant",
+                    "action_type": "message",
+                    "content": "fix error",
+                },
+                {
+                    "turn_index": 6,
+                    "role": "assistant",
+                    "action_type": "message",
+                    "content": "run tests again",
+                },
+                {
+                    "turn_index": 8,
+                    "role": "assistant",
+                    "action_type": "message",
+                    "content": "done",
+                },
+            ],
+            "observations": [
+                {"turn_index": 1, "role": "tool", "content": "file edited"},
+                {"turn_index": 3, "role": "tool", "content": "test failed with error"},
+                {"turn_index": 5, "role": "tool", "content": "fix applied"},
+                {"turn_index": 7, "role": "tool", "content": "all tests passed"},
+            ],
+            "recovery_events": [],
+        },
+        "metadata": {
+            "tool_names": ["execute_bash", "str_replace_editor", "finish"],
+            "settlement_classification": "external-proxy-settlement",
+        },
+    }
+
+    cal = external_record_to_model_calibration(record)
+    mc = cal["model_calibration"]
+
+    # New features must exist
+    assert "tool_diversity_count" in mc
+    assert "error_recovery_ratio" in mc
+    assert "action_observation_ratio" in mc
+    assert "avg_actions_per_step" in mc
+    assert "dataset_id" in mc
+
+    # tool_diversity_count: count of distinct tools
+    assert mc["tool_diversity_count"] == 3  # execute_bash, str_replace_editor, finish
+
+    # error_recovery_ratio: must be between 0 and 1
+    assert 0.0 <= mc["error_recovery_ratio"] <= 1.0
+
+    # action_observation_ratio: actions / observations
+    assert mc["action_observation_ratio"] > 0.0
+
+    # avg_actions_per_step: actions / elapsed_steps
+    assert mc["avg_actions_per_step"] > 0.0
+
+
+def test_new_features_do_not_leak_labels():
+    """New features must not change when outcome.success flips."""
+    from scripts.settlement_datasets.run_calibration_pipeline import (
+        external_record_to_model_calibration,
+    )
+
+    base = {
+        "dataset": "test",
+        "task_id": "leak-check",
+        "payment": {
+            "turns": 3,
+            "tool_calls": 2,
+            "commands": 3,
+            "elapsed_steps": 10,
+            "error_count": 1,
+        },
+        "affordance_path": {
+            "actions": [
+                {"turn_index": 0, "role": "assistant", "content": "a"},
+                {"turn_index": 2, "role": "assistant", "content": "b"},
+            ],
+            "observations": [
+                {"turn_index": 1, "role": "tool", "content": "error in test"},
+                {"turn_index": 3, "role": "tool", "content": "ok"},
+            ],
+            "recovery_events": [],
+        },
+        "metadata": {"tool_names": ["bash", "edit"]},
+    }
+
+    success_rec = {**base, "outcome": {"success": True, "confidence": 0.9}}
+    failure_rec = {**base, "outcome": {"success": False, "confidence": 0.8}}
+
+    s_cal = external_record_to_model_calibration(success_rec)["model_calibration"]
+    f_cal = external_record_to_model_calibration(failure_rec)["model_calibration"]
+
+    # All new features must be identical regardless of outcome
+    for feat in [
+        "tool_diversity_count",
+        "error_recovery_ratio",
+        "action_observation_ratio",
+        "avg_actions_per_step",
+        "horizon_delta",
+        "risk_estimate",
+        "debt_estimate",
+    ]:
+        assert s_cal[feat] == f_cal[feat], (
+            f"Feature {feat} differs between success and failure: "
+            f"{s_cal[feat]} vs {f_cal[feat]}"
+        )
+
+    # Labels must differ
+    assert s_cal["settlement_success"] is True
+    assert f_cal["settlement_success"] is False

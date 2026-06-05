@@ -383,7 +383,9 @@ def build_calibration_frame(
     The resulting DataFrame has columns:
     ``settlement_id``, ``payment_predicted_total``, ``payment_actual_total``,
     ``payment_error``, ``settlement_success``, ``settlement_score``,
-    ``horizon_delta``, ``risk_estimate``, ``debt_estimate``.
+    ``horizon_delta``, ``risk_estimate``, ``debt_estimate``,
+    ``tool_diversity_count``, ``error_recovery_ratio``,
+    ``action_observation_ratio``, ``avg_actions_per_step``, ``dataset_id``.
     """
     rows: list[dict[str, Any]] = []
     for settlement in settlements:
@@ -406,6 +408,13 @@ def build_calibration_frame(
                 "horizon_delta": float(cal.get("horizon_delta", 0)),
                 "risk_estimate": cal.get("risk_estimate"),
                 "debt_estimate": cal.get("debt_estimate"),
+                "tool_diversity_count": int(cal.get("tool_diversity_count", 0)),
+                "error_recovery_ratio": float(cal.get("error_recovery_ratio", 0)),
+                "action_observation_ratio": float(
+                    cal.get("action_observation_ratio", 0)
+                ),
+                "avg_actions_per_step": float(cal.get("avg_actions_per_step", 0)),
+                "dataset_id": int(cal.get("dataset_id", -1)),
             }
         )
 
@@ -421,5 +430,10 @@ def build_calibration_frame(
             "horizon_delta",
             "risk_estimate",
             "debt_estimate",
+            "tool_diversity_count",
+            "error_recovery_ratio",
+            "action_observation_ratio",
+            "avg_actions_per_step",
+            "dataset_id",
         ],
     )

@@ -507,6 +507,11 @@ def test_build_calibration_frame_extracts_settlement_model_fields():
         "horizon_delta",
         "risk_estimate",
         "debt_estimate",
+        "tool_diversity_count",
+        "error_recovery_ratio",
+        "action_observation_ratio",
+        "avg_actions_per_step",
+        "dataset_id",
     ]
     assert frame.iloc[0]["payment_error"] == pytest.approx(0.5)
 

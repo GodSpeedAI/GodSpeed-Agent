@@ -124,13 +124,15 @@ def external_record_to_model_calibration(record: dict[str, Any]) -> dict[str, An
     The output is compatible with
     ``godspeed_nav.cognitive_model.build_calibration_frame``.
 
-    **Label hygiene:** ``horizon_delta`` is derived from pre-outcome proxy
-    signals (payment efficiency, inverse risk) — never from
+    **Label hygiene:** All features are derived from pre-outcome proxy
+    signals (payment, affordance_path, metadata) -- never from
     ``outcome.success``, ``settlement_quality``, or ``settlement_score``.
     ``settlement_success`` and ``settlement_score`` are labels only.
     """
     payment = record.get("payment", {})
     outcome = record.get("outcome", {})
+    affordance_path = record.get("affordance_path", {})
+    metadata = record.get("metadata", {})
 
     elapsed_steps = max(payment.get("elapsed_steps", 1), 1)
     error_count = payment.get("error_count", 0)
@@ -145,17 +147,66 @@ def external_record_to_model_calibration(record: dict[str, Any]) -> dict[str, An
 
     # horizon_delta: proxy for "how much perception-action space opened up"
     # based on payment signals, NOT outcome.success.
-    # High efficiency + low error rate -> higher horizon_delta.
     raw_delta = (inverse_risk * 0.6) + (min(payment_efficiency, 1.0) * 0.4)
     horizon_delta = round(min(max(raw_delta, 0.0), 1.0), 4)
 
     risk_estimate = min(1.0, error_rate)
 
     # Debt estimate: proxy for unresolved payment burden
-    # Higher when many turns but few tool calls (wasted effort)
     debt_estimate = 0.0
     if turns > 0 and tool_calls == 0:
         debt_estimate = min(turns / 20.0, 1.0)
+
+    # --- New pre-outcome features ---
+
+    # 1. tool_diversity_count: distinct tool names used
+    tool_names = metadata.get("tool_names", [])
+    tool_diversity_count = len(set(t for t in tool_names if t))
+
+    # 2. error_recovery_ratio: fraction of error observations followed
+    #    by a non-error observation in a later turn.
+    #    Pre-outcome: uses observation content only, not outcome labels.
+    observations = affordance_path.get("observations", [])
+    error_obs_indices: list[int] = []
+    non_error_obs_indices: list[int] = []
+    error_keywords = ("error", "fail", "traceback", "exception", "assertionerror")
+    for obs in observations:
+        content = obs.get("content", "") or ""
+        idx = obs.get("turn_index", 0)
+        if any(kw in content.lower() for kw in error_keywords):
+            error_obs_indices.append(idx)
+        else:
+            non_error_obs_indices.append(idx)
+
+    if error_obs_indices:
+        recoveries = 0
+        for eidx in error_obs_indices:
+            if any(nidx > eidx for nidx in non_error_obs_indices):
+                recoveries += 1
+        error_recovery_ratio = round(recoveries / len(error_obs_indices), 4)
+    else:
+        error_recovery_ratio = 0.0
+
+    # 3. action_observation_ratio: assistant actions / tool observations
+    actions = affordance_path.get("actions", [])
+    n_actions = len(actions)
+    n_observations = len(observations)
+    if n_observations > 0:
+        action_observation_ratio = round(n_actions / n_observations, 4)
+    else:
+        action_observation_ratio = 0.0
+
+    # 4. avg_actions_per_step: actions / elapsed_steps
+    avg_actions_per_step = round(n_actions / max(elapsed_steps, 1), 4)
+
+    # 5. dataset_id: numeric encoding of source dataset (pre-outcome metadata)
+    dataset_name = record.get("dataset", "unknown")
+    _DATASET_ID_MAP = {
+        "swegym_openhands": 0,
+        "agenttrove": 1,
+        "nebius_swe_agent": 2,
+    }
+    dataset_id = _DATASET_ID_MAP.get(dataset_name, -1)
 
     return {
         "id": f"{record.get('dataset', 'unknown')}:{record.get('task_id', '')}",
@@ -172,10 +223,15 @@ def external_record_to_model_calibration(record: dict[str, Any]) -> dict[str, An
             "horizon_delta": horizon_delta,
             "risk_estimate": risk_estimate,
             "debt_estimate": round(debt_estimate, 4),
+            "tool_diversity_count": tool_diversity_count,
+            "error_recovery_ratio": error_recovery_ratio,
+            "action_observation_ratio": action_observation_ratio,
+            "avg_actions_per_step": avg_actions_per_step,
+            "dataset_id": dataset_id,
         },
         "metadata": {
             "settlement_classification": "external-proxy-settlement",
-            "source_dataset": record.get("dataset", ""),
+            "source_dataset": dataset_name,
         },
     }
 
@@ -230,6 +286,11 @@ def _evaluate_sklearn_held_out(
         "horizon_delta",
         "risk_estimate",
         "debt_estimate",
+        "tool_diversity_count",
+        "error_recovery_ratio",
+        "action_observation_ratio",
+        "avg_actions_per_step",
+        "dataset_id",
     ]
     leaked = set(leakage_audit.get("leaked_features", []))
     feature_cols = [
@@ -606,6 +667,11 @@ def run_pipeline(
             "horizon_delta",
             "risk_estimate",
             "debt_estimate",
+            "tool_diversity_count",
+            "error_recovery_ratio",
+            "action_observation_ratio",
+            "avg_actions_per_step",
+            "dataset_id",
         ]
         available_features = [c for c in feature_cols if c in cal_frame.columns]
         y = cal_frame["settlement_success"].astype(float)
