@@ -1,5 +1,11 @@
 # AGENTS.md
 
+## Normative Language
+
+The key words MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in RFC 2119.
+
+Implementation-defined means the behavior is part of the implementation contract, but this specification does not prescribe one universal policy. Implementations MUST document the selected behavior.
+
 ## Purpose
 
 This repository implements Godspeed Agent Harness, a local-first cybernetic navigation runtime for agents that is evolving toward the fuller Cognitive Operating System described in `tmp/cogos.md` and the computational core described in `tmp/math.md`. The project is developmental rather than arrival-centric: agents should optimize for horizon expansion through the next affordable affordance, not for static outcome completion.

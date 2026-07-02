@@ -1,0 +1,607 @@
+{
+  "project_name": "godspeed-agent-harness",
+  "audit_date": "2026-06-14",
+  "repo_root": "/home/sprime01/projects/godspeed_agent",
+  "summary": {
+    "outcomes_total": 25,
+    "implemented": 18,
+    "partially_implemented": 4,
+    "declared_only": 1,
+    "test_only": 0,
+    "config_only": 1,
+    "contradicted": 0,
+    "unclear": 1
+  },
+  "outcomes": [
+    {
+      "id": "OUT-001",
+      "name": "Explicit Navigation Loop",
+      "statement": "The system converts desired-direction language into an explicit navigation loop: start direction, review horizon, identify affordance, estimate payment, record settlement, update trajectory, review metabolization, schedule repetition.",
+      "actor_user": "Agent / developer invoking the CLI or runtime",
+      "settlement_criterion": "A full cycle through start-direction, review-horizon, record-settlement writes consistent records across desired_directions, horizons, horizon_reviews, affordances, affordance_paths, payments, settlements, trajectories, capabilities, and repetition_schedules ledgers.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "README.md", "symbol_or_section": "Core Workflow", "note": "Lists the 8-step loop"},
+        {"path": "docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md", "symbol_or_section": "Section 7 Developmental State Machine", "note": "Defines 13 states with transition triggers"},
+        {"path": "docs/plans/2026-05-29-enterprise-hardening.md", "symbol_or_section": "Phase 1", "note": "Runtime orchestration foundation"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "NavigationRuntime", "note": "598-line class with start_direction, review_horizon, record_settlement, set_representational_state, review_representational_transition, cognitive_surfaces, review_self_critique, snapshot"},
+        {"path": "godspeed_nav/cli.py", "symbol_or_section": "run", "note": "Dispatches 18 commands to runtime methods"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_runtime_workflow.py", "symbol_or_section": "", "note": "Exercises full runtime cycle"},
+        {"path": "tests/test_cli_hooks_mcp.py", "symbol_or_section": "", "note": "CLI integration tests"}
+      ],
+      "runtime_path": "CLI start-direction -> NavigationRuntime.start_direction (writes desired_directions + horizons) -> CLI review-horizon -> NavigationRuntime.review_horizon (writes payments, affordances, affordance_paths, horizon_reviews) -> CLI record-settlement -> NavigationRuntime.record_settlement (writes settlements, trajectories, capabilities, repetition_schedules)",
+      "gaps": [
+        {"type": "missing runtime enforcement", "description": "No explicit state-machine guard prevents out-of-order invocation (see OUT-021)"}
+      ],
+      "reviewer_notes": "Inspect tests/test_runtime_workflow.py to confirm full-cycle assertions. Run a live start-direction to review-horizon to record-settlement to developmental-report cycle in a clean workspace."
+    },
+    {
+      "id": "OUT-002",
+      "name": "Five-State Affordance Classification",
+      "statement": "The system distinguishes potentials, possibilities, affordances, capabilities, and substrate as separate runtime states with explicit classification criteria.",
+      "actor_user": "Agent reviewing what is visible vs spendable",
+      "settlement_criterion": "Candidate without pathway is potential; unaffordable candidate is possibility; affordable candidate with pathway is affordance; repeated settlement promotes to capability; metabolized capability becomes substrate.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "README.md", "symbol_or_section": "What It Does", "note": "Distinguishes potentials, possibilities, affordances, capabilities, and substrate"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "review_horizon lines 100-178", "note": "Candidates without pathway go to potentials; unaffordable to possibilities; affordable to affordances + affordance_paths"},
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "_update_capability_evidence", "note": "Builds capabilities ledger with lifecycle states"},
+        {"path": "godspeed_nav/metabolization.py", "symbol_or_section": "compute_metabolization", "note": "Evaluates 6 factors; substrate_candidate at score >= 0.75"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_runtime_workflow.py", "symbol_or_section": "", "note": "Exercises candidate classification"}
+      ],
+      "runtime_path": "review_horizon loops candidates, checks pathway presence, estimates payment, checks spendability, classifies and persists to appropriate ledger",
+      "gaps": [],
+      "reviewer_notes": "Classification logic is real and multi-layered."
+    },
+    {
+      "id": "OUT-003",
+      "name": "Affordances as Spendable Paths",
+      "statement": "The system treats affordances as spendable paths with required preconditions, transition sequences, expected settlement, and lifecycle status.",
+      "actor_user": "Agent deciding what to do next",
+      "settlement_criterion": "review_horizon produces affordance_paths records containing required_preconditions, transition_sequence, expected_settlement, lifecycle_status, and pathway_quality.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md", "symbol_or_section": "Milestone 4", "note": "Replace Flat Horizon Candidates With Explicit Affordance Paths"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "review_horizon lines 158-177", "note": "Persists affordance_paths with all specified fields"},
+        {"path": "godspeed_nav/metrics.py", "symbol_or_section": "rank_affordances", "note": "Ranks by expected_horizon_delta * pathway_quality / (burden * (1 + risk))"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "review_horizon builds affordance_path record with preconditions and transition sequence, persists to affordance_paths ledger",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-004",
+      "name": "Durable Local Ledgers with Checksums",
+      "statement": "The system records payment, settlement, trajectory, and developmental memory in local JSONL ledgers with file locking, SHA-256 checksums, event envelopes, sequence numbers, indexes, quarantine, and backup/export.",
+      "actor_user": "Operator / downstream system needing persistent auditable evidence",
+      "settlement_criterion": "append_event writes enveloped records with schema_version, sequence, timestamp, ledger, record, checksum. read_events validates checksums and quarantines corrupt lines.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/references/ledger-reference.md", "symbol_or_section": "Event Envelope", "note": "Documents envelope fields and checksum validation"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "LedgerStore", "note": "404-line class with append, read, append_event, read_events, export_backup, migration_status, query_developmental_memory"},
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "_lock_handle", "note": "Uses fcntl.flock(LOCK_EX) for concurrency safety"},
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "_checksum", "note": "SHA-256 over canonical JSON"},
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "_write_quarantine", "note": "Isolates corrupt records"},
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "_redact", "note": "Redacts secret keys"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_enterprise_storage.py", "symbol_or_section": "", "note": "Storage durability tests"},
+        {"path": "tests/test_domain_storage.py", "symbol_or_section": "", "note": "Domain ledger tests"}
+      ],
+      "runtime_path": "LedgerStore constructor creates ledgers/, indexes/, config/, cache/quarantine/ dirs; append_event locks file, computes sequence, writes enveloped record with checksum, updates index",
+      "gaps": [],
+      "reviewer_notes": "Enterprise-grade persistence with proper locking, checksums, and quarantine."
+    },
+    {
+      "id": "OUT-005",
+      "name": "Opposition-Jump Blocking",
+      "statement": "The system enforces representational path dependency by blocking unearned opposition jumps between representational states unless a metabolized shortcut exists.",
+      "actor_user": "Agent attempting a representational transition",
+      "settlement_criterion": "A transition with phase_gap == 2 (opposition jump) not in metabolized_shortcuts returns status blocked with code blocked_opposition_jump.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md", "symbol_or_section": "Milestone 3", "note": "Implement Representational Transition Policy And Opposition-Jump Blocking"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/metrics.py", "symbol_or_section": "review_representational_transition lines 236-252", "note": "Blocks opposition jumps, recommends adjacent phases"},
+        {"path": "godspeed_nav/policies.py", "symbol_or_section": "enforce_representational_transition_policy", "note": "Blocks when status == blocked"},
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "review_representational_transition", "note": "Persists blocked transitions to representational_transitions ledger"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_computation.py", "symbol_or_section": "", "note": "Transition computation tests"},
+        {"path": "tests/test_policy_gates.py", "symbol_or_section": "", "note": "Policy enforcement tests"}
+      ],
+      "runtime_path": "review_representational_transition computes phase_gap, checks is_opposition_jump, returns blocked if gap == 2 and shortcut not metabolized",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-006",
+      "name": "CLI, Hooks, MCP, and Validation Surfaces",
+      "statement": "The system exposes operator-grade CLI, hooks, MCP tools, and enterprise-readiness validation, all wired to the core runtime.",
+      "actor_user": "Developer / operator / Claude Code integration",
+      "settlement_criterion": "CLI has 18 commands dispatching to real runtime functions. 4 hooks record to ledgers. MCP server exposes 21 tools. validate runs 15+ checks and can fail.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "README.md", "symbol_or_section": "CLI Surfaces", "note": "Lists all CLI commands"},
+        {"path": "docs/references/cli-reference.md", "symbol_or_section": "", "note": "Operator-facing CLI documentation"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/cli.py", "symbol_or_section": "build_parser", "note": "18 subcommands with run() dispatch"},
+        {"path": "hooks/hooks.json", "symbol_or_section": "", "note": "Registers UserPromptSubmit, PreToolUse, PostToolUse, Stop"},
+        {"path": "mcp/cybernetic_nav_server/server.py", "symbol_or_section": "TOOL_NAMES + call_tool", "note": "21 tools dispatching to runtime functions"},
+        {"path": "godspeed_nav/validation.py", "symbol_or_section": "validate_enterprise_readiness", "note": "15+ checks"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_cli_hooks_mcp.py", "symbol_or_section": "", "note": "CLI and hooks integration tests"}
+      ],
+      "runtime_path": "CLI/hook/MCP all resolve workspace_root and storage_root, load config, instantiate NavigationRuntime or LedgerStore, call methods",
+      "gaps": [
+        {"type": "duplicated/conflicting implementation", "description": ".mcp.json references mcp/cybernetic-nav-server/server.py (hyphen) which is a 10-line shim to mcp/cybernetic_nav_server/server.py (underscore). Works but fragile."},
+        {"type": "missing runtime enforcement", "description": "hooks/pre_tool_use.py always returns exit code 0 - observability not enforcement (see OUT-020)"}
+      ],
+      "reviewer_notes": "MCP shim naming inconsistency is low-risk but should be documented or unified."
+    },
+    {
+      "id": "OUT-007",
+      "name": "ML/Predictive Threshold Gating",
+      "statement": "The system keeps predictive and ML extensions dormant until settlement-history thresholds are met (ml_event_threshold: 200, simulation_threshold: 1000), and predictions remain advisory.",
+      "actor_user": "Operator / researcher",
+      "settlement_criterion": "Below 200 settlements, predictive-extensions returns stage deterministic_only with empty ml_predictions.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "HARNESS.md", "symbol_or_section": "computation", "note": "ml_event_threshold: 200, simulation_threshold: 1000, model_provider: heuristic"},
+        {"path": "docs/plans/2026-06-03-cognitive-model-computational-core.md", "symbol_or_section": "Task 7", "note": "Built-in scikit-learn provider behind evidence gate"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/ml.py", "symbol_or_section": "build_predictive_extension_plan lines 295-338", "note": "Stage logic based on settlement_event_count vs thresholds"},
+        {"path": "godspeed_nav/ml.py", "symbol_or_section": "SklearnPredictiveModelAdapter", "note": "Lazy import sklearn, returns empty predictions with note if calibration data insufficient"},
+        {"path": "godspeed_nav/ml.py", "symbol_or_section": "run_predictive_extensions", "note": "Reads settlements from ledger, resolves provider from config"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_computation.py", "symbol_or_section": "", "note": "sklearn provider threshold-gating tests"}
+      ],
+      "runtime_path": "run_predictive_extensions reads settlements count, compares to thresholds, calls provider only if above threshold",
+      "gaps": [],
+      "reviewer_notes": "Threshold gating is genuinely enforced in code, not just documented."
+    },
+    {
+      "id": "OUT-008",
+      "name": "Deterministic Computational Model",
+      "statement": "The system implements a deterministic computational model: representational burden kernel, hard gates, spendability scoring, and advisory controller ranking from the math specification.",
+      "actor_user": "Developer / runtime decision support",
+      "settlement_criterion": "compute_representational_burden returns delta, burden, burden_max using a strictly positive-definite matrix. evaluate_candidate_model blocks on hard gates before scoring.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/2026-06-03-cognitive-model-computational-core.md", "symbol_or_section": "", "note": "8-task implementation plan"},
+        {"path": "README.md", "symbol_or_section": "Computational Model Layer", "note": "Describes planned computational core"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/cognitive_model.py", "symbol_or_section": "compute_representational_burden", "note": "Numpy quadratic form with positive-definite matrix"},
+        {"path": "godspeed_nav/cognitive_model.py", "symbol_or_section": "evaluate_candidate_model", "note": "Hard gates: governance, settlement access, payment capacity, risk ceilings, debt ceilings"},
+        {"path": "godspeed_nav/cognitive_model.py", "symbol_or_section": "rank_candidates_by_controller", "note": "Objective function with controller weights, advisory mode"},
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "review_horizon lines 187-214", "note": "Calls rank_candidates_by_controller in advisory mode"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_computation.py", "symbol_or_section": "", "note": "Cognitive model tests"}
+      ],
+      "runtime_path": "review_horizon maps affordances to candidate shape, calls rank_candidates_by_controller, includes output as cognitive_model with mode advisory",
+      "gaps": [],
+      "reviewer_notes": "README says 'planned computational core' but it IS implemented. Slight documentation lag."
+    },
+    {
+      "id": "OUT-009",
+      "name": "Settlement Calibration Fields",
+      "statement": "The system records model calibration fields on each settlement event for future weight fitting.",
+      "actor_user": "Researcher / developer calibrating the model",
+      "settlement_criterion": "Every settlement record includes a model_calibration object with payment_predicted, payment_actual, settlement_success, settlement_score, horizon_delta, risk_estimate, debt_estimate.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/references/ledger-reference.md", "symbol_or_section": "Model Calibration Fields", "note": "Documents calibration fields and their purpose"},
+        {"path": "docs/plans/2026-06-03-cognitive-model-computational-core.md", "symbol_or_section": "Task 5", "note": "Record calibration fields on settlement"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "record_settlement lines 408-416", "note": "Includes model_calibration object in settlement record"},
+        {"path": "godspeed_nav/cognitive_model.py", "symbol_or_section": "build_calibration_frame lines 375-439", "note": "Extracts to pandas DataFrame with 14 columns"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "record_settlement finds matched affordance, recovers predicted payment from payment ledger, builds model_calibration object",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-010",
+      "name": "Runtime Self-Critique",
+      "statement": "The system runs runtime-owned self-critique that detects dead-end directions, circular motion, and simulation misread as capability evidence.",
+      "actor_user": "Agent / operator reviewing system health",
+      "settlement_criterion": "review_self_critique produces critique findings with codes dead_end_direction, circular_motion, simulation_is_not_capability.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md", "symbol_or_section": "Milestone 9", "note": "Runtime-Owned Self-Critique And Falsification Surfaces"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "review_self_critique lines 277-346", "note": "Detects all three failure modes, persists findings"},
+        {"path": "godspeed_nav/trajectory.py", "symbol_or_section": "detect_circular_motion", "note": "rotation >= math.tau and radius_growth <= 0.1"},
+        {"path": "hooks/stop.py", "symbol_or_section": "main", "note": "Calls review_self_critique on session stop"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "review_self_critique checks active directions with settlement but no horizon growth, checks trajectory for circular motion, checks capabilities for simulation evidence source",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-011",
+      "name": "Enterprise-Readiness Validation",
+      "statement": "The system runs an enterprise-readiness audit that can FAIL when structure drifts.",
+      "actor_user": "Operator / CI pipeline",
+      "settlement_criterion": "validate returns status pass only when all 15+ checks pass.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/2026-05-29-enterprise-hardening.md", "symbol_or_section": "Phase 6", "note": "Enterprise Documentation and Release Gates"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/validation.py", "symbol_or_section": "validate_enterprise_readiness", "note": "15 checks: plugin_structure, config, predictive_extensions, storage, developmental_memory, self_critique, public_cognitive_surfaces, runtime_workflow, mcp, reports, cognitive_os_conformance, hooks, agents, cognitive_runtime_bridge"},
+        {"path": "godspeed_nav/validation.py", "symbol_or_section": "lines 314-318", "note": "status = pass if all checks pass else fail"}
+      ],
+      "test_evidence": [
+        {"path": "tests/test_validation.py", "symbol_or_section": "test_validate_enterprise_readiness_checks_core_surfaces", "note": ""},
+        {"path": "tests/test_validation.py", "symbol_or_section": "test_cli_validate_outputs_pass_status", "note": ""},
+        {"path": "tests/test_validation.py", "symbol_or_section": "test_validate_enterprise_readiness_does_not_mutate_target_storage", "note": ""}
+      ],
+      "runtime_path": "validate loads config, checks required paths, runs predictive extensions, checks storage migration, checks lineage keys, checks self-critique docs, runs full runtime workflow in scratch dir, checks MCP tools, checks reports, checks cognitive-OS conformance",
+      "gaps": [],
+      "reviewer_notes": "Validation is substantive and can genuinely fail."
+    },
+    {
+      "id": "OUT-012",
+      "name": "Local-First, No External API by Default",
+      "statement": "The system operates local-first with no external API calls in the core runtime.",
+      "actor_user": "Operator concerned about data sovereignty",
+      "settlement_criterion": "No HTTP/network imports in godspeed_nav/ core. Storage is local JSONL.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "README.md", "symbol_or_section": "Implementation-defined Behavior", "note": "No external API calls by default"},
+        {"path": "HARNESS.md", "symbol_or_section": "harness", "note": "mode: local"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/", "symbol_or_section": "", "note": "No requests, httpx, urllib, or network calls in core modules"},
+        {"path": "godspeed_nav/ruvector_bridge.py", "symbol_or_section": "search_documents", "note": "Calls local node subprocess, not remote API"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [
+        {"type": "architecture/code mismatch", "description": "scripts/settlement_datasets/hf_stream.py uses datasets library to stream from HuggingFace, but this is in calibration pipeline (scripts/), not core runtime"}
+      ],
+      "reviewer_notes": "Core runtime is genuinely local-first. Calibration pipeline does access HuggingFace but is explicitly optional and documented."
+    },
+    {
+      "id": "OUT-013",
+      "name": "Secret Redaction",
+      "statement": "The system redacts secrets in storage and logs using a known set of sensitive keys.",
+      "actor_user": "Security / operator",
+      "settlement_criterion": "Records containing keys like api_key, password, token, secret have values replaced with [REDACTED].",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "HARNESS.md", "symbol_or_section": "storage", "note": "redact_secrets: true"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "SECRET_KEYS", "note": "Set of 6 sensitive key names"},
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "_redact", "note": "Recursive redaction for dict/list/scalar"},
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "LedgerStore.__init__", "note": "redact_secrets=True by default"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-014",
+      "name": "Absorption Review",
+      "statement": "The system reviews whether an external capability is absorbable by checking pathway, license, enforcing human review, with settlement plan.",
+      "actor_user": "Developer considering absorbing an external capability",
+      "settlement_criterion": "review_absorbability returns absorbability_status of potential, blocked, or absorbable with required_human_review.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "README.md", "symbol_or_section": "Project Learning And Absorption", "note": "Describes potential to absorbable to settled to metabolized progression"},
+        {"path": "docs/runbooks/absorption-ingest.md", "symbol_or_section": "", "note": "Absorption ingest runbook"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/absorption.py", "symbol_or_section": "review_absorbability", "note": "60 lines: checks pathway, license, enforces policy, generates settlement plan and worktree plan"},
+        {"path": "godspeed_nav/policies.py", "symbol_or_section": "enforce_absorption_review", "note": "requires_review when require_human_review_for_absorption: true (default)"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-015",
+      "name": "Positive Disintegration Review",
+      "statement": "The system reviews structures for positive disintegration: dissolution candidates, metabolization candidates, salvageable elements, with human-review gate.",
+      "actor_user": "Developer / operator reviewing what should dissolve vs persist",
+      "settlement_criterion": "review_positive_disintegration separates blocked, dissolution, metabolization candidates and generates salvage plan.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "skills/positive-disintegration/SKILL.md", "symbol_or_section": "", "note": "Skill for positive disintegration review"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/disintegration.py", "symbol_or_section": "review_positive_disintegration", "note": "46 lines: classifies structures, generates salvage plan, enforces human review policy"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-016",
+      "name": "Developmental Memory Lineage Queries",
+      "statement": "The system answers developmental-history lineage questions: paid paths, failed settlements, substrate capabilities, revised critique findings.",
+      "actor_user": "Agent / operator asking how did this system become what it is",
+      "settlement_criterion": "query_developmental_memory returns paid_paths, failed_settlements, substrate_capabilities, revised_critique_findings.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/references/ledger-reference.md", "symbol_or_section": "Operational Reading Rules", "note": "Use query_developmental_memory for lineage answers"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "query_developmental_memory lines 191-222", "note": "Returns four lineage keys from payments, settlements, capabilities, critique_findings"},
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "read_developmental_memory", "note": "Delegates to store"},
+        {"path": "godspeed_nav/validation.py", "symbol_or_section": "developmental_memory check", "note": "Validates lineage keys match expected set"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-017",
+      "name": "Semantic Memory Search via RuVector",
+      "statement": "The system provides local semantic search over structured developmental-memory summaries using RuVector.",
+      "actor_user": "Agent needing recall over prior settlement patterns",
+      "settlement_criterion": "search-developmental-memory returns ranked results from local RuVector index.",
+      "status": "implemented",
+      "confidence": "medium",
+      "declared_evidence": [
+        {"path": "docs/references/cli-reference.md", "symbol_or_section": "search-developmental-memory", "note": "Runs local semantic retrieval over structured summaries"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "search_developmental_memory", "note": "Builds documents from settlements + critique_findings, calls bridge"},
+        {"path": "godspeed_nav/ruvector_bridge.py", "symbol_or_section": "search_documents", "note": "Subprocess to Node, validates availability"},
+        {"path": "tools/ruvector/search_memory.cjs", "symbol_or_section": "", "note": "Node sidecar script"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "search_developmental_memory builds documents, calls search_documents, which runs node subprocess",
+      "gaps": [
+        {"type": "missing integration wiring", "description": "Requires npm install in tools/ruvector/ (not automatic)"},
+        {"type": "missing documentation", "description": "Returns empty results when no documents have summary or finding fields"}
+      ],
+      "reviewer_notes": "Requires Node.js and npm install. Depends on settlement records having summary fields."
+    },
+    {
+      "id": "OUT-018",
+      "name": "Repetition Scheduling",
+      "statement": "The system schedules repetition as runtime behavior after successful but non-metabolized settlement, tracking variation coverage and escalating critique on circular motion.",
+      "actor_user": "Agent managing capability formation",
+      "settlement_criterion": "After record_settlement, a repetition_schedules record is created with status scheduled or satisfied.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md", "symbol_or_section": "Milestone 6", "note": "Make Repetition A Scheduled Runtime Primitive"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "_schedule_repetition lines 555-597", "note": "Creates schedule unless substrate_candidate"},
+        {"path": "godspeed_nav/metabolization.py", "symbol_or_section": "plan_repetition", "note": "Returns schedule with trigger, next_condition, critique_escalation"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "record_settlement calls _schedule_repetition which calls plan_repetition and persists to repetition_schedules",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-019",
+      "name": "Capability Lifecycle Tracking",
+      "statement": "The system tracks capability lifecycle through latent, active, repeated, metabolized, brittle, retired.",
+      "actor_user": "Developer / operator reviewing capability maturity",
+      "settlement_criterion": "reports.py lifecycle_counts includes all 6 states.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md", "symbol_or_section": "Section 4.1.7 Capability", "note": "status field with 6 lifecycle states"},
+        {"path": "docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md", "symbol_or_section": "Milestone 7", "note": "Expand Capability Lifecycle And Identity State"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/schemas.py", "symbol_or_section": "infer_capability_lifecycle", "note": "Assigns lifecycle state from settlement_count, stability, metabolization_score"},
+        {"path": "godspeed_nav/reports.py", "symbol_or_section": "lifecycle_counts lines 47-62", "note": "Counts all 6 lifecycle states"},
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "_update_capability_evidence", "note": "Computes settlement_count, stability, metabolization_score"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [],
+      "reviewer_notes": ""
+    },
+    {
+      "id": "OUT-020",
+      "name": "Hook-Level Blocking of Unaffordable Actions",
+      "statement": "The system blocks unaffordable actions at the hook boundary before tool execution.",
+      "actor_user": "Agent attempting a tool call that exceeds payment capacity",
+      "settlement_criterion": "When pre_tool_use.py determines unaffordable AND blocking enabled, the tool call is prevented.",
+      "status": "partially_implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/references/policy-reference.md", "symbol_or_section": "block_unaffordable_actions", "note": "unaffordable candidates are blocked instead of merely warned"}
+      ],
+      "implementation_evidence": [
+        {"path": "hooks/pre_tool_use.py", "symbol_or_section": "main", "note": "Estimates payment, enforces policy, records to ledger, outputs JSON with decision"},
+        {"path": "godspeed_nav/policies.py", "symbol_or_section": "enforce_payment_policy", "note": "Returns block when block_unaffordable_actions: true"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "pre_tool_use.py reads event, estimates payment, enforces policy, appends to tool_payments, outputs JSON",
+      "gaps": [
+        {"type": "missing runtime enforcement", "description": "hooks/pre_tool_use.py always returns exit code 0 (line 67). Claude Code hooks block by exiting non-zero. This hook is observability-only, not enforcement."},
+        {"type": "architecture/code mismatch", "description": "HARNESS.md has block_unaffordable_actions: false by default, so policy decision is warn not block"}
+      ],
+      "reviewer_notes": "CRITICAL: Determine whether Claude Code interprets JSON output decision:block as blocking signal. If not, the hook cannot enforce payment policy at tool boundary. Runtime review_horizon does reject unaffordable candidates but only when explicitly invoked."
+    },
+    {
+      "id": "OUT-021",
+      "name": "Developmental State-Machine Enforcement",
+      "statement": "The system enforces a 13-state developmental state machine with transition triggers, preventing out-of-order operations.",
+      "actor_user": "Agent / runtime ensuring developmental ordering",
+      "settlement_criterion": "The runtime refuses operations that violate state ordering.",
+      "status": "partially_implemented",
+      "confidence": "medium",
+      "declared_evidence": [
+        {"path": "docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md", "symbol_or_section": "Section 7 Developmental State Machine", "note": "Defines 13 states and transition triggers"},
+        {"path": "docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md", "symbol_or_section": "Section 7", "note": "The runtime is the sole authority for developmental state transitions"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "NavigationRuntime", "note": "Implements all actions but no guard against out-of-order invocation"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [
+        {"type": "missing runtime enforcement", "description": "No state-machine guard: caller can call record_settlement without start_direction or review_horizon"}
+      ],
+      "reviewer_notes": "Verify whether out-of-order operations produce silent data inconsistencies."
+    },
+    {
+      "id": "OUT-022",
+      "name": "Runtime Event Emission",
+      "statement": "The system emits runtime events for observability subscribers.",
+      "actor_user": "Downstream monitoring / dashboard system",
+      "settlement_criterion": "External subscribers can receive notifications when runtime state transitions occur.",
+      "status": "partially_implemented",
+      "confidence": "medium",
+      "declared_evidence": [
+        {"path": "docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md", "symbol_or_section": "Section 10.4 Emitted Runtime Events", "note": "Lists 11 event types"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/storage.py", "symbol_or_section": "append_event", "note": "Ledgers serve as append-only event log but no pub/sub"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [
+        {"type": "missing integration wiring", "description": "No event dispatcher, no subscriber registration, no callback mechanism. Events are recorded but not emitted."}
+      ],
+      "reviewer_notes": "Spec declares 11 event types but there is no observer pattern or event emission system."
+    },
+    {
+      "id": "OUT-023",
+      "name": "Real Settlement History from Actual Navigation",
+      "statement": "The system has been exercised through real agent navigation work, producing actual settlement history.",
+      "actor_user": "Operator / auditor validating the system works in production",
+      "settlement_criterion": "ledgers/ contains real settlement records from actual agent navigation.",
+      "status": "declared_only",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "state/current_state.json", "symbol_or_section": "next_steps", "note": "Use the harness in real agent work, collect real settlement history"},
+        {"path": "CURRENT_STATE.md", "symbol_or_section": "Next Spendable Affordance", "note": "Continue using the harness in real agent work"}
+      ],
+      "implementation_evidence": [
+        {"path": "ledgers/", "symbol_or_section": "", "note": "EMPTY - only README.md exists"},
+        {"path": ".godspeed-harness/", "symbol_or_section": "", "note": "Contains ONLY validation scratch directories - no real developmental memory"},
+        {"path": "state/milestones.jsonl", "symbol_or_section": "", "note": "78 records about building the harness itself, not about using it for navigation"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [
+        {"type": "overclaimed maturity", "description": "The system is extensively tested and self-validating but has zero real-world settlement evidence. All capability claims rest on test evidence, not use evidence."}
+      ],
+      "reviewer_notes": "SINGLE MOST IMPORTANT GAP. Without real settlement history, the developmental loop, metabolization, capability formation, and calibration outcomes are all theoretical."
+    },
+    {
+      "id": "OUT-024",
+      "name": "Block Unaffordable Actions by Default",
+      "statement": "The system blocks unaffordable actions by default, not just warns.",
+      "actor_user": "Agent / operator",
+      "settlement_criterion": "block_unaffordable_actions: true in default config.",
+      "status": "config_only",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/references/policy-reference.md", "symbol_or_section": "block_unaffordable_actions", "note": "Documents the setting and its enforcement"}
+      ],
+      "implementation_evidence": [
+        {"path": "HARNESS.md", "symbol_or_section": "safety line 37", "note": "block_unaffordable_actions: false"},
+        {"path": "godspeed_nav/policies.py", "symbol_or_section": "enforce_payment_policy", "note": "Respects the flag: false means warn, true means block"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [
+        {"type": "architecture/code mismatch", "description": "Default is WARN not BLOCK. policy-reference.md describes blocking without noting the default is warn-only."}
+      ],
+      "reviewer_notes": "Config choice, not contradiction. But could surprise operators who assume unsafe actions are blocked."
+    },
+    {
+      "id": "OUT-025",
+      "name": "Identity State as Metabolized History",
+      "statement": "The system maintains identity state as metabolized history: active directions, capabilities, substrate, lock-in risks.",
+      "actor_user": "Agent / operator understanding what the system has become",
+      "settlement_criterion": "developmental-report and cognitive-surfaces expose identity_state.",
+      "status": "implemented",
+      "confidence": "high",
+      "declared_evidence": [
+        {"path": "docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md", "symbol_or_section": "Section 4.1.8 Identity State", "note": "Fields: active_direction_ids, capability_ids, substrate_ids, identity_markers, lock_in_risks"}
+      ],
+      "implementation_evidence": [
+        {"path": "godspeed_nav/reports.py", "symbol_or_section": "identity_state lines 113-118", "note": "Aggregates active_direction_ids, capability_ids, substrate_ids, lock_in_risks"},
+        {"path": "godspeed_nav/runtime.py", "symbol_or_section": "cognitive_surfaces", "note": "Exposes identity_state from report"}
+      ],
+      "test_evidence": [],
+      "runtime_path": "",
+      "gaps": [],
+      "reviewer_notes": ""
+    }
+  ],
+  "top_risks": [
+    "No real settlement history exists - ledgers/ is empty, .godspeed-harness/ is validation-only. All capability claims are test-evidence-based, not use-evidence-based.",
+    "Hooks are observability-only - pre_tool_use.py always exits 0. Policy enforcement exists inside review_horizon but not at the hook boundary.",
+    "Default policy warns rather than blocks unaffordable actions - HARNESS.md has block_unaffordable_actions: false.",
+    "No explicit developmental state-machine enforcement - operations can be called out of order without guards.",
+    "Calibration evidence is external proxy data - HuggingFace datasets, not local capability proof. Explicitly acknowledged but could be misread."
+  ],
+  "first_files_to_inspect": [
+    "godspeed_nav/runtime.py - core loop, verify state-machine gaps",
+    "hooks/pre_tool_use.py - verify exit-code behavior and blocking capability",
+    "godspeed_nav/policies.py - verify enforcement vs documentation",
+    "godspeed_nav/validation.py - verify substantive vs structural checks",
+    "ledgers/ - confirms empty, no real settlement history",
+    "godspeed_nav/ml.py - verify threshold gating logic",
+    "godspeed_nav/cognitive_model.py - verify math-spec alignment"
+  ],
+  "open_architectural_questions": [
+    "Does Claude Code hook framework interpret decision:block in stdout JSON as blocking, or does it require non-zero exit?",
+    "Should the runtime enforce state-machine ordering, or is conventional ordering sufficient?",
+    "Is JSONL-with-indexes sufficient long-term, or should SQLite evolution be prioritized?",
+    "Should calibration pipeline external proxy data be more prominently separated from local settlement data?",
+    "Is the MCP shim (cybernetic-nav-server to cyberbernetic_nav_server) intentional packaging or accidental?"
+  ],
+  "recommended_next_prompt": "You are an adversarial auditor for the Godspeed Agent Harness. A prior audit produced an outcome-to-code map at .agents/reports/outcome_code_map_godspeed_agent_2026-06-14.md. Focus your audit on these high-risk findings: (1) hooks/pre_tool_use.py always returns exit code 0 - determine whether this means the hook CANNOT block tool execution at the Claude Code level. (2) ledgers/ is empty and .godspeed-harness/ contains only validation scratch - determine whether ANY real settlement history exists. (3) godspeed_nav/runtime.py has no state-machine guards - verify whether out-of-order operations produce silent inconsistencies. (4) HARNESS.md has block_unaffordable_actions: false - verify whether any test or runtime path actually hard-blocks unaffordable actions. (5) scripts/settlement_datasets/ calibration pipeline uses external HuggingFace data - verify whether any local settlement data has ever been used for calibration. For each finding, cite specific file paths, line numbers, and code symbols."
+}

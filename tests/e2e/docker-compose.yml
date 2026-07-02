@@ -1,0 +1,43 @@
+# WP-3 (F-02) e2e: GSA settlements → NATS → ledger bridge → Postgres.
+#
+# Spins up NATS (JetStream) + Postgres with the ledger schema applied. The
+# ledger bridge (`sea_nats_bridge.py`) runs as a subprocess from the e2e test
+# (it needs the ledger's venv with psycopg/nats), not as a compose service, so
+# this compose only provides the two stateful dependencies.
+#
+# Usage:
+#   docker compose -f tests/e2e/docker-compose.yml up -d
+#   python -m pytest tests/e2e/test_settlement_roundtrip.py
+#   docker compose -f tests/e2e/docker-compose.yml down -v
+
+services:
+  nats:
+    image: nats:2.10
+    command: ["-js", "-m", "8222"]   # JetStream + monitoring
+    ports:
+      - "4222:4222"   # client
+      - "8222:8222"   # monitoring
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8222/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: agent_memory
+      POSTGRES_USER: bridge_worker
+      POSTGRES_PASSWORD: bridge_e2e_pw
+    ports:
+      - "5432:5432"
+    # Apply the ledger's schema migrations in numeric order on first init.
+    # The migrations live in the sibling hassos-addon-agent-memory-ledger repo.
+    volumes:
+      - ../../../hassos-addon-agent-memory-ledger/agent_memory_ledger/rootfs/usr/share/agent_memory_ledger/agent_memory:/migrations:ro
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-apply-migrations.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bridge_worker -d agent_memory"]
+      interval: 2s
+      timeout: 2s
+      retries: 30

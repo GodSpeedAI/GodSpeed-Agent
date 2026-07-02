@@ -16,27 +16,110 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import json
 import uuid
+import warnings
+from pathlib import Path
 from typing import Any
 
 NAMESPACE = "agentic_capability_loop"
-DOMAIN_MODEL_HASH = hashlib.sha256(NAMESPACE.encode("utf-8")).hexdigest()
+
+_MANIFEST = (
+    Path(__file__).resolve().parents[2]
+    / "SEA"
+    / "docs"
+    / "specs"
+    / "domains"
+    / "agentic_capability_loop"
+    / "agentic_capability_loop.manifest.json"
+)
+
+
+def _load_hash() -> str:
+    if _MANIFEST.exists():
+        m = json.loads(_MANIFEST.read_text(encoding="utf-8"))
+        h = (m.get("meta") or {}).get("sea_file_hash")
+        if h:
+            return h
+    warnings.warn(
+        "agentic_capability_loop manifest not found or missing sea_file_hash; "
+        "using namespace hash as fallback. Complete Phase 1 to fix this.",
+        stacklevel=2,
+    )
+    return hashlib.sha256(NAMESPACE.encode("utf-8")).hexdigest()
+
+
+DOMAIN_MODEL_HASH: str = _load_hash()
 
 
 def _now_iso() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
-def _event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """Build a canonical event envelope."""
-    payload = {"domain_model_hash": DOMAIN_MODEL_HASH, **payload}
-    return {
+def _idempotency_key(
+    event_type: str,
+    payload: dict[str, Any],
+    *,
+    correlation_id: str | None = None,
+) -> str:
+    """Content-derived dedup key (matches SEA's v1 derivation, F-10).
+
+    A replay (same logical content) carries the same key with a fresh
+    `event_id`, so the ledger can dedup redeliveries. Covers correlation_id +
+    event_type + canonical payload — not event_id/occurred_at.
+    """
+    content = "{cid}|{etype}|{payload}".format(
+        cid=correlation_id or "",
+        etype=event_type,
+        payload=json.dumps(payload, sort_keys=True, separators=(",", ":")),
+    )
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def _provenance(
+    *,
+    domain_model_hash: str | None = None,
+    correlation_id: str | None = None,
+) -> dict[str, Any]:
+    """CEP-0008 SS15 provenance record (F-06): producer (origin) + lineage
+    refs (chain). The v1 schema's provenance allows only `origin` + `chain`."""
+    chain: list[str] = []
+    if domain_model_hash:
+        chain.append(f"domain_model_hash:{domain_model_hash}")
+    if correlation_id:
+        chain.append(f"correlation_id:{correlation_id}")
+    return {"origin": "godspeed-agent", "chain": chain}
+
+
+def _event(
+    event_type: str,
+    payload: dict[str, Any],
+    *,
+    correlation_id: str | None = None,
+) -> dict[str, Any]:
+    """Build a v1-conformant envelope (`sea.agent.event.v1.json`).
+
+    `namespace` rides inside `payload` because v1's `additionalProperties:false`
+    rejects a top-level `namespace`. Family-A callers see no difference.
+    """
+    payload = {"domain_model_hash": DOMAIN_MODEL_HASH, "namespace": NAMESPACE, **payload}
+    event: dict[str, Any] = {
+        "schema_version": "v1",
         "event_id": str(uuid.uuid4()),
+        "source_agent": "godspeed-agent",
         "event_type": event_type,
-        "namespace": NAMESPACE,
         "occurred_at": _now_iso(),
+        "idempotency_key": _idempotency_key(
+            event_type, payload, correlation_id=correlation_id
+        ),
         "payload": payload,
+        "provenance": _provenance(
+            domain_model_hash=DOMAIN_MODEL_HASH, correlation_id=correlation_id
+        ),
     }
+    if correlation_id:
+        event["correlation_id"] = correlation_id
+    return event
 
 
 def handle_evidence_recorded(
@@ -262,16 +345,43 @@ def persist_to_ledger(
     capability_event: dict[str, Any],
     repetition_event: dict[str, Any],
     ledger_store: Any,
+    *,
+    learning_proposal_event: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Persist agentic loop events to real GodSpeed JSONL ledgers."""
+    from agentic_capability_loop.learning_proposals import LearningProposalLedger  # noqa: PLC0415
+
     settlement_envelope = ledger_store.append_event("agentic_settlements", settlement_event)
     capability_envelope = ledger_store.append_event("agentic_capabilities", capability_event)
     repetition_envelope = ledger_store.append_event("agentic_repetitions", repetition_event)
-    return {
+
+    result: dict[str, Any] = {
         "settlement": settlement_envelope,
         "capability": capability_envelope,
         "repetition": repetition_envelope,
+        "learning_proposal": None,
     }
+
+    if learning_proposal_event is not None:
+        proposal_ledger = LearningProposalLedger(ledger_store.root)
+        proposal_ledger.append(learning_proposal_event)
+        result["learning_proposal"] = {"event_id": learning_proposal_event["event_id"]}
+
+    # WP-3 (F-02): best-effort one-way drain of the buffered settlements/
+    # capabilities/repetitions to NATS when configured. The JSONL buffer is the
+    # source of truth; this never raises — a transport failure leaves events
+    # buffered for the next drain.
+    try:
+        from agentic_capability_loop.publisher import drain_persisted_to_nats  # noqa: PLC0415
+
+        result["nats_drain"] = drain_persisted_to_nats(
+            ledger_store,
+            ("agentic_settlements", "agentic_capabilities", "agentic_repetitions"),
+        )
+    except Exception:  # noqa: BLE001 — transport must not break persistence
+        result["nats_drain"] = {}
+
+    return result
 
 
 def detect_coherence_break(
@@ -280,6 +390,8 @@ def detect_coherence_break(
     *,
     missing_phase: str | None = None,
     trigger_event_id: str | None = None,
+    domain_area: str = "agentic_capability_loop",
+    evidence_ref: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Detect a coherence break and emit CoherenceBreakDetected + LearningProposalCreated.
     
@@ -291,6 +403,8 @@ def detect_coherence_break(
         work_request_id: ID of the work request where the break occurred.
         missing_phase: Optional name of the phase that was skipped or failed.
         trigger_event_id: Optional ID of the event that triggered the detection.
+        domain_area: Domain area for the learning proposal.
+        evidence_ref: Optional reference to evidence that triggered the break.
     
     Returns:
         Tuple of (CoherenceBreakDetected event, LearningProposalCreated event).
@@ -316,7 +430,10 @@ def detect_coherence_break(
             "coherence_break_id": coherence_break_id,
             "work_request_id": work_request_id,
             "proposal": f"Investigate and resolve: {reason}",
+            "domain_area": domain_area,
+            "evidence_ref": evidence_ref,
             "priority": "high" if "missing" in reason.lower() else "medium",
+            "status": "open",
             "created_at": _now_iso(),
         },
     )

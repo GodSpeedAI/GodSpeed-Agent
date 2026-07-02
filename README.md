@@ -1,6 +1,25 @@
-# Godspeed Agent Harness
+# Godspeed Agent — Settlement & Navigation Runtime
 
-Godspeed Agent Harness is a local-first Claude Code plugin and Python runtime for horizon-centric cybernetic navigation. It turns desired directions into horizon checks, affordance review, payment estimates, settlement events, developmental memory, and runtime validation.
+Godspeed Agent is a local-first Claude Code plugin and Python **settlement /
+navigation runtime** for horizon-centric cybernetic development. It turns
+desired directions into horizon checks, affordance review, payment estimates,
+settlement events, developmental memory, and runtime validation.
+
+## Boundary
+
+Godspeed Agent is the **settlement / navigation runtime**: it owns **settlement
+classification** (usable / partial / unusable), the **capability lifecycle**
+(metabolized after ≥3 usable settlements), **developmental memory**, and
+**learning proposals**. ("Navigation" is GSA's internal metaphor for that loop.)
+
+It does **not** own routing, hooks, traces, or proof gating — that is
+[SWE_SEED](../SWE_SEED)'s job (the **dev-work harness**). GSA consumes
+`EvidenceRecorded` and emits `SettlementRecorded` / `CapabilityUpdated`; it must
+not duplicate SWE_SEED's hook/trace/learning machinery (F-08).
+
+> Note: earlier versions of this README called GSA a "harness". Per the stack's
+> vocabulary decision (§14), "harness" is SWE_SEED exclusively; GSA is the
+> settlement runtime.
 
 The harness is developmental rather than arrival-centric. In this project, outcome completion is not terminal: a settled outcome becomes substrate and should expose new affordances.
 

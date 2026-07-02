@@ -1,0 +1,11 @@
+{
+  "run_id": "hf-calibration-005-features",
+  "manifest_path": "configs/settlement_datasets/calibration_sources.yaml",
+  "created_at": "2026-06-05T11:15:05Z",
+  "target_usable_settlements": 5000,
+  "min_confidence": 0.65,
+  "provider": "sklearn",
+  "dry_run": false,
+  "sampling_strategy": "natural",
+  "min_datasets": 3
+}
