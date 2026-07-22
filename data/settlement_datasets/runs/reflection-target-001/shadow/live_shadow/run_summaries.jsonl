@@ -1,4 +1,3 @@
-{"domain": "code", "final_outcome": "success", "fires_before_final": 0, "fires_with_recovery_opportunity": 0, "first_shadow_fire_step": null, "policy_activation_recommendations": [], "post_fire_outcome": "unknown", "run_id": "at-1fa6dff6686c", "settlement_quality": "recovered_success", "shadow_fires": [], "task_id": "at-1fa6dff6686c", "total_steps": 14}
-{"domain": "code", "final_outcome": "success", "fires_before_final": 0, "fires_with_recovery_opportunity": 0, "first_shadow_fire_step": null, "policy_activation_recommendations": [], "post_fire_outcome": "unknown", "run_id": "codeforces-00033", "settlement_quality": "recovered_success", "shadow_fires": [], "task_id": "codeforces-00033", "total_steps": 10}
-{"domain": "code", "final_outcome": "success", "fires_before_final": 0, "fires_with_recovery_opportunity": 0, "first_shadow_fire_step": null, "policy_activation_recommendations": [], "post_fire_outcome": "unknown", "run_id": "codeforces-00090", "settlement_quality": "recovered_success", "shadow_fires": [], "task_id": "codeforces-00090", "total_steps": 10}
-{"domain": "code", "final_outcome": "success", "fires_before_final": 0, "fires_with_recovery_opportunity": 0, "first_shadow_fire_step": null, "policy_activation_recommendations": [], "post_fire_outcome": "unknown", "run_id": "codeforces-00091", "settlement_quality": "recovered_success", "shadow_fires": [], "task_id": "codeforces-00091", "total_steps": 18}
+version https://git-lfs.github.com/spec/v1
+oid sha256:6f9f7c295cc9a6dba4914990fdf3f7d0e4fd901968c302c8aecb20f18869ea04
+size 1430
