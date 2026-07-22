@@ -1,0 +1,43 @@
+# Keep build context lean and avoid leaking local state into the image.
+.git/
+.github/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.godspeed-harness/
+.logs/
+.omo/
+.agents/
+.claude/
+.claude-plugin/
+tmp/
+node_modules/
+**/__pycache__/
+**/node_modules/
+
+# Heavy data not needed to run the CLI.
+data/
+evals/
+tests/
+docs/
+ledgers/
+state/
+monitors/
+scripts/
+skills/
+agents/
+policies/
+configs/
+schemas/
+agentic_capability_loop/
+hassos-addon-agent-memory-ledger/
+tools/ruvector/node_modules/
+
+# Binaries / PDFs.
+*.pdf
+*.sqlite
+*:Zone.Identifier
+
+# Local artifacts.
+dist/
+*.egg-info/

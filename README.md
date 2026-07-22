@@ -63,6 +63,54 @@ The target-state contract lives in `docs/plans/specs/2026-05-30-cognitive-operat
 - `docs/` contains plans, runbooks, and framework understanding notes.
 - `tests/` contains the executable contract for CLI behavior, docs alignment, runtime workflow, policies, storage, and reports.
 
+## Installation
+
+The package builds to a wheel and sdist (`[build-system]` = hatchling) and can
+be used four ways, from most to least portable.
+
+### Global CLI (`uv tool install`)
+
+Installs `godspeed-nav` onto PATH with its own isolated environment, no clone
+needed once you have the wheel:
+
+```bash
+uv tool install godspeed-agent-harness        # from PyPI, once published
+# or from a local build:
+uv build && uv tool install dist/godspeed_agent_harness-0.1.0-py3-none-any.whl
+godspeed-nav runtime-snapshot
+```
+
+### Container
+
+No local Python/uv toolchain required. Mount your workspace so ledgers land in
+it:
+
+```bash
+docker build -t godspeed-agent .
+docker run --rm -v "$PWD:/work" -w /work godspeed-agent \
+  runtime-snapshot --workspace-root /work --storage-root .godspeed-harness
+```
+
+RuVector semantic search is an optional sidecar (needs Node); it is off by
+default to keep the image small — enable it with
+`docker build --build-arg INSTALL_RUVECTOR=1 .`
+
+### From source (development)
+
+```bash
+uv sync --extra dev
+uv run pytest -q
+```
+
+### Publish to PyPI
+
+The build is already PyPI-ready. Publish with:
+
+```bash
+uv build            # -> dist/*.whl, dist/*.tar.gz
+uv publish          # needs UV_PUBLISH_TOKEN / PyPI credentials
+```
+
 ## Quick Start
 
 Prerequisites:
