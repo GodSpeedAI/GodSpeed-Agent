@@ -1,6 +1,29 @@
 from pathlib import Path
 
+import pytest
+
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.schemas import DomainRuleError
+
+_DERIVED_LEDGERS = (
+    "settlements",
+    "trajectories",
+    "capabilities",
+    "repetition_schedules",
+)
+
+
+def _seed_affordance(runtime: NavigationRuntime, affordance_id: str) -> None:
+    runtime.store.append(
+        "affordances",
+        {
+            "id": affordance_id,
+            "direction_id": "dir-seed",
+            "statement": "seeded executable affordance",
+            "pathway": "seeded",
+            "current_status": "affordance",
+        },
+    )
 
 
 def test_runtime_completes_connected_developmental_cycle(tmp_path: Path):
@@ -98,6 +121,7 @@ def test_runtime_marks_unaffordable_candidates_as_possibilities(tmp_path: Path):
 
 def test_runtime_promotes_repeated_success_into_metabolization_evidence(tmp_path: Path):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "repeatable-loop")
 
     for before_state, after_state in [
         ({"context_a": 0}, {"context_a": 1}),
@@ -280,6 +304,7 @@ def test_runtime_settlement_records_environment_identity_and_future_state_deltas
     tmp_path: Path,
 ):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "identity-loop")
 
     settlement = runtime.record_settlement(
         affordance_id="identity-loop",
@@ -312,6 +337,7 @@ def test_runtime_schedules_repetition_after_successful_non_metabolized_settlemen
     tmp_path: Path,
 ):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "repeat-loop")
 
     runtime.record_settlement(
         affordance_id="repeat-loop",
@@ -336,6 +362,7 @@ def test_runtime_escalates_repetition_schedule_when_circular_motion_repeats(
     tmp_path: Path,
 ):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "repeat-loop")
     runtime.store.append("trajectories", {"new_theta": 0.0, "new_radius": 1.0})
     runtime.store.append("trajectories", {"new_theta": 7.0, "new_radius": 1.01})
 
@@ -423,3 +450,128 @@ def test_record_settlement_persists_cognitive_model_calibration_fields(tmp_path:
     assert calibration["settlement_success"] is True
     assert "payment_predicted" in calibration
     assert "horizon_delta" in calibration
+
+
+# ---------------------------------------------------------------------------
+# Task 1: Settlement requires an executable affordance
+# ---------------------------------------------------------------------------
+
+
+def _snapshot_derived(runtime: NavigationRuntime) -> dict[str, int]:
+    return {ledger: len(runtime.store.read(ledger)) for ledger in _DERIVED_LEDGERS}
+
+
+def test_record_settlement_rejects_unknown_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    before = _snapshot_derived(runtime)
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="does-not-exist",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+    assert _snapshot_derived(runtime) == before
+
+
+def test_record_settlement_rejects_potential_only_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "potentials",
+        {
+            "id": "potential-only",
+            "direction_id": "dir-1",
+            "current_status": "potential",
+            "missing_pathway_reason": "no_pathway",
+        },
+    )
+    before = _snapshot_derived(runtime)
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="potential-only",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+    assert _snapshot_derived(runtime) == before
+
+
+def test_record_settlement_rejects_possibility_only_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "possibilities",
+        {
+            "id": "possibility-only",
+            "direction_id": "dir-1",
+            "current_status": "possibility",
+            "candidate_pathway": "big migration",
+            "unknowns": ["payment_exceeds_capacity"],
+        },
+    )
+    before = _snapshot_derived(runtime)
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="possibility-only",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+    assert _snapshot_derived(runtime) == before
+
+
+def test_record_settlement_rejects_non_executable_status(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "affordances",
+        {
+            "id": "spent-affordance",
+            "direction_id": "dir-1",
+            "current_status": "settled",
+            "pathway": "done",
+        },
+    )
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="spent-affordance",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+
+
+def test_record_settlement_succeeds_for_seeded_executable_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "executable-aff")
+
+    settlement = runtime.record_settlement(
+        affordance_id="executable-aff",
+        before_state={"x": 0},
+        after_state={"x": 1},
+        payment_actual={"time": 1},
+        evidence=["passed"],
+        horizon_delta=1,
+    )
+
+    assert settlement["status"] == "success"
+    assert runtime.snapshot()["counts"]["settlements"] == 1
+    assert runtime.snapshot()["counts"]["capabilities"] == 1

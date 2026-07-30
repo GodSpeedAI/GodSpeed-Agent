@@ -16,7 +16,7 @@ from godspeed_nav.policies import (
     enforce_payment_policy,
     enforce_representational_transition_policy,
 )
-from godspeed_nav.schemas import infer_capability_lifecycle, now_iso
+from godspeed_nav.schemas import DomainRuleError, infer_capability_lifecycle, now_iso
 from godspeed_nav.storage import LedgerStore
 from godspeed_nav.trajectory import detect_circular_motion, update_trajectory
 
@@ -362,6 +362,7 @@ class NavigationRuntime:
         future_affordances_created: list[str] | None = None,
         desired_direction: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        self._require_executable_affordance(affordance_id)
         settlement_result = score_settlement(
             before_state,
             after_state,
@@ -501,6 +502,32 @@ class NavigationRuntime:
             "current_status": "potential",
             "created_at": now_iso(),
         }
+
+    def _require_executable_affordance(self, affordance_id: str) -> dict[str, Any]:
+        """Return the persisted affordance for ``affordance_id``.
+
+        Raises ``DomainRuleError`` (code
+        ``settlement_requires_executable_affordance``) when the identifier is
+        unknown, or resolves to a potential/possibility/non-executable record.
+        Only persisted affordances with ``current_status == 'affordance'`` may
+        settle. This runs before any settlement-derived state is written.
+        """
+        for aff in self.store.read("affordances"):
+            if aff.get("id") == affordance_id:
+                if aff.get("current_status") != "affordance":
+                    raise DomainRuleError(
+                        "settlement_requires_executable_affordance",
+                        f"Affordance '{affordance_id}' is not executable "
+                        f"(status='{aff.get('current_status')}'); settlement "
+                        "requires a persisted executable affordance.",
+                    )
+                return aff
+        raise DomainRuleError(
+            "settlement_requires_executable_affordance",
+            f"Affordance '{affordance_id}' is not a persisted executable "
+            "affordance; settlement cannot proceed for an unknown, potential, "
+            "or possibility identifier.",
+        )
 
     def _latest_trajectory(self) -> dict[str, Any]:
         trajectories = self.store.read("trajectories")

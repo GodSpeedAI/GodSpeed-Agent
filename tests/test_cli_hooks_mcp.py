@@ -14,6 +14,26 @@ def make_workspace(tmp_path: Path) -> Path:
     return workspace_root
 
 
+def seed_affordance_ledger(storage_root: Path, affordance_id: str) -> None:
+    """Persist an executable affordance so record_settlement accepts it."""
+    ledger = storage_root / "ledgers" / "affordances.jsonl"
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    with ledger.open("a", encoding="utf-8") as handle:
+        handle.write(
+            json.dumps(
+                {
+                    "id": affordance_id,
+                    "direction_id": "dir-seed",
+                    "statement": "seeded executable affordance",
+                    "pathway": "seeded",
+                    "current_status": "affordance",
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
+
+
 def run_python(args: list[str], stdin: dict | None = None) -> dict:
     result = subprocess.run(
         [sys.executable, *args],
@@ -214,6 +234,44 @@ def test_cli_search_developmental_memory_returns_ruvector_matches(tmp_path: Path
     assert output["provider"] == "ruvector"
     assert output["result_count"] >= 1
     assert output["results"][0]["record_id"] == "set-1"
+
+
+def test_cli_record_settlement_rejects_non_executable_affordance(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "godspeed_nav.cli",
+            "record-settlement",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--affordance-id",
+            "never-reviewed",
+            "--before",
+            '{"x": 0}',
+            "--after",
+            '{"x": 1}',
+            "--payment",
+            '{"time": 1}',
+            "--evidence",
+            '["none"]',
+            "--horizon-delta",
+            "1",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 2
+    error = json.loads(result.stderr)
+    assert error["code"] == "settlement_requires_executable_affordance"
+    assert "message" in error
 
 
 def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
@@ -627,6 +685,7 @@ def test_user_prompt_hook_records_direction_hypothesis(tmp_path: Path):
 def test_post_tool_hook_records_settlement_event(tmp_path: Path):
     workspace_root = make_workspace(tmp_path)
     storage_root = workspace_root / ".godspeed-harness"
+    seed_affordance_ledger(storage_root, "aff-1")
 
     output = run_python(
         ["hooks/post_tool_use.py"],
@@ -662,6 +721,7 @@ def test_post_tool_hook_records_settlement_event(tmp_path: Path):
 def test_post_tool_hook_surfaces_metabolization_candidate_after_repeated_success(tmp_path: Path):
     workspace_root = make_workspace(tmp_path)
     storage_root = workspace_root / ".godspeed-harness"
+    seed_affordance_ledger(storage_root, "aff-repeat")
 
     final_output = None
     for index, key in enumerate(["hook_a", "hook_b", "hook_c"], start=1):
@@ -687,6 +747,7 @@ def test_post_tool_hook_surfaces_metabolization_candidate_after_repeated_success
 def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
     workspace_root = make_workspace(tmp_path)
     storage_root = workspace_root / ".godspeed-harness"
+    seed_affordance_ledger(storage_root, "stop-loop")
 
     run_python(
         ["hooks/post_tool_use.py"],
@@ -728,6 +789,7 @@ def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_
     workspace_root = make_workspace(tmp_path)
     storage_root = workspace_root / ".godspeed-harness"
     session_id = "sess-123"
+    seed_affordance_ledger(storage_root, "edit-docs")
 
     prompt_output = run_python(
         ["hooks/user_prompt_submit.py"],
@@ -1051,6 +1113,31 @@ def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):
     assert review["next_affordance"]["id"] == "mcp-loop"
     assert settlement["status"] == "success"
     assert settlement["trajectory"]["new_radius"] > 1
+
+
+def test_mcp_record_settlement_propagates_typed_rejection(tmp_path: Path):
+    from godspeed_nav.schemas import DomainRuleError
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        call_tool(
+            "cybernetic_nav.record_settlement",
+            {
+                "workspace_root": str(workspace_root),
+                "storage_root": str(storage_root),
+                "affordance_id": "never-reviewed",
+                "before_state": {"x": 0},
+                "after_state": {"x": 1},
+                "payment_actual": {"time": 1},
+                "evidence": ["none"],
+                "horizon_delta": 1,
+            },
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
 
 
 def test_mcp_wrapper_dispatches_enterprise_validation(tmp_path: Path):

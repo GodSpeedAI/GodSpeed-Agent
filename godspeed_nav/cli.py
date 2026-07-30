@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from typing import Any
 
 from godspeed_nav.absorption import review_absorbability
@@ -16,6 +17,7 @@ from godspeed_nav.metrics import (
 from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.schemas import DomainRuleError
 from godspeed_nav.storage import LedgerStore
 from godspeed_nav.validation import validate_enterprise_readiness
 
@@ -294,7 +296,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    print(json.dumps(run(args), sort_keys=True))
+    try:
+        result = run(args)
+    except DomainRuleError as error:
+        sys.stderr.write(
+            json.dumps({"code": error.code, "message": str(error)}, sort_keys=True)
+            + "\n"
+        )
+        return 2
+    print(json.dumps(result, sort_keys=True))
     return 0
 
 
