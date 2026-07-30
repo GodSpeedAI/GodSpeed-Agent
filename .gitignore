@@ -16,3 +16,4 @@ data/agenttrove/sft/*.jsonl
 policies/generated/*.yaml
 evals/agenttrove/*.jsonl
 .serena/
+.tmp/
