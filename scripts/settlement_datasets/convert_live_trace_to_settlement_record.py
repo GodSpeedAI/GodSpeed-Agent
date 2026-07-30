@@ -25,6 +25,12 @@ from godspeed_nav.trace_capture import (
     detect_low_cost_inspection_after_error,
 )
 
+from scripts.settlement_datasets.swe_seed_trace_reader import (
+    read_swe_seed_hook_events,
+    read_swe_seed_trace_record,
+    to_trace_analysis_record,
+)
+
 ACTION_EVENT_TYPES = {
     "tool_call",
     "command",
@@ -244,13 +250,33 @@ def convert_run(run_dir: Path) -> dict[str, Any]:
     return record
 
 
+def convert_swe_seed_trace(
+    trace_root: Path,
+    trace_path: Path,
+    hook_log_dir: Path | None,
+    output_path: Path,
+) -> None:
+    record = read_swe_seed_trace_record(trace_root, trace_path)
+    hook_events = (
+        read_swe_seed_hook_events(hook_log_dir, record["trace_id"])
+        if hook_log_dir is not None
+        else []
+    )
+    analysis = to_trace_analysis_record(record, hook_events)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(analysis, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert a captured live harness trace into a canonical settlement record"
     )
     parser.add_argument(
         "--run-dir",
-        required=True,
+        default=None,
         help="Path to a live harness trace directory (e.g., data/settlement_datasets/live_harness_traces/<run_id>/)",
     )
     parser.add_argument(
@@ -258,7 +284,39 @@ def main() -> None:
         default=None,
         help="Output path for settlement_record.json (defaults to <run-dir>/settlement_record.json)",
     )
+    parser.add_argument(
+        "--swe-seed-trace-root",
+        default=None,
+        help="Repo root whose .agent-harness/traces/records/ holds an SWE_SEED trace export",
+    )
+    parser.add_argument(
+        "--swe-seed-trace-path",
+        default=None,
+        help="Path to a single SWE_SEED TraceRecord JSON inside the canonical records dir",
+    )
+    parser.add_argument(
+        "--swe-seed-hook-log-dir",
+        default=None,
+        help="Directory of SWE_SEED events-*.jsonl hook logs to correlate with the trace",
+    )
     args = parser.parse_args()
+
+    if args.swe_seed_trace_path:
+        if not args.swe_seed_trace_root or not args.output:
+            parser.error(
+                "--swe-seed-trace-path requires --swe-seed-trace-root and --output"
+            )
+        convert_swe_seed_trace(
+            Path(args.swe_seed_trace_root),
+            Path(args.swe_seed_trace_path),
+            Path(args.swe_seed_hook_log_dir) if args.swe_seed_hook_log_dir else None,
+            Path(args.output),
+        )
+        print(f"Wrote SWE_SEED provisional analysis record -> {args.output}")
+        return
+
+    if not args.run_dir:
+        parser.error("--run-dir is required (or use the SWE_SEED trace flags)")
 
     run_dir = Path(args.run_dir)
     if not run_dir.is_dir():
