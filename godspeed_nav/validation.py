@@ -16,7 +16,6 @@ REQUIRED_PATHS = [
     ".claude-plugin/plugin.json",
     "HARNESS.md",
     "README.md",
-    "hooks/hooks.json",
     ".mcp.json",
     "monitors/monitors.json",
     "evals/evals.json",
@@ -291,7 +290,7 @@ def validate_enterprise_readiness(
             scratch_workspace / "truth-probe"
         )
 
-    checks["hooks"] = _check((workspace / "hooks" / "pre_tool_use.py").exists(), {})
+    checks["distribution_configuration"] = _compute_distribution_configuration(workspace)
 
     checks["agents"] = _check(
         all(

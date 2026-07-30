@@ -1,5 +1,10 @@
 # Guarded Activation Experiment Report
 
+> **Superseded by F-08.** The live trace recorder this experiment used is
+> retired; SWE_SEED owns traces and GodSpeed-Agent reads them through a
+> read-only adapter. Calibration uses explicit synthetic fixtures. Retained as
+> historical provenance only.
+
 ## Scope
 
 - Experiment ID: `reflection-guarded-001`

@@ -1,5 +1,11 @@
 # Live Harness Trace Capture
 
+> **Superseded by F-08.** GodSpeed-Agent no longer owns software hooks or a live
+> trace recorder; SWE_SEED is the proven owner. Synthetic calibration traces
+> live in `scripts/settlement_datasets/synthetic_trace_fixture.py`, and SWE_SEED
+> trace exports are read through `scripts/settlement_datasets/swe_seed_trace_reader.py`.
+> The recorder API below is historical and no longer exists in `godspeed_nav`.
+
 ## Purpose
 
 Live harness trace capture records step-level events from real or local agent runs, preserving the temporal structure needed to evaluate whether policies like `require_reflection_before_continuing_after_second_unresolved_error` could fire before settlement closes.

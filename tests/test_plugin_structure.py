@@ -64,3 +64,18 @@ def test_plugin_components_are_not_nested_inside_manifest_directory():
 
     for name in forbidden:
         assert not (plugin_dir / name).exists()
+
+
+def test_plugin_has_no_host_hook_registration():
+    """SWE_SEED owns software hooks; GodSpeed-Agent registers none."""
+    assert not (ROOT / "hooks").exists(), "hooks/ directory must not exist"
+    assert not (ROOT / "hooks" / "hooks.json").exists()
+
+
+def test_runtime_trace_capture_module_is_absent():
+    """Live trace capture lives in SWE_SEED; the runtime recorder is removed."""
+    assert not (ROOT / "godspeed_nav" / "trace_capture.py").exists()
+    import importlib
+
+    with __import__("pytest").raises(ModuleNotFoundError):
+        importlib.import_module("godspeed_nav.trace_capture")

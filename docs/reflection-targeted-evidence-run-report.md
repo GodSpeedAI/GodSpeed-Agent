@@ -1,5 +1,10 @@
 # Reflection Targeted Evidence Run Report
 
+> **Superseded by F-08.** The live trace capture referenced here is retired;
+> SWE_SEED owns traces and GodSpeed-Agent reads them through a read-only
+> adapter; calibration uses explicit synthetic fixtures. Retained as historical
+> provenance only.
+
 ## Scope
 
 - Run id: `reflection-target-001`

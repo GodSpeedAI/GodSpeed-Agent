@@ -23,7 +23,6 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
         "cognitive_os_conformance",
         "runtime_workflow",
         "agents",
-        "hooks",
         "mcp",
         "reports",
         "cognitive_runtime_bridge",
