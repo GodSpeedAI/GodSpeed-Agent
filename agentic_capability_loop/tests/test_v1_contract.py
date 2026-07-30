@@ -14,14 +14,11 @@ from __future__ import annotations
 
 import copy
 import json
-import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
-from agentic_capability_loop.adapters import (  # noqa: E402
+from agentic_capability_loop.adapters import (
     detect_coherence_break,
     emit_capability_updated,
     emit_execution_evidence_ingested,
@@ -29,8 +26,8 @@ from agentic_capability_loop.adapters import (  # noqa: E402
     handle_evidence_recorded,
     schedule_repetition,
 )
-from godspeed_nav.runtime import NavigationRuntime  # noqa: E402
-from godspeed_nav.schemas import DomainRuleError  # noqa: E402
+from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.schemas import DomainRuleError
 
 _SCHEMA = (
     Path(__file__).resolve().parent

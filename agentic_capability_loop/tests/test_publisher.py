@@ -6,16 +6,13 @@ The drain/watermark logic is tested deterministically with a fake publisher
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
-from agentic_capability_loop.adapters import emit_settlement_recorded  # noqa: E402
-from agentic_capability_loop.publisher import SettlementPublisher  # noqa: E402
-from godspeed_nav.storage import LedgerStore  # noqa: E402
+from agentic_capability_loop.adapters import emit_settlement_recorded
+from agentic_capability_loop.publisher import SettlementPublisher
+from godspeed_nav.storage import LedgerStore
 
 OUTBOX = "agentic_outbound_events"
 
