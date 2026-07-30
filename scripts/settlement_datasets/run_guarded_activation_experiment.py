@@ -26,7 +26,10 @@ from scripts.settlement_datasets.guarded_activation import (
     GuardedActivationExperiment,
     validate_intervention_record,
 )
-from godspeed_nav.trace_capture import read_trace_events, read_run_summary
+from scripts.settlement_datasets.synthetic_trace_fixture import (
+    read_trace_events,
+    read_run_summary,
+)
 
 
 EXPERIMENT_ID = "reflection-guarded-003"

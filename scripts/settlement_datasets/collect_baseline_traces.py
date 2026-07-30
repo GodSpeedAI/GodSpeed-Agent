@@ -1,8 +1,9 @@
-"""Live Trace Baseline Collection Pass.
+"""Synthetic Trace Baseline Collection Pass.
 
-Collects a baseline set of local harness runs with trace capture enabled
-and policy evaluation in shadow-only mode. Each run simulates a realistic
-agent interaction pattern through the actual HarnessTraceCapture API.
+Collects a baseline set of synthetic harness runs as explicit dataset
+fixtures (trace_source: synthetic_fixture) with policy evaluation in
+shadow-only mode. Each run simulates a realistic agent interaction pattern
+through the SyntheticTraceFixture API.
 
 This is instrumentation and observation only.
 No policy is activated. No intervention is enforced.
@@ -21,7 +22,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from godspeed_nav.trace_capture import HarnessTraceCapture
+from scripts.settlement_datasets.synthetic_trace_fixture import SyntheticTraceFixture
 
 
 def _ts(step: int) -> str:
@@ -37,7 +38,7 @@ def _ts(step: int) -> str:
 # coding, debugging, shell, test-running, file-edit, API/tool-use tasks.
 
 
-def run_coding_import_error_same_path(capture: HarnessTraceCapture) -> str:
+def run_coding_import_error_same_path(capture: SyntheticTraceFixture) -> str:
     """Coding task: two distinct import errors, agent retries same approach."""
     capture.record_model_message(
         "I need to implement the user authentication module. Let me start by running the existing tests.",
@@ -85,7 +86,7 @@ def run_coding_import_error_same_path(capture: HarnessTraceCapture) -> str:
     return "failure"
 
 
-def run_debugging_test_failures_with_revision(capture: HarnessTraceCapture) -> str:
+def run_debugging_test_failures_with_revision(capture: SyntheticTraceFixture) -> str:
     """Debugging task: repeated test failures, then strategy revision to inspect config."""
     capture.record_model_message(
         "I need to debug why the payment processing tests are failing. Let me run them first.",
@@ -151,7 +152,7 @@ def run_debugging_test_failures_with_revision(capture: HarnessTraceCapture) -> s
     return "success"
 
 
-def run_shell_permission_denied_then_success(capture: HarnessTraceCapture) -> str:
+def run_shell_permission_denied_then_success(capture: SyntheticTraceFixture) -> str:
     """Shell task: permission denied, then different approach succeeds."""
     capture.record_model_message(
         "I need to deploy the application to the staging server.",
@@ -209,7 +210,7 @@ def run_shell_permission_denied_then_success(capture: HarnessTraceCapture) -> st
     return "success"
 
 
-def run_test_running_flaky_tests(capture: HarnessTraceCapture) -> str:
+def run_test_running_flaky_tests(capture: SyntheticTraceFixture) -> str:
     """Test-running task: flaky tests fail twice, agent retries same command."""
     capture.record_model_message(
         "Running the full integration test suite to verify the release.",
@@ -257,7 +258,7 @@ def run_test_running_flaky_tests(capture: HarnessTraceCapture) -> str:
     return "failure"
 
 
-def run_file_edit_syntax_error_recovery(capture: HarnessTraceCapture) -> str:
+def run_file_edit_syntax_error_recovery(capture: SyntheticTraceFixture) -> str:
     """File-edit task: syntax error, then inspection, then fix."""
     capture.record_model_message(
         "I need to add input validation to the user registration handler.",
@@ -323,7 +324,7 @@ def run_file_edit_syntax_error_recovery(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_api_tool_use_rate_limiting(capture: HarnessTraceCapture) -> str:
+def run_api_tool_use_rate_limiting(capture: SyntheticTraceFixture) -> str:
     """API/tool-use task: rate limiting errors, then backoff strategy."""
     capture.record_model_message(
         "I need to fetch user data from the external API for all 500 users.",
@@ -370,7 +371,7 @@ def run_api_tool_use_rate_limiting(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_coding_type_error_inspection(capture: HarnessTraceCapture) -> str:
+def run_coding_type_error_inspection(capture: SyntheticTraceFixture) -> str:
     """Coding task: type errors, agent inspects before retrying."""
     capture.record_model_message(
         "I need to refactor the data processing pipeline to handle None values.",
@@ -436,7 +437,7 @@ def run_coding_type_error_inspection(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_debugging_missing_dependency(capture: HarnessTraceCapture) -> str:
+def run_debugging_missing_dependency(capture: SyntheticTraceFixture) -> str:
     """Debugging task: missing dependency, agent tries multiple install approaches."""
     capture.record_model_message(
         "The CI build is failing. Let me reproduce the issue locally.",
@@ -490,7 +491,7 @@ def run_debugging_missing_dependency(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_shell_disk_full_error(capture: HarnessTraceCapture) -> str:
+def run_shell_disk_full_error(capture: SyntheticTraceFixture) -> str:
     """Shell task: disk full errors, agent cleans up and retries."""
     capture.record_model_message(
         "I need to build the Docker image for the microservice.",
@@ -544,7 +545,7 @@ def run_shell_disk_full_error(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_coding_clean_success(capture: HarnessTraceCapture) -> str:
+def run_coding_clean_success(capture: SyntheticTraceFixture) -> str:
     """Coding task: clean success with no errors."""
     capture.record_model_message(
         "I need to add a health check endpoint to the API server.",
@@ -592,7 +593,7 @@ def run_coding_clean_success(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_test_running_mixed_results(capture: HarnessTraceCapture) -> str:
+def run_test_running_mixed_results(capture: SyntheticTraceFixture) -> str:
     """Test-running task: some pass, some fail, agent investigates."""
     capture.record_model_message(
         "Running the complete test suite before the release.",
@@ -654,7 +655,7 @@ def run_test_running_mixed_results(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_api_tool_use_connection_refused(capture: HarnessTraceCapture) -> str:
+def run_api_tool_use_connection_refused(capture: SyntheticTraceFixture) -> str:
     """API/tool-use task: connection refused, agent checks service status."""
     capture.record_model_message(
         "I need to verify the payment gateway integration is working.",
@@ -710,7 +711,7 @@ def run_api_tool_use_connection_refused(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_coding_duplicate_error_no_recovery(capture: HarnessTraceCapture) -> str:
+def run_coding_duplicate_error_no_recovery(capture: SyntheticTraceFixture) -> str:
     """Coding task: same error repeated, agent gives up."""
     capture.record_model_message(
         "I need to fix the failing unit tests for the calculator module.",
@@ -744,7 +745,7 @@ def run_coding_duplicate_error_no_recovery(capture: HarnessTraceCapture) -> str:
     return "failure"
 
 
-def run_coding_final_turn_only_error(capture: HarnessTraceCapture) -> str:
+def run_coding_final_turn_only_error(capture: SyntheticTraceFixture) -> str:
     """Coding task: success, but last-second error on final turn during cleanup."""
     capture.record_model_message(
         "I need to refactor the calculator module and then clean up.",
@@ -793,7 +794,7 @@ def run_coding_final_turn_only_error(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_debugging_test_failure_with_changed_strategy(capture: HarnessTraceCapture) -> str:
+def run_debugging_test_failure_with_changed_strategy(capture: SyntheticTraceFixture) -> str:
     """Debugging task: test fails, agent revises strategy, second failure occurs under revision."""
     capture.record_model_message(
         "Let me run the database tests.",
@@ -843,7 +844,7 @@ def run_debugging_test_failure_with_changed_strategy(capture: HarnessTraceCaptur
     return "failure"
 
 
-def run_api_tool_error_changed_arguments(capture: HarnessTraceCapture) -> str:
+def run_api_tool_error_changed_arguments(capture: SyntheticTraceFixture) -> str:
     """API task: invalid args fail, model retries with fixed arguments (adaptive recovery)."""
     capture.record_model_message(
         "Let's fetch payment records.",
@@ -898,7 +899,7 @@ def run_api_tool_error_changed_arguments(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_file_edit_error_same_path(capture: HarnessTraceCapture) -> str:
+def run_file_edit_error_same_path(capture: SyntheticTraceFixture) -> str:
     """File edit task: edit syntax error, same non-adaptive retry -> fire!"""
     capture.record_model_message(
         "I need to edit the server file.",
@@ -942,7 +943,7 @@ def run_file_edit_error_same_path(capture: HarnessTraceCapture) -> str:
     return "failure"
 
 
-def run_coding_repeated_error_same_path_3(capture: HarnessTraceCapture) -> str:
+def run_coding_repeated_error_same_path_3(capture: SyntheticTraceFixture) -> str:
     """Coding task: distinct C linking errors, non-adaptive same-path continuation -> fire!"""
     capture.record_model_message(
         "Let's link the binary.",
@@ -982,7 +983,7 @@ def run_coding_repeated_error_same_path_3(capture: HarnessTraceCapture) -> str:
     return "failure"
 
 
-def run_shell_error_diagnostic_recovery(capture: HarnessTraceCapture) -> str:
+def run_shell_error_diagnostic_recovery(capture: SyntheticTraceFixture) -> str:
     """Shell command fails, model runs diagnostic command, then fixes it."""
     capture.record_model_message(
         "Starting the application service.",
@@ -1036,7 +1037,7 @@ def run_shell_error_diagnostic_recovery(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_coding_repeated_error_same_path(capture: HarnessTraceCapture) -> str:
+def run_coding_repeated_error_same_path(capture: SyntheticTraceFixture) -> str:
     """Coding task: repeated compilation error, non-adaptive same-path continuation -> fire!"""
     capture.record_model_message(
         "I need to compile the C module.",
@@ -1076,7 +1077,7 @@ def run_coding_repeated_error_same_path(capture: HarnessTraceCapture) -> str:
     return "failure"
 
 
-def run_coding_clean_success_2(capture: HarnessTraceCapture) -> str:
+def run_coding_clean_success_2(capture: SyntheticTraceFixture) -> str:
     """Coding task: second clean success, zero errors."""
     capture.record_model_message(
         "Let's list the workspace directory structure.",
@@ -1100,7 +1101,7 @@ def run_coding_clean_success_2(capture: HarnessTraceCapture) -> str:
     return "success"
 
 
-def run_debugging_single_error_recovery(capture: HarnessTraceCapture) -> str:
+def run_debugging_single_error_recovery(capture: SyntheticTraceFixture) -> str:
     """Debugging task: single connection refused error, model starts DB and succeeds."""
     capture.record_model_message(
         "I need to run the app DB check.",
@@ -1312,10 +1313,9 @@ def collect_baseline(
         run_id = scenario["run_id"]
         print(f"Collecting: {run_id} ({scenario['task_type']})")
 
-        capture = HarnessTraceCapture(
-            run_id,
-            enabled=True,
-            trace_dir=output_dir,
+        capture = SyntheticTraceFixture(
+            output_dir=Path(output_dir),
+            run_id=run_id,
             run_metadata={
                 "task_id": run_id,
                 "domain": scenario["domain"],

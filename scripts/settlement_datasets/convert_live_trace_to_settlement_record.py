@@ -17,12 +17,13 @@ from scripts.settlement_datasets.adapter_base import (
     write_records_jsonl,
 )
 
-from godspeed_nav.trace_capture import (
+from scripts.settlement_datasets.synthetic_trace_fixture import (
     read_run_summary,
     read_trace_events,
     detect_duplicate_errors,
     detect_same_path_continuation,
     detect_low_cost_inspection_after_error,
+    TRACE_SOURCE,
 )
 
 from scripts.settlement_datasets.swe_seed_trace_reader import (
@@ -183,7 +184,7 @@ def build_metadata(
     )
 
     metadata: dict[str, Any] = {
-        "trace_source": "live_harness_trace",
+        "trace_source": TRACE_SOURCE,
         "error_steps": error_steps,
         "strategy_revision_steps": strategy_revision_steps,
         "test_passed_steps": test_passed_steps,
@@ -233,7 +234,7 @@ def convert_run(run_dir: Path) -> dict[str, Any]:
         "source_uri": f"live_harness_trace://{run_id}",
         "desired_direction": {
             "statement": desired_direction_statement,
-            "source": "live_capture",
+            "source": TRACE_SOURCE,
         },
         "environment": environment,
         "representational_state": make_empty_representational_state(),
