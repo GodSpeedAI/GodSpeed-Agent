@@ -42,16 +42,15 @@ def append_learning_proposal(
 ) -> dict[str, Any]:
     """Validate and append a LearningProposalCreated event to canonical storage.
 
-    Re-delivery of the same ``event_id`` is idempotent: the existing record is
-    returned and no duplicate write occurs.
+    Re-delivery of the same ``event_id`` is idempotent: the dedup scan and
+    append run under one ``flock`` so concurrent re-delivery stores exactly one
+    record and the existing record is returned.
     """
     _validate(event)
-    event_id = event.get("event_id")
-    for existing in query_learning_proposals(store):
-        if existing.get("event_id") == event_id:
-            return existing
-    store.append_event(LEDGER_NAME, event)
-    return event
+    envelope, _appended = store.append_event_if_absent(
+        LEDGER_NAME, event, dedup_field="event_id"
+    )
+    return envelope["record"]
 
 
 def query_learning_proposals(

@@ -469,10 +469,6 @@ class NavigationRuntime:
                     "missing or empty. Software proof alone is not settlement.",
                 )
 
-        for existing in self.store.read("execution_evidence"):
-            if existing.get("evidence_event_id") == event_id:
-                return existing
-
         self._require_executable_affordance(payload["affordance_id"])
 
         record = {
@@ -488,8 +484,12 @@ class NavigationRuntime:
             "source_event_type": event.get("event_type"),
             "created_at": now_iso(),
         }
-        self.store.append_event("execution_evidence", record)
-        return record
+        # Atomic dedup + append under one flock: concurrent re-delivery of the
+        # same event_id stores exactly one provisional record.
+        envelope, _appended = self.store.append_event_if_absent(
+            "execution_evidence", record, dedup_field="evidence_event_id"
+        )
+        return envelope["record"]
 
     def snapshot(self) -> dict[str, Any]:
         ledgers = {

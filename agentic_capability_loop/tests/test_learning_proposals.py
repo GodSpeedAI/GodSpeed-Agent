@@ -105,18 +105,19 @@ def test_append_rejects_missing_required_fields(tmp_path: Path) -> None:
         })
 
 
-def test_canonical_append_maintains_monotonic_sequences_under_concurrency(tmp_path: Path) -> None:
-    store = LedgerStore(str(tmp_path))
-    proposals = [_proposal(work_request_id=f"wr-{i}") for i in range(12)]
+def test_canonical_append_dedupes_same_event_id_under_concurrency(tmp_path: Path) -> None:
+    from concurrent.futures import ThreadPoolExecutor
 
-    def append(proposal):
-        return LedgerStore(store.root).append_event(LEDGER_NAME, proposal)
+    store = LedgerStore(str(tmp_path))
+    proposal = _proposal(work_request_id="wr-dedup")
+
+    def append(_index: int):
+        return append_learning_proposal(LedgerStore(store.root), proposal)
 
     with ThreadPoolExecutor(max_workers=8) as executor:
-        list(executor.map(append, proposals))
+        list(executor.map(append, range(8)))
 
-    sequences = sorted(e["sequence"] for e in store.read_events(LEDGER_NAME))
-    assert sequences == list(range(1, len(proposals) + 1))
+    assert len(query_learning_proposals(store)) == 1
 
 
 def test_canonical_storage_included_in_backup(tmp_path: Path) -> None:

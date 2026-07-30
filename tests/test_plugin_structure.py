@@ -69,7 +69,6 @@ def test_plugin_components_are_not_nested_inside_manifest_directory():
 def test_plugin_has_no_host_hook_registration():
     """SWE_SEED owns software hooks; GodSpeed-Agent registers none."""
     assert not (ROOT / "hooks").exists(), "hooks/ directory must not exist"
-    assert not (ROOT / "hooks" / "hooks.json").exists()
 
 
 def test_runtime_trace_capture_module_is_absent():

@@ -107,15 +107,7 @@ class LedgerStore:
         with path.open("a+", encoding="utf-8") as handle:
             self._lock_handle(handle)
             try:
-                sequence = self._next_event_sequence(handle)
-                envelope = {
-                    "schema_version": 1,
-                    "sequence": sequence,
-                    "timestamp": now_iso(),
-                    "ledger": ledger_name,
-                    "record": payload,
-                }
-                envelope["checksum"] = self._checksum(envelope)
+                envelope = self._build_envelope(handle, ledger_name, payload)
                 handle.seek(0, os.SEEK_END)
                 handle.write(json.dumps(envelope, sort_keys=True) + "\n")
                 handle.flush()
@@ -124,6 +116,79 @@ class LedgerStore:
                 self._unlock_handle(handle)
         self._update_index(ledger_name, envelope)
         return envelope
+
+    def append_event_if_absent(
+        self,
+        ledger_name: str,
+        record: dict[str, Any],
+        *,
+        dedup_field: str,
+    ) -> tuple[dict[str, Any], bool]:
+        """Atomically append ``record`` unless a prior event shares its
+        ``dedup_field`` value. The dedup scan and the append run under the same
+        ``flock`` so concurrent re-delivery of one logical event stores exactly
+        one record. Returns ``(envelope, appended)`` where ``envelope`` is the
+        stored (or pre-existing) event envelope and ``appended`` is False on a
+        dedup hit.
+        """
+        path = self.ledger_path(ledger_name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = self._redact(record) if self.redact_secrets else record
+        key_value = record.get(dedup_field)
+        envelope: dict[str, Any]
+        appended = True
+        with path.open("a+", encoding="utf-8") as handle:
+            self._lock_handle(handle)
+            try:
+                existing = self._find_event_by_field(handle, dedup_field, key_value)
+                if existing is not None:
+                    envelope = existing
+                    appended = False
+                else:
+                    envelope = self._build_envelope(handle, ledger_name, payload)
+                    handle.seek(0, os.SEEK_END)
+                    handle.write(json.dumps(envelope, sort_keys=True) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+            finally:
+                self._unlock_handle(handle)
+        if appended:
+            self._update_index(ledger_name, envelope)
+        return envelope, appended
+
+    def _build_envelope(
+        self, handle: Any, ledger_name: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        sequence = self._next_event_sequence(handle)
+        envelope = {
+            "schema_version": 1,
+            "sequence": sequence,
+            "timestamp": now_iso(),
+            "ledger": ledger_name,
+            "record": payload,
+        }
+        envelope["checksum"] = self._checksum(envelope)
+        return envelope
+
+    def _find_event_by_field(
+        self, handle: Any, field: str, value: Any
+    ) -> dict[str, Any] | None:
+        handle.seek(0)
+        for line in handle.read().splitlines():
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(event, dict) or not self._is_event_envelope(event):
+                continue
+            if event.get("checksum") != self._checksum(event):
+                continue
+            record = event.get("record")
+            if isinstance(record, dict) and record.get(field) == value:
+                return event
+        return None
 
     def read_events(self, ledger_name: str) -> list[dict[str, Any]]:
         path = self.ledger_path(ledger_name)

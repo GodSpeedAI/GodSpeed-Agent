@@ -664,3 +664,38 @@ def test_ingest_execution_evidence_requires_executable_affordance(tmp_path: Path
         )
 
     assert exc_info.value.code == "settlement_requires_executable_affordance"
+
+
+def test_ingest_execution_evidence_rejects_non_executable_statuses(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "potentials",
+        {"id": "pot-only", "current_status": "potential", "missing_pathway_reason": "x"},
+    )
+    runtime.store.append(
+        "possibilities",
+        {"id": "poss-only", "current_status": "possibility", "candidate_pathway": "p", "unknowns": []},
+    )
+
+    for affordance_id in ("pot-only", "poss-only"):
+        with pytest.raises(DomainRuleError) as exc_info:
+            runtime.ingest_execution_evidence(_evidence_event(affordance_id=affordance_id))
+        assert exc_info.value.code == "settlement_requires_executable_affordance"
+
+
+def test_ingest_execution_evidence_concurrent_redelivery_is_idempotent(tmp_path: Path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+    event = _evidence_event(event_id="ev-concurrent")
+
+    def ingest(_index: int) -> dict[str, Any]:
+        return NavigationRuntime(runtime.store.root).ingest_execution_evidence(event)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(ingest, range(8)))
+
+    stored = NavigationRuntime(runtime.store.root).store.read("execution_evidence")
+    assert len(stored) == 1
+    assert all(r["id"] == stored[0]["id"] for r in results)

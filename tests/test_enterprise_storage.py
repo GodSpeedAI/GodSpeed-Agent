@@ -120,6 +120,25 @@ def test_developmental_memory_query_answers_lineage_questions(tmp_path: Path):
     assert lineage["revised_critique_findings"] == [{"id": "crit-1", "revised_by": "aff-2"}]
 
 
+def test_append_event_if_absent_dedupes_under_concurrency(tmp_path: Path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+    record = {"id": "ev-1", "event_id": "ev-1", "payload": "x"}
+
+    def append(_index: int):
+        return LedgerStore(store.root).append_event_if_absent(
+            "execution_evidence", record, dedup_field="event_id"
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(append, range(8)))
+
+    appended_flags = [r[1] for r in results]
+    assert sum(appended_flags) == 1
+    assert len(store.read_events("execution_evidence")) == 1
+
+
 def test_learning_proposals_use_canonical_ledger_store(tmp_path: Path):
     from agentic_capability_loop.adapters import detect_coherence_break
     from agentic_capability_loop.learning_proposals import (
