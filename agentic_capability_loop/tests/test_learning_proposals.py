@@ -187,15 +187,18 @@ def test_migrate_legacy_noop_when_no_legacy_file(tmp_path: Path) -> None:
 
 def test_persist_to_ledger_writes_learning_proposal_canonically(tmp_path: Path) -> None:
     from agentic_capability_loop.adapters import (
+        emit_capability_updated,
         emit_settlement_recorded,
         persist_to_ledger,
         schedule_repetition,
-        update_capability_ledger,
     )
 
     store = LedgerStore(str(tmp_path))
-    settlement = emit_settlement_recorded("wr-persist", "proof-1", "ev-1", "unusable", "no match")
-    capability = update_capability_ledger(settlement, "test-cap", settlement_count=0)
+    settlement = emit_settlement_recorded("wr-persist", "proof-1", "ev-1", "usable", "no match")
+    capability = emit_capability_updated(
+        {"id": "cap-1", "label": "test-cap", "status": "active_evidence", "settlement_count": 0},
+        settlement,
+    )
     repetition = schedule_repetition(capability["payload"]["capability_id"])
     proposal = _proposal(work_request_id="wr-persist")
 
@@ -203,4 +206,5 @@ def test_persist_to_ledger_writes_learning_proposal_canonically(tmp_path: Path) 
         settlement, capability, repetition, store, learning_proposal_event=proposal
     )
     assert result["learning_proposal"]["event_id"] == proposal["event_id"]
+    assert len(result["outbox"]) == 3
     assert len(query_learning_proposals(store)) == 1

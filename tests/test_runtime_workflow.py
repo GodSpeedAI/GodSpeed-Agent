@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -575,3 +576,91 @@ def test_record_settlement_succeeds_for_seeded_executable_affordance(tmp_path: P
     assert settlement["status"] == "success"
     assert runtime.snapshot()["counts"]["settlements"] == 1
     assert runtime.snapshot()["counts"]["capabilities"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Task 2: Execution evidence is provisional and capability-neutral
+# ---------------------------------------------------------------------------
+
+
+def _evidence_event(
+    event_id: str = "ev-1",
+    affordance_id: str = "exec-ev-aff",
+    expected: str = "ok",
+    observed: str = "ok",
+) -> dict[str, Any]:
+    return {
+        "schema_version": "v1",
+        "event_id": event_id,
+        "source_agent": "sea-forge",
+        "event_type": "EvidenceRecorded",
+        "occurred_at": "2026-07-01T00:00:00+00:00",
+        "idempotency_key": event_id,
+        "payload": {
+            "namespace": "agentic_capability_loop",
+            "affordance_id": affordance_id,
+            "work_request_id": "wr-1",
+            "proof_result_id": "pr-1",
+            "expected_result": expected,
+            "observed_result": observed,
+        },
+    }
+
+
+def test_ingest_execution_evidence_is_provisional_and_writes_no_settlement_state(
+    tmp_path: Path,
+):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+    before = _snapshot_derived(runtime)
+
+    cases = [
+        ("ev-match-1", "ok", "ok"),
+        ("ev-match-2", "ok", "ok"),
+        ("ev-differ-1", "ok", "different"),
+    ]
+    for event_id, expected, observed in cases:
+        result = runtime.ingest_execution_evidence(
+            _evidence_event(event_id=event_id, expected=expected, observed=observed)
+        )
+        assert result["classification"] == "provisional"
+
+    assert _snapshot_derived(runtime) == before
+    assert len(runtime.store.read("execution_evidence")) == 3
+    by_id = {r["evidence_event_id"]: r["proof_match"] for r in runtime.store.read("execution_evidence")}
+    assert by_id == {"ev-match-1": True, "ev-match-2": True, "ev-differ-1": False}
+
+
+def test_ingest_execution_evidence_rejects_incomplete(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.ingest_execution_evidence(
+            _evidence_event(observed="")
+        )
+
+    assert exc_info.value.code == "incomplete_execution_evidence"
+    assert len(runtime.store.read("execution_evidence")) == 0
+
+
+def test_ingest_execution_evidence_is_idempotent(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+
+    first = runtime.ingest_execution_evidence(_evidence_event())
+    second = runtime.ingest_execution_evidence(_evidence_event())
+
+    assert first["id"] == second["id"]
+    assert len(runtime.store.read("execution_evidence")) == 1
+
+
+def test_ingest_execution_evidence_requires_executable_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.ingest_execution_evidence(
+            _evidence_event(affordance_id="not-persisted")
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"

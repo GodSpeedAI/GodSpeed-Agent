@@ -437,6 +437,60 @@ class NavigationRuntime:
         self._schedule_repetition(affordance_id, capability, trajectory)
         return {**settlement, "trajectory": trajectory, "capability": capability}
 
+    def ingest_execution_evidence(self, event: dict[str, Any]) -> dict[str, Any]:
+        """Validate and persist external execution evidence as provisional input.
+
+        Software proof alone is never settlement. Complete non-empty evidence is
+        classified ``provisional`` regardless of whether expected and observed
+        strings match; match/mismatch is preserved as an observed proof fact.
+        Missing required evidence raises ``DomainRuleError`` (code
+        ``incomplete_execution_evidence``). This writes only the canonical
+        ``execution_evidence`` ledger and never ``settlements``,
+        ``capabilities``, ``trajectories``, or ``repetition_schedules``; a later
+        ``record_settlement()`` with observable consequence is the only
+        promotion path. Re-delivery of the same ``event_id`` returns the
+        existing record without a duplicate write.
+        """
+        payload = event.get("payload", {})
+        event_id = event.get("event_id")
+        required = {
+            "event_id": event_id,
+            "affordance_id": payload.get("affordance_id"),
+            "work_request_id": payload.get("work_request_id"),
+            "proof_result_id": payload.get("proof_result_id"),
+            "expected_result": payload.get("expected_result"),
+            "observed_result": payload.get("observed_result"),
+        }
+        for field, value in required.items():
+            if not value:
+                raise DomainRuleError(
+                    "incomplete_execution_evidence",
+                    f"Execution evidence rejected: required field '{field}' is "
+                    "missing or empty. Software proof alone is not settlement.",
+                )
+
+        for existing in self.store.read("execution_evidence"):
+            if existing.get("evidence_event_id") == event_id:
+                return existing
+
+        self._require_executable_affordance(payload["affordance_id"])
+
+        record = {
+            "id": f"ee-{uuid4().hex}",
+            "evidence_event_id": event_id,
+            "affordance_id": payload["affordance_id"],
+            "work_request_id": payload["work_request_id"],
+            "proof_result_id": payload["proof_result_id"],
+            "expected_result": payload["expected_result"],
+            "observed_result": payload["observed_result"],
+            "proof_match": payload["expected_result"] == payload["observed_result"],
+            "classification": "provisional",
+            "source_event_type": event.get("event_type"),
+            "created_at": now_iso(),
+        }
+        self.store.append_event("execution_evidence", record)
+        return record
+
     def snapshot(self) -> dict[str, Any]:
         ledgers = {
             "desired_directions": self.store.read("desired_directions"),
