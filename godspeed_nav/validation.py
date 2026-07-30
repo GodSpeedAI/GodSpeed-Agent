@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,7 @@ from godspeed_nav.config import load_config, runtime_policy
 from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.schemas import DomainRuleError
 from godspeed_nav.storage import LedgerStore
 
 REQUIRED_PATHS = [
@@ -281,6 +283,14 @@ def validate_enterprise_readiness(
             },
         )
 
+        checks["settlement_invariants"] = _probe_settlement_invariants(runtime)
+        checks["adapter_authority"] = _probe_adapter_authority(
+            runtime, "validation-affordance"
+        )
+        checks["developmental_truth_storage"] = _probe_developmental_truth_storage(
+            scratch_workspace / "truth-probe"
+        )
+
     checks["hooks"] = _check((workspace / "hooks" / "pre_tool_use.py").exists(), {})
 
     checks["agents"] = _check(
@@ -311,6 +321,8 @@ def validate_enterprise_readiness(
         },
     )
 
+    checks["distribution_configuration"] = _compute_distribution_configuration(workspace)
+
     status = (
         "pass"
         if all(check["status"] == "pass" for check in checks.values())
@@ -321,3 +333,140 @@ def validate_enterprise_readiness(
 
 def _check(condition: bool, details: dict[str, Any]) -> dict[str, Any]:
     return {"status": "pass" if condition else "fail", "details": details}
+
+
+_DERIVED_LEDGERS = ("settlements", "trajectories", "capabilities", "repetition_schedules")
+
+
+def _probe_settlement_invariants(runtime: NavigationRuntime) -> dict[str, Any]:
+    """Assert unknown/potential/possibility identifiers cannot settle."""
+    before = {name: len(runtime.store.read(name)) for name in _DERIVED_LEDGERS}
+    rejected = False
+    code = None
+    try:
+        runtime.record_settlement(
+            affordance_id="invariant-unknown-affordance",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["settlement-invariant probe"],
+            horizon_delta=1,
+        )
+    except DomainRuleError as exc:
+        rejected = True
+        code = exc.code
+    after = {name: len(runtime.store.read(name)) for name in _DERIVED_LEDGERS}
+    zero_writes = before == after
+    ok = rejected and code == "settlement_requires_executable_affordance" and zero_writes
+    return _check(ok, {
+        "rejected_unknown_affordance": rejected,
+        "rejection_code": code,
+        "zero_derived_writes": zero_writes,
+    })
+
+
+def _probe_adapter_authority(runtime: NavigationRuntime, affordance_id: str) -> dict[str, Any]:
+    """Assert execution evidence is provisional and writes no settlement state."""
+    before = {name: len(runtime.store.read(name)) for name in _DERIVED_LEDGERS}
+    complete = {
+        "schema_version": "v1",
+        "event_id": "invariant-ev-complete",
+        "source_agent": "sea-forge",
+        "event_type": "EvidenceRecorded",
+        "occurred_at": "2026-07-01T00:00:00+00:00",
+        "idempotency_key": "invariant-ev-complete",
+        "payload": {
+            "namespace": "agentic_capability_loop",
+            "affordance_id": affordance_id,
+            "work_request_id": "wr-invariant",
+            "proof_result_id": "pr-invariant",
+            "expected_result": "ok",
+            "observed_result": "ok",
+        },
+    }
+    provisional = False
+    try:
+        ingested = runtime.ingest_execution_evidence(complete)
+        provisional = ingested.get("classification") == "provisional"
+    except DomainRuleError:
+        provisional = False
+    incomplete_rejected = False
+    incomplete_code = None
+    try:
+        runtime.ingest_execution_evidence(
+            {**complete, "event_id": "invariant-ev-incomplete",
+             "payload": {**complete["payload"], "observed_result": ""}}
+        )
+    except DomainRuleError as exc:
+        incomplete_rejected = True
+        incomplete_code = exc.code
+    after = {name: len(runtime.store.read(name)) for name in _DERIVED_LEDGERS}
+    zero_writes = before == after
+    ok = (
+        provisional
+        and incomplete_rejected
+        and incomplete_code == "incomplete_execution_evidence"
+        and zero_writes
+    )
+    return _check(ok, {
+        "complete_evidence_provisional": provisional,
+        "incomplete_evidence_rejected": incomplete_rejected,
+        "incomplete_rejection_code": incomplete_code,
+        "zero_derived_writes": zero_writes,
+    })
+
+
+def _probe_developmental_truth_storage(storage_root: Path) -> dict[str, Any]:
+    """Assert learning proposals use canonical LedgerStore storage."""
+    from agentic_capability_loop.adapters import detect_coherence_break
+    from agentic_capability_loop.learning_proposals import (
+        LEDGER_NAME,
+        append_learning_proposal,
+        query_learning_proposals,
+    )
+
+    store = LedgerStore(storage_root)
+    _, proposal = detect_coherence_break(
+        "truth-storage probe", "wr-truth", domain_area="agentic_capability_loop"
+    )
+    append_learning_proposal(store, proposal)
+    query_ok = len(query_learning_proposals(store, domain_area="agentic_capability_loop")) >= 1
+    canonical_path = store.root / "ledgers" / f"{LEDGER_NAME}.jsonl"
+    no_root_file = not (Path(store.root) / f"{LEDGER_NAME}.jsonl").exists()
+    backup = store.export_backup(storage_root / "backup-probe")
+    manifest_ledgers = json.loads(
+        (backup / "manifest.json").read_text(encoding="utf-8")
+    )["ledgers"]
+    backup_ok = f"{LEDGER_NAME}.jsonl" in manifest_ledgers
+    ok = query_ok and no_root_file and canonical_path.exists() and backup_ok
+    return _check(ok, {
+        "canonical_path_exists": canonical_path.exists(),
+        "no_root_level_truth_file": no_root_file,
+        "query_returns_proposal": query_ok,
+        "backup_includes_proposal": backup_ok,
+    })
+
+
+def _compute_distribution_configuration(workspace: Path) -> dict[str, Any]:
+    """Report package/test configuration evidence (not built-artifact proof)."""
+    import tomllib
+
+    pyproject = tomllib.loads((workspace / "pyproject.toml").read_text(encoding="utf-8"))
+    hatch = pyproject.get("tool", {}).get("hatch", {}).get("build", {}).get("targets", {})
+    wheel_packages = hatch.get("wheel", {}).get("packages", [])
+    testpaths = (
+        pyproject.get("tool", {}).get("pytest", {}).get("ini_options", {}).get("testpaths", [])
+    )
+    both_packages = (
+        "agentic_capability_loop" in wheel_packages and "godspeed_nav" in wheel_packages
+    )
+    adapter_tests = "agentic_capability_loop/tests" in testpaths
+    ok = both_packages and adapter_tests
+    return _check(ok, {
+        "wheel_packages": wheel_packages,
+        "testpaths": testpaths,
+        "artifact_proof_note": (
+            "configuration evidence only; built-artifact proof lives in "
+            "tests/test_distribution.py"
+        ),
+    })
