@@ -1,9 +1,10 @@
 # Live Harness Trace Capture
 
-> **Superseded by F-08.** GodSpeed-Agent no longer owns software hooks or a live
-> trace recorder; SWE_SEED is the proven owner. Synthetic calibration traces
-> live in `scripts/settlement_datasets/synthetic_trace_fixture.py`, and SWE_SEED
-> trace exports are read through `scripts/settlement_datasets/swe_seed_trace_reader.py`.
+> **Superseded by F-08.** Software hooks and traces are owned by SWE_SEED;
+> GodSpeed-Agent keeps settlement and developmental state. Synthetic
+> calibration traces live in
+> `scripts/settlement_datasets/synthetic_trace_fixture.py`, and SWE_SEED trace
+> exports are read through `scripts/settlement_datasets/swe_seed_trace_reader.py`.
 > The recorder API below is historical and no longer exists in `godspeed_nav`.
 
 ## Purpose

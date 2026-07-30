@@ -33,7 +33,7 @@ The current repository implements the local-first developmental harness and the 
 - Distinguishes potentials, possibilities, affordances, capabilities, and substrate.
 - Treats affordances as spendable paths, not merely visible destinations.
 - Records payment, settlement, trajectory, and developmental memory in local ledgers.
-- Exposes runtime and review workflows through a Python CLI, hooks, MCP servers, and skill packages.
+- Exposes runtime and review workflows through a Python CLI, MCP servers, and skill packages.
 - Keeps the system open to self-critique so doctrine can be revised when it fails settlement.
 
 ## Computational Model Layer
@@ -53,13 +53,14 @@ The manifesto in `tmp/cogos.md` sharpens several rules that govern this reposito
 - Positive disintegration requires both dissolution and salvage. Destruction alone is not development.
 - Self-critique is mandatory. Doctrine, policy, and runtime behavior remain subject to revision when they fail settlement.
 
-The target-state contract lives in `docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md`, and the bridge plan from the earlier harness substrate to that target lives in `docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md`. The main bridge milestones are now implemented and validated through the runtime, hooks, MCP, reports, and enterprise-readiness audit.
+The target-state contract lives in `docs/plans/specs/2026-05-30-cognitive-operating-system-spec.md`, and the bridge plan from the earlier harness substrate to that target lives in `docs/plans/2026-05-30-cognitive-operating-system-bridge-plan.md`. The main bridge milestones are now implemented and validated through the runtime, MCP, reports, and enterprise-readiness audit.
 
 ## Package
 
 - `.claude-plugin/plugin.json` contains plugin identity metadata.
-- `skills/`, `agents/`, `hooks/`, `mcp/`, `monitors/`, `bin/`, and settings files live at plugin root level.
+- `skills/`, `agents/`, `mcp/`, `monitors/`, `bin/`, and settings files live at plugin root level.
 - `godspeed_nav/` contains deterministic local computation, storage, runtime, policy, reporting, and validation code.
+- `agentic_capability_loop/` contains the public event adapter that ingests external `EvidenceRecorded` events as provisional execution evidence and emits outbound envelopes through the transport outbox.
 - `docs/` contains plans, runbooks, and framework understanding notes.
 - `tests/` contains the executable contract for CLI behavior, docs alignment, runtime workflow, policies, storage, and reports.
 
@@ -225,9 +226,10 @@ The CLI exposes deterministic and workflow-grade commands.
 - `metabolization` reviews whether repeated settlement is strong enough to count as substrate.
 - `absorbability` checks whether an external capability is potential, possible, or absorbable.
 - `start-direction`, `review-horizon`, `record-settlement`, and `runtime-snapshot` operate the local runtime.
+- `record-settlement` requires a persisted executable affordance (`current_status == 'affordance'`); unknown, potential, or possibility identifiers are rejected with a typed `settlement_requires_executable_affordance` error before any settlement-derived state is written.
 - `developmental-report` summarizes settlement quality, payment burden, trajectory, and active directions.
 - `search-developmental-memory` runs local RuVector-backed semantic retrieval over structured developmental-memory summaries.
-- `validate` runs an enterprise-readiness audit over package shape, config, storage, hooks, MCP, runtime, and reports.
+- `validate` runs an enterprise-readiness audit over package shape, config, storage, settlement/evidence/storage invariants, MCP, runtime, and reports.
 
 These surfaces implement the cognitive-runtime substrate directly. Representational state, transition policy, explicit affordance paths, identity-state accounting, repetition backlog, developmental memory lineage, and runtime-owned self-critique are now inspectable through the public surfaces.
 
@@ -237,7 +239,7 @@ The RuVector bridge lives under `tools/ruvector/` and is intentionally local-fir
 
 Implementation-defined defaults are documented in `HARNESS.md`. This implementation uses `.godspeed-harness` as the local storage root, JSONL ledgers, Python deterministic computation, and a default maximum payment burden of `100`.
 
-No external API calls by default. MCP tools and hook scripts operate on local input, local computation, and configured local storage.
+No external API calls by default. MCP tools operate on local input, local computation, and configured local storage. Software hooks and traces are owned by SWE_SEED; GodSpeed-Agent reads SWE_SEED exports through a read-only evidence adapter.
 
 ## Calibration Pipeline
 

@@ -1,7 +1,7 @@
 [project]
 name = "godspeed-agent-harness"
 version = "0.1.0"
-description = "Local-first horizon-centric cybernetic navigation harness for Claude Code."
+description = "Local-first horizon-centric cybernetic settlement and navigation runtime for agents."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

@@ -58,14 +58,15 @@ These ledgers are written by the connected runtime in `NavigationRuntime`.
 - `trajectories`: Euler-style trajectory updates created after settlement.
 - `capabilities`: capability or substrate-candidate records used by metabolization reporting.
 
-## Hook Event Ledgers
+## Event Adapter Ledgers
 
-These ledgers are written by hook surfaces and use `append_event`.
+These ledgers are written by the public event adapter (`agentic_capability_loop`) and the runtime evidence boundary. They all use `append_event`.
 
-- `prompt_submissions`: prompt hypotheses from `hooks/user_prompt_submit.py`.
-- `tool_payments`: payment and policy decisions from `hooks/pre_tool_use.py`.
-- `post_tool_use_events`: settlement linkage emitted by `hooks/post_tool_use.py`.
-- `stop_events`: stop-time observability emitted by `hooks/stop.py`.
+- `execution_evidence`: provisional execution-evidence records persisted by `NavigationRuntime.ingest_execution_evidence()`. Software proof alone is never settlement; this ledger is provisional input for a later consequence-based settlement. Re-delivery by `event_id` is idempotent.
+- `agentic_learning_proposals`: LearningProposalCreated events persisted through the canonical `LedgerStore` helper (`append_learning_proposal`). These share locking, checksum, redaction, index, backup, and migration behavior with every other canonical ledger; there is no second storage authority.
+- `agentic_outbound_events`: a transport outbox. Outbound envelopes (e.g. SettlementRecorded, CapabilityUpdated, RepetitionPlanned) are buffered here for one-way drain. It stores transport envelopes only; `settlements`, `capabilities`, and `repetition_schedules` remain the canonical runtime authority.
+
+Software hooks and traces are owned by SWE_SEED (F-08); host hook ledgers no longer exist in this runtime.
 
 ## Backup And Recovery Notes
 

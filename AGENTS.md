@@ -8,7 +8,7 @@ Implementation-defined means the behavior is part of the implementation contract
 
 ## Purpose
 
-This repository implements Godspeed Agent Harness, a local-first cybernetic navigation runtime for agents that is evolving toward the fuller Cognitive Operating System described in `tmp/cogos.md` and the computational core described in `tmp/math.md`. The project is developmental rather than arrival-centric: agents should optimize for horizon expansion through the next affordable affordance, not for static outcome completion.
+This repository implements the GodSpeed-Agent settlement and navigation runtime, a local-first cybernetic navigation runtime for agents that is evolving toward the fuller Cognitive Operating System described in `tmp/cogos.md` and the computational core described in `tmp/math.md`. The project is developmental rather than arrival-centric: agents should optimize for horizon expansion through the next affordable affordance, not for static outcome completion.
 
 When working in this repo, treat outcomes as temporary attractors. Once an outcome settles, its value is that it becomes substrate and exposes new affordances.
 
@@ -150,3 +150,35 @@ Work is complete when all of the following hold:
 Use self-critique. If the framework language, policies, or mechanics fail settlement in practice, document the mismatch, revise the relevant surface, and prefer reconstruction over doctrinal drift.
 
 Commit often, and update `CURRENT_STATE.md` at every meaningful milestone.
+
+## Local Agent Memory
+
+Use `.agents/` for repository-local memory, not chat transcripts or routine work
+logs. Read the relevant files before work and keep entries concise, dated, and
+evidence-linked. Update an existing entry instead of duplicating it.
+
+- `CURRENT_STATUS.md` is the handoff. Keep the active objective, completed work,
+  changed files, verification results, remaining steps, blockers, and decisions
+  accurate enough that a new agent can continue without reconstructing the task. Commit often, and update at every meaningful milestone.
+- `OBSERVED_DEBT.md` records concrete debt, gaps, risks, or defects noticed during
+  work but outside the current scope. Include location/evidence, impact, and a
+  suggested next move. Do not expand the task to fix it without authorization.
+- `LESSONS.md` contains only verified, project-specific learning that will improve
+  future agent work or prevent an easy/repeated mistake. Do not add generic advice,
+  speculation, one-off debugging chronology, or facts obvious from current code.
+- `OPEN_QUESTIONS.md` contains only unresolved choices that cannot be answered by
+  repository or external research and genuinely require user judgment.
+
+At handoff, refresh `CURRENT_STATUS.md`, capture qualifying debt or lessons, and
+remove or resolve stale entries. Tell the user when a directory has distinct
+commands, architecture, risks, generated-file rules, or conventions that warrant
+a scoped local `AGENTS.md`; recommend its scope and key rules rather than silently
+creating instruction sprawl.
+Run `just context-check` before handoff; its required status sections and
+change-coupling rules are tool-agnostic and also run in CI.
+
+## Codebase Search
+
+When the edit location is unknown, localize before reading broadly. Use `rg --files` or glob patterns to find likely files, then `rg` with exact symbols, errors, config keys, domain terms, and naming variants. Search likely implementations, callers, tests, and configuration in parallel. Prefer file-only results first, then inspect only the strongest matches.
+
+Read narrow ranges with `sed` or `awk`, usually 30–80 lines around a match, and avoid rereading content already in context. Cap noisy output, change search terms when results are weak, and stop once the implementation, execution path, tests, and relevant dependencies are identified. Use Understand Anything when this would otherwise require a long multi-file search chain.
