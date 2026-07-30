@@ -118,3 +118,29 @@ def test_developmental_memory_query_answers_lineage_questions(tmp_path: Path):
     assert lineage["failed_settlements"] == ["set-1"]
     assert lineage["substrate_capabilities"] == ["cap-1"]
     assert lineage["revised_critique_findings"] == [{"id": "crit-1", "revised_by": "aff-2"}]
+
+
+def test_learning_proposals_use_canonical_ledger_store(tmp_path: Path):
+    from agentic_capability_loop.adapters import detect_coherence_break
+    from agentic_capability_loop.learning_proposals import (
+        LEDGER_NAME,
+        append_learning_proposal,
+        query_learning_proposals,
+    )
+
+    store = LedgerStore(tmp_path / ".godspeed-harness")
+    _, proposal = detect_coherence_break(
+        "missing evidence", "wr-canonical", domain_area="agentic_capability_loop"
+    )
+
+    append_learning_proposal(store, proposal)
+
+    # Canonical path, not a root-level truth file.
+    assert (store.root / "ledgers" / f"{LEDGER_NAME}.jsonl").exists()
+    assert not (Path(store.root) / f"{LEDGER_NAME}.jsonl").exists()
+    # Queryable through the canonical store.
+    assert len(query_learning_proposals(store, domain_area="agentic_capability_loop")) == 1
+    # Backup includes the canonical ledger.
+    backup = store.export_backup(tmp_path / "backup")
+    manifest = json.loads((backup / "manifest.json").read_text(encoding="utf-8"))
+    assert f"{LEDGER_NAME}.jsonl" in manifest["ledgers"]

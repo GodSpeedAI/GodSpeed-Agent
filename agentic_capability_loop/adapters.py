@@ -349,8 +349,6 @@ def persist_to_ledger(
     learning_proposal_event: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Persist agentic loop events to real GodSpeed JSONL ledgers."""
-    from agentic_capability_loop.learning_proposals import LearningProposalLedger  # noqa: PLC0415
-
     settlement_envelope = ledger_store.append_event("agentic_settlements", settlement_event)
     capability_envelope = ledger_store.append_event("agentic_capabilities", capability_event)
     repetition_envelope = ledger_store.append_event("agentic_repetitions", repetition_event)
@@ -363,8 +361,9 @@ def persist_to_ledger(
     }
 
     if learning_proposal_event is not None:
-        proposal_ledger = LearningProposalLedger(ledger_store.root)
-        proposal_ledger.append(learning_proposal_event)
+        from agentic_capability_loop.learning_proposals import append_learning_proposal  # noqa: PLC0415
+
+        append_learning_proposal(ledger_store, learning_proposal_event)
         result["learning_proposal"] = {"event_id": learning_proposal_event["event_id"]}
 
     # WP-3 (F-02): best-effort one-way drain of the buffered settlements/
