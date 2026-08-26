@@ -1,0 +1,488 @@
+{
+  "affordance_id": "aff-t11-canonical-001",
+  "direction_id": "dir-t11-001",
+  "domain_model_sha256": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+  "envelopes": {
+    "AuthorizedInvocation": {
+      "event_id": "d878df4a-a916-5569-a911-6064c9eddff9",
+      "event_type": "AuthorizedInvocation",
+      "idempotency_key": "6826a6c57c9b0a7c009f393a72ddbb1a2be3466d3b8c8c810ab9cdc189ca55d0",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "authority_decision_id": "dec_t11_authority_0001",
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "execution_constraints": {
+          "timeout_ms": 10000
+        },
+        "invocation_id": "inv_t11_0001",
+        "namespace": "agentic_capability_loop",
+        "operation": "execute_command",
+        "resource": "sea-forge",
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:5c4b7f3b-b23b-5261-8a4c-0d0da92e0405"
+        ],
+        "origin": "sea-forge"
+      },
+      "schema_version": "v1",
+      "source_agent": "sea-forge"
+    },
+    "ContextPacketCreated": {
+      "event_id": "422162fa-cb36-53de-8807-ca7bdb9e8ba4",
+      "event_type": "ContextPacketCreated",
+      "idempotency_key": "ef2121628c0f856a74952120876d0b74c36964952d546098bebf2b761f43cf41",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "citations": [
+          {
+            "sha256": "0e99bdf4ced7bf4873069b3f718f430ad782f813fa6c929bde9e1d5ba0680703",
+            "source": "runbook://deploy/blue-green"
+          }
+        ],
+        "context_packet_id": "ctx_t11_001",
+        "context_requirement_id": "cr-t11",
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "namespace": "agentic_capability_loop",
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:a801d226-6932-597d-95e9-b20c581e0034"
+        ],
+        "origin": "context-kernel"
+      },
+      "schema_version": "v1",
+      "source_agent": "context-kernel"
+    },
+    "ContextRequired": {
+      "event_id": "a801d226-6932-597d-95e9-b20c581e0034",
+      "event_type": "ContextRequired",
+      "idempotency_key": "407b23710558b6884169bdcfa321a9dee06731d7dc98f63c44617cdf6e6d1c99",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "citations": [],
+        "context_requirement_id": "cr-t11",
+        "corpus_scope": "runbooks",
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "namespace": "agentic_capability_loop",
+        "query": "blue-green deployment runbook",
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:56dabf9b-294d-5b99-bfed-c0ffac35dcd4"
+        ],
+        "origin": "swe-seed"
+      },
+      "schema_version": "v1",
+      "source_agent": "swe-seed"
+    },
+    "DesiredDirection": {
+      "event_id": "c6ba3a3d-ec4f-5a52-a7a8-d6c738493aec",
+      "event_type": "DesiredDirection",
+      "idempotency_key": "897e6f8005b4759ea3fea298c102e16bcb8a0be42e3316f6163fa14808c092e0",
+      "occurred_at": "2026-08-26T19:36:48.172708+00:00",
+      "payload": {
+        "desired_state": "deploy service via blue-green",
+        "direction_id": "dir-t11-001",
+        "direction_type": "improve",
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "namespace": "agentic_capability_loop"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741"
+        ],
+        "origin": "external-environment"
+      },
+      "schema_version": "v1",
+      "source_agent": "external-environment"
+    },
+    "DevelopmentalMemory": {
+      "event_id": "bee4c1a1-d745-589a-a035-9d1dcf37e9e5",
+      "event_type": "DevelopmentalMemory",
+      "idempotency_key": "fe79b59acf28e8e16c4b7eac935b55ff74d3f8e07ea54031fdbac85d5761ebc9",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "capability_state": {
+          "capability_id": "aff-t11-canonical-001",
+          "lifecycle": "active",
+          "metabolization_score": 0.16666666666666666,
+          "settlement_count": 1,
+          "stability": 0.92
+        },
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "earned_shortcuts": [
+          "ctx-t11-alpha"
+        ],
+        "namespace": "agentic_capability_loop",
+        "observer_or_system_id": "observer-t11",
+        "repetitions_due": [
+          "aff-t11-canonical-001"
+        ],
+        "settlement_history_refs": [
+          "set-t11-001"
+        ]
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741"
+        ],
+        "origin": "memory-ledger"
+      },
+      "schema_version": "v1",
+      "source_agent": "memory-ledger"
+    },
+    "EvidenceRecorded": {
+      "event_id": "70b455e1-11cc-55a3-97ef-b3d8a0341436",
+      "event_type": "EvidenceRecorded",
+      "idempotency_key": "5fa258339d365d82fd4228667e5130de556b49ce516dd258b7ef3cffac104cb0",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "affordance_id": "aff-t11-canonical-001",
+        "difference": {
+          "expected_sha256": "9140d29ea3369d20ee080b249c4a95643a9889a813469444861d2abdb1d4c564",
+          "observed_sha256": "1287b82a14d9d1ffa85443d1904971c36c040b28e2a2f143047364ad8d64519f",
+          "verdict": "divergent"
+        },
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "expected_outcome": {
+          "affordance": "blue-green",
+          "declared_result": "health check green"
+        },
+        "namespace": "agentic_capability_loop",
+        "observed_outcome": [
+          {
+            "effect": "health check green",
+            "probe": "lb/ready"
+          },
+          {
+            "effect": "zero-downtime observed",
+            "window_ms": 0
+          }
+        ],
+        "operational_settlement_ref": "sha256:c07444f1cec212c3eb317ce433c9d30503c6b5bbafab44b2dcf40b419284d781",
+        "proof_result_ref": "sha256:b309c5eddd05a3f5b6c4117c06a7aa6f9328f2370f75abc70fb5fdb762f56ea7",
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:fd5b2913-ed56-53f8-918e-10dfc772ad38",
+          "caused_by:9488d3c8-d027-5d03-8f83-ed2c38a75553"
+        ],
+        "origin": "realitytrace"
+      },
+      "schema_version": "v1",
+      "source_agent": "realitytrace"
+    },
+    "ExecutionObservation": {
+      "event_id": "62566cae-d734-5b3b-a7b1-a8f606f48824",
+      "event_type": "ExecutionObservation",
+      "idempotency_key": "d098f84fba9ea7e4c2ed57a4abc31b06e98555c3eea94b267cb2eacac6f377a1",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "execution_status": "completed",
+        "invocation_id": "inv_t11_0001",
+        "namespace": "agentic_capability_loop",
+        "observed_effects": [
+          {
+            "effect": "health check green",
+            "probe": "lb/ready"
+          },
+          {
+            "effect": "zero-downtime observed",
+            "window_ms": 0
+          }
+        ],
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:d878df4a-a916-5569-a911-6064c9eddff9"
+        ],
+        "origin": "execution-environment"
+      },
+      "schema_version": "v1",
+      "source_agent": "execution-environment"
+    },
+    "GovernedWorkRequest": {
+      "event_id": "5c4b7f3b-b23b-5261-8a4c-0d0da92e0405",
+      "event_type": "GovernedWorkRequest",
+      "idempotency_key": "798aedda2a6564f0f82b232b10bb54756a6cd529e6ccae19a92f2e43dbafdd21",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "actor": {
+          "actor_id": "agent-operator",
+          "role": "R-AA"
+        },
+        "affordance_id": "aff-t11-canonical-001",
+        "context_packet_ref": "ctx_t11_001",
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "intent": "rotate deploy to blue-green and verify health gates",
+        "namespace": "agentic_capability_loop",
+        "proof_contract": {
+          "criterion": "live proof exits 0",
+          "proof_type": "live"
+        },
+        "settlement_criteria": [
+          "health check green",
+          "zero-downtime observed"
+        ],
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:56dabf9b-294d-5b99-bfed-c0ffac35dcd4",
+          "caused_by:422162fa-cb36-53de-8807-ca7bdb9e8ba4"
+        ],
+        "origin": "swe-seed"
+      },
+      "schema_version": "v1",
+      "source_agent": "swe-seed"
+    },
+    "OperationalSettlement": {
+      "event_id": "fd5b2913-ed56-53f8-918e-10dfc772ad38",
+      "event_type": "OperationalSettlement",
+      "idempotency_key": "f85058b3bcd56394bb07afce346c0dbf86cc84701cebc22955a58b0d7dc4902c",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "authority_decision_id": "dec_t11_authority_0001",
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "evidence_refs": [
+          "sha256:1287b82a14d9d1ffa85443d1904971c36c040b28e2a2f143047364ad8d64519f",
+          "authorized_invocation:d878df4a-a916-5569-a911-6064c9eddff9",
+          "execution_observation:62566cae-d734-5b3b-a7b1-a8f606f48824"
+        ],
+        "execution_status": "completed",
+        "invocation_id": "inv_t11_0001",
+        "namespace": "agentic_capability_loop",
+        "observed_effects": [
+          {
+            "effect": "health check green",
+            "probe": "lb/ready"
+          },
+          {
+            "effect": "zero-downtime observed",
+            "window_ms": 0
+          }
+        ],
+        "operational_settlement_status": "accepted",
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:d878df4a-a916-5569-a911-6064c9eddff9",
+          "caused_by:62566cae-d734-5b3b-a7b1-a8f606f48824"
+        ],
+        "origin": "sea-forge"
+      },
+      "schema_version": "v1",
+      "source_agent": "sea-forge"
+    },
+    "ProofCompleted": {
+      "event_id": "9488d3c8-d027-5d03-8f83-ed2c38a75553",
+      "event_type": "ProofCompleted",
+      "idempotency_key": "554354b46821175cf04f231a15758673197a817402678f3c0b6147ae1f5bae4c",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "artifact_refs": [
+          "sha256:c7c5c1d70c5dec4416ab6158afd0b223ef40c29b1dc1f97ed9428b94d4cadb1c"
+        ],
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "expected_outcome": {
+          "affordance": "blue-green",
+          "declared_result": "health check green"
+        },
+        "namespace": "agentic_capability_loop",
+        "operational_settlement_ref": "sha256:c07444f1cec212c3eb317ce433c9d30503c6b5bbafab44b2dcf40b419284d781",
+        "proof_contract": {
+          "criterion": "live proof exits 0",
+          "proof_type": "live"
+        },
+        "proof_result_id": "pr-t11-0001",
+        "proof_status": "passed",
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:fd5b2913-ed56-53f8-918e-10dfc772ad38",
+          "caused_by:5c4b7f3b-b23b-5261-8a4c-0d0da92e0405"
+        ],
+        "origin": "swe-seed"
+      },
+      "schema_version": "v1",
+      "source_agent": "swe-seed"
+    },
+    "SettlementRecorded": {
+      "event_id": "f38bda56-8aba-5d5b-ab7b-40f80a5900a0",
+      "event_type": "SettlementRecorded",
+      "idempotency_key": "5ea6417f3f33f965e87aa08e49ad1887a5288c0613bb1507ea2c08d003d39342",
+      "occurred_at": "2026-08-26T12:00:00+00:00",
+      "payload": {
+        "affordance_id": "aff-t11-canonical-001",
+        "developmental_decision": {
+          "action": "record_developmental_consequence",
+          "basis": "evidence-weighted",
+          "evaluation": "independent_gsa"
+        },
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "domain_model_ref": {
+          "model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "namespace": "agentic_capability_loop"
+        },
+        "namespace": "agentic_capability_loop",
+        "settlement_ref": "set-t11-001",
+        "settlement_score": 0.92,
+        "settlement_status": "success",
+        "source_evidence_refs": [
+          "70b455e1-11cc-55a3-97ef-b3d8a0341436"
+        ],
+        "variation_context": "ctx-t11-alpha",
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:70b455e1-11cc-55a3-97ef-b3d8a0341436"
+        ],
+        "origin": "godspeed-agent"
+      },
+      "schema_version": "v1",
+      "source_agent": "godspeed-agent"
+    },
+    "WorkRequested": {
+      "event_id": "56dabf9b-294d-5b99-bfed-c0ffac35dcd4",
+      "event_type": "WorkRequested",
+      "idempotency_key": "dd2e8ec5b70faa731d9d4b20273f23ac4414df19cf98c946bf291a4543494be8",
+      "occurred_at": "2026-08-26T19:36:48.172839+00:00",
+      "payload": {
+        "affordance_id": "aff-t11-canonical-001",
+        "desired_outcome": "deploy service via blue-green rotation",
+        "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+        "namespace": "agentic_capability_loop",
+        "settlement_criteria": [
+          "health check green",
+          "zero-downtime observed"
+        ],
+        "work_request_id": "wr-gsf-t11-001"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "caused_by:c6ba3a3d-ec4f-5a52-a7a8-d6c738493aec"
+        ],
+        "origin": "godspeed-agent"
+      },
+      "schema_version": "v1",
+      "source_agent": "godspeed-agent"
+    }
+  },
+  "observations": {
+    "changed_next_navigation_state": {
+      "ranked_first": "aff-t11-canonical-001"
+    },
+    "cited_context": [
+      {
+        "sha256": "0e99bdf4ced7bf4873069b3f718f430ad782f813fa6c929bde9e1d5ba0680703",
+        "source": "runbook://deploy/blue-green"
+      }
+    ],
+    "durable_developmental_memory": {
+      "capability_state": {
+        "capability_id": "aff-t11-canonical-001",
+        "lifecycle": "active",
+        "metabolization_score": 0.16666666666666666,
+        "settlement_count": 1,
+        "stability": 0.92
+      },
+      "event_id": "bee4c1a1-d745-589a-a035-9d1dcf37e9e5"
+    },
+    "expected_vs_observed_realitytrace_record": {
+      "expected_sha256": "9140d29ea3369d20ee080b249c4a95643a9889a813469444861d2abdb1d4c564",
+      "observed_sha256": "1287b82a14d9d1ffa85443d1904971c36c040b28e2a2f143047364ad8d64519f",
+      "verdict": "divergent"
+    },
+    "explicit_authority_decision": "dec_t11_authority_0001",
+    "explicit_developmental_settlement_decision": "success",
+    "independent_proof_result": "passed",
+    "observed_real_execution": [
+      {
+        "effect": "health check green",
+        "probe": "lb/ready"
+      },
+      {
+        "effect": "zero-downtime observed",
+        "window_ms": 0
+      }
+    ],
+    "one_resolvable_domain_model_identity_end_to_end": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+    "one_work_request_id_end_to_end": "wr-gsf-t11-001",
+    "operational_settlement": "accepted",
+    "provisional_developmental_evidence": {
+      "classification": "provisional",
+      "event_id": "70b455e1-11cc-55a3-97ef-b3d8a0341436"
+    }
+  },
+  "provenance_chain": [
+    "c6ba3a3d-ec4f-5a52-a7a8-d6c738493aec",
+    "56dabf9b-294d-5b99-bfed-c0ffac35dcd4",
+    "a801d226-6932-597d-95e9-b20c581e0034",
+    "422162fa-cb36-53de-8807-ca7bdb9e8ba4",
+    "5c4b7f3b-b23b-5261-8a4c-0d0da92e0405",
+    "d878df4a-a916-5569-a911-6064c9eddff9",
+    "62566cae-d734-5b3b-a7b1-a8f606f48824",
+    "fd5b2913-ed56-53f8-918e-10dfc772ad38",
+    "9488d3c8-d027-5d03-8f83-ed2c38a75553",
+    "70b455e1-11cc-55a3-97ef-b3d8a0341436",
+    "f38bda56-8aba-5d5b-ab7b-40f80a5900a0",
+    "bee4c1a1-d745-589a-a035-9d1dcf37e9e5"
+  ],
+  "work_request_id": "wr-gsf-t11-001"
+}

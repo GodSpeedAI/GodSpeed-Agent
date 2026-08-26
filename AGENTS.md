@@ -157,7 +157,7 @@ Use `.agents/` for repository-local memory, not chat transcripts or routine work
 logs. Read the relevant files before work and keep entries concise, dated, and
 evidence-linked. Update an existing entry instead of duplicating it.
 
-- `CURRENT_STATUS.md` is the handoff. Keep the active objective, completed work,
+- `current_status.yml` is the handoff. Keep the active objective, completed work,
   changed files, verification results, remaining steps, blockers, and decisions
   accurate enough that a new agent can continue without reconstructing the task. Commit often, and update at every meaningful milestone.
 - `OBSERVED_DEBT.md` records concrete debt, gaps, risks, or defects noticed during
@@ -169,7 +169,7 @@ evidence-linked. Update an existing entry instead of duplicating it.
 - `OPEN_QUESTIONS.md` contains only unresolved choices that cannot be answered by
   repository or external research and genuinely require user judgment.
 
-At handoff, refresh `CURRENT_STATUS.md`, capture qualifying debt or lessons, and
+At handoff, refresh `current_status.yml`, capture qualifying debt or lessons, and
 remove or resolve stale entries. Tell the user when a directory has distinct
 commands, architecture, risks, generated-file rules, or conventions that warrant
 a scoped local `AGENTS.md`; recommend its scope and key rules rather than silently

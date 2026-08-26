@@ -1,0 +1,195 @@
+{
+  "domain_model_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "events": [
+    {
+      "event_id": "f13c7712-97a0-5a98-ac83-7b7416b6c2a1",
+      "event_type": "SettlementRecorded",
+      "idempotency_key": "5d84f3ccf21ccba1f956eaf0cff5182ecd36bf1534198ee1cc3d3b0197acc85d",
+      "occurred_at": "2026-08-26T00:00:00+00:00",
+      "payload": {
+        "affordance_id": "aff-t09-golden",
+        "developmental_decision": {
+          "action": "record_developmental_consequence",
+          "basis": "evidence-weighted",
+          "evaluation": "independent_gsa_evaluation"
+        },
+        "domain_model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "domain_model_ref": {
+          "model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "namespace": "agentic_capability_loop"
+        },
+        "namespace": "agentic_capability_loop",
+        "settlement_ref": "set-golden-001",
+        "settlement_score": 0.9,
+        "settlement_status": "success",
+        "source_evidence_refs": [
+          "e836107a-70d5-5b68-9213-7e924114d4ee"
+        ],
+        "variation_context": "ctx-alpha",
+        "work_request_id": "wr-gsf-t09"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "caused_by:e836107a-70d5-5b68-9213-7e924114d4ee",
+          "caused_by:b4210fa4-e207-5b69-8a92-1d7107b0fd26"
+        ],
+        "origin": "godspeed-agent"
+      },
+      "schema_version": "v1",
+      "source_agent": "godspeed-agent"
+    },
+    {
+      "event_id": "4f60dd90-edfc-59e2-8e2b-c37b4b681a6c",
+      "event_type": "RepetitionPlanned",
+      "idempotency_key": "5c99d0bd634701d5586bc33359d0bf3f6bc96403a5b6d10c5b52cd4d5b69e752",
+      "occurred_at": "2026-08-26T00:00:00+00:00",
+      "payload": {
+        "affordance_id": "aff-t09-golden",
+        "developmental_decision": {
+          "action": "record_developmental_consequence",
+          "basis": "evidence-weighted",
+          "evaluation": "independent_gsa_evaluation"
+        },
+        "domain_model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "domain_model_ref": {
+          "model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "namespace": "agentic_capability_loop"
+        },
+        "namespace": "agentic_capability_loop",
+        "planned_variations": [
+          "ctx-alpha",
+          "ctx-beta"
+        ],
+        "repetition_count": 3,
+        "source_evidence_refs": [
+          "e836107a-70d5-5b68-9213-7e924114d4ee"
+        ],
+        "work_request_id": "wr-gsf-t09"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "caused_by:e836107a-70d5-5b68-9213-7e924114d4ee",
+          "caused_by:b4210fa4-e207-5b69-8a92-1d7107b0fd26"
+        ],
+        "origin": "godspeed-agent"
+      },
+      "schema_version": "v1",
+      "source_agent": "godspeed-agent"
+    },
+    {
+      "event_id": "3fde760e-6cd5-5dec-ae48-6f1b3141e8a0",
+      "event_type": "LearningProposalCreated",
+      "idempotency_key": "6794264b86e855baf9fadd0f8ff014f1a8a2525aaf27d364da064b23303058a6",
+      "occurred_at": "2026-08-26T00:00:00+00:00",
+      "payload": {
+        "developmental_decision": {
+          "action": "record_developmental_consequence",
+          "basis": "evidence-weighted",
+          "evaluation": "independent_gsa_evaluation"
+        },
+        "domain_area": "navigation",
+        "domain_model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "domain_model_ref": {
+          "model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "namespace": "agentic_capability_loop"
+        },
+        "learning_proposal_id": "lp-golden-001",
+        "namespace": "agentic_capability_loop",
+        "source_evidence_refs": [
+          "e836107a-70d5-5b68-9213-7e924114d4ee"
+        ],
+        "status": "proposed",
+        "work_request_id": "wr-gsf-t09"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "caused_by:e836107a-70d5-5b68-9213-7e924114d4ee",
+          "caused_by:b4210fa4-e207-5b69-8a92-1d7107b0fd26"
+        ],
+        "origin": "godspeed-agent"
+      },
+      "schema_version": "v1",
+      "source_agent": "godspeed-agent"
+    },
+    {
+      "event_id": "993102e4-1c7f-50fb-8439-a86a7d724082",
+      "event_type": "CoherenceBreakDetected",
+      "idempotency_key": "9ca430fd8583c5b19d5c7b54a1c5f1b759e4939e9b086ea366f8c99c5c64005d",
+      "occurred_at": "2026-08-26T00:00:00+00:00",
+      "payload": {
+        "break_reason": "trajectory circular motion",
+        "developmental_decision": {
+          "action": "record_developmental_consequence",
+          "basis": "evidence-weighted",
+          "evaluation": "independent_gsa_evaluation"
+        },
+        "domain_model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "domain_model_ref": {
+          "model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "namespace": "agentic_capability_loop"
+        },
+        "namespace": "agentic_capability_loop",
+        "source_evidence_refs": [
+          "e836107a-70d5-5b68-9213-7e924114d4ee"
+        ],
+        "work_request_id": "wr-gsf-t09"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "caused_by:e836107a-70d5-5b68-9213-7e924114d4ee",
+          "caused_by:b4210fa4-e207-5b69-8a92-1d7107b0fd26"
+        ],
+        "origin": "godspeed-agent"
+      },
+      "schema_version": "v1",
+      "source_agent": "godspeed-agent"
+    },
+    {
+      "event_id": "083bde8e-3b3f-5201-b1c7-c4b5ed2d7bee",
+      "event_type": "CapabilityUpdated",
+      "idempotency_key": "f196dea925203f2c29d74f0aa831f2dd25abfaf64407451c211e9020f4d20936",
+      "occurred_at": "2026-08-26T00:00:00+00:00",
+      "payload": {
+        "capability_id": "aff-t09-golden",
+        "developmental_decision": {
+          "action": "record_developmental_consequence",
+          "basis": "evidence-weighted",
+          "evaluation": "independent_gsa_evaluation"
+        },
+        "domain_model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "domain_model_ref": {
+          "model_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "namespace": "agentic_capability_loop"
+        },
+        "namespace": "agentic_capability_loop",
+        "source_evidence_refs": [
+          "e836107a-70d5-5b68-9213-7e924114d4ee"
+        ],
+        "target_lifecycle": "active",
+        "variation_evidence": [
+          "set-golden-001"
+        ],
+        "work_request_id": "wr-gsf-t09"
+      },
+      "provenance": {
+        "chain": [
+          "domain_model_hash:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "caused_by:e836107a-70d5-5b68-9213-7e924114d4ee",
+          "caused_by:b4210fa4-e207-5b69-8a92-1d7107b0fd26"
+        ],
+        "origin": "godspeed-agent"
+      },
+      "schema_version": "v1",
+      "source_agent": "godspeed-agent"
+    }
+  ],
+  "known_parent_ids": [
+    "e836107a-70d5-5b68-9213-7e924114d4ee",
+    "b4210fa4-e207-5b69-8a92-1d7107b0fd26"
+  ],
+  "work_request_id": "wr-gsf-t09"
+}

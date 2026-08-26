@@ -225,6 +225,200 @@ class NavigationRuntime:
         self.store.append("horizon_reviews", review)
         return review
 
+    # ------------------------------------------------------------------
+    # T10 — Developmental memory -> next navigation (E10 / I12)
+    # ------------------------------------------------------------------
+    # The three methods below close the frozen E10/I12 boundary:
+    # - ``get_developmental_memory`` projects durable history into a canonical
+    #   DevelopmentalMemory envelope (memory_ledger -> godspeed_agent).
+    # - ``ingest_developmental_memory`` validates a received envelope as GSA
+    #   would on the next cycle (exclusive producer, identity, required fields).
+    # - ``review_horizon_with_memory`` / ``rank_candidates_with_memory``
+    #   implement the documented *gate-evaluation-after-memory* pattern:
+    #   memory retrieval -> memory-informed scoring/boost -> HARD GATE
+    #   evaluation (governance, payment, settlement, risk/debt ceilings).
+    #   Memory is evidence that may reduce search burden (boost horizon/direction)
+    #   but can NEVER flip a blocked gate to allowed. Historical capability
+    #   evidence remains distinguishable from current affordance availability
+    #   via the ``_historical_capability`` / ``_memory_influenced`` tags and
+    #   via the envelope's ``capability_state`` vs the freshly computed
+    #   ``current_status == 'affordance'``.
+    # ------------------------------------------------------------------
+
+    def get_developmental_memory(
+        self,
+        observer_or_system_id: str,
+        domain_model_hash: str,
+        *,
+        parent_evidence_ids: list[str] | None = None,
+        event_id: str | None = None,
+        occurred_at: str | None = None,
+    ) -> dict[str, Any]:
+        """Project durable developmental history into a canonical DevelopmentalMemory envelope.
+
+        This is the E10 retrieval seam (memory_ledger -> godspeed_agent). The
+        envelope is derived ON DEMAND from the durable ``developmental_events``
+        ledger via :func:`godspeed_nav.developmental_memory.build_developmental_memory_from_store`,
+        so it reflects the same replay-through-the-gate truth that powers restart
+        survival. Capability_state is computed honestly via
+        ``infer_capability_lifecycle`` / ``compute_metabolization`` over the
+        real settlement evidence — history cannot inflate into unearned
+        capability.
+
+        The returned envelope MUST be consumed as evidence in the next navigation
+        cycle and then gated by current governance/payment/settlement checks
+        (see :meth:`review_horizon_with_memory` / :meth:`rank_candidates_with_memory`).
+        """
+        from godspeed_nav.developmental_memory import (  # noqa: PLC0415 — lazy to keep graph flat
+            build_developmental_memory_from_store,
+        )
+
+        return build_developmental_memory_from_store(
+            self.store,
+            observer_or_system_id=observer_or_system_id,
+            domain_model_hash=domain_model_hash,
+            parent_evidence_ids=parent_evidence_ids,
+            event_id=event_id,
+            occurred_at=occurred_at,
+        )
+
+    def ingest_developmental_memory(
+        self,
+        envelope: dict[str, Any],
+        *,
+        local_model_sha256: str | None = None,
+        expected_observer_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Validate a DevelopmentalMemory envelope as GSA on receipt (E10 consumer gate).
+
+        Enforces exclusive producer (memory_ledger), canonical identity, required
+        fields, namespace, and observer binding. Returns the validated summary.
+        This gate runs BEFORE any navigation state is influenced — a refused
+        envelope changes no horizon.
+        """
+        from godspeed_nav.developmental_memory import ingest_developmental_memory as _ingest  # noqa: PLC0415
+
+        return _ingest(
+            envelope,
+            local_model_sha256=local_model_sha256,
+            expected_observer_id=expected_observer_id,
+        )
+
+    def rank_candidates_with_memory(
+        self,
+        candidates: list[dict[str, Any]],
+        developmental_memory: dict[str, Any] | None,
+        *,
+        context: str | None = None,
+        boost_factor: float = 0.35,
+    ) -> dict[str, Any]:
+        """Rank navigation candidates with memory evidence, but AFTER hard gates.
+
+        Gate-evaluation-after-memory pattern (E10/I12):
+
+        1. Retrieval: caller already obtained ``developmental_memory`` via
+           :meth:`get_developmental_memory` (or supplies None for empty history).
+        2. Memory-informed scoring: candidates whose ``id`` echoes historical
+           capability evidence receive a modest boost to ``expected_horizon_delta``
+           / ``direction_score`` (reduced search burden) via
+           :func:`godspeed_nav.developmental_memory.apply_developmental_memory_to_candidates`.
+        3. Hard-gate evaluation: every boosted candidate is then evaluated through
+           :func:`godspeed_nav.cognitive_model.evaluate_candidate_model` — governance
+           (``governance_allowed``), settlement access (``settlement_accessible``),
+           payment capacity (``payment_required`` vs ``payment_capacity``), and
+           risk/debt ceilings. A candidate blocked on current state remains blocked
+           regardless of historical success.
+
+        Returns ``{"ranked": [...], "rejected": [...], "memory_applied": bool,
+        "memory_event_id": str|None}`` — the ``ranked`` list is ordered by the
+        controller objective (lower is better). Historical evidence is tagged
+        distinctly (``_historical_capability``) from current affordance
+        availability (``allowed == True``).
+        """
+        from godspeed_nav.cognitive_model import rank_candidates_by_controller  # noqa: PLC0415
+        from godspeed_nav.developmental_memory import (  # noqa: PLC0415
+            apply_developmental_memory_to_candidates,
+        )
+
+        ctx = context or self.policy.get("context", "production")
+        influenced = apply_developmental_memory_to_candidates(
+            candidates, developmental_memory, boost_factor=boost_factor
+        )
+        ranked_result = rank_candidates_by_controller(influenced, context=ctx)
+        # Attach memory provenance to the result for auditability
+        mem_id = developmental_memory.get("event_id") if isinstance(developmental_memory, dict) else None
+        return {
+            **ranked_result,
+            "memory_applied": developmental_memory is not None,
+            "memory_event_id": mem_id,
+            "influenced_candidates": influenced,
+        }
+
+    def review_horizon_with_memory(
+        self,
+        direction_id: str,
+        candidates: list[dict[str, Any]],
+        developmental_memory: dict[str, Any] | None = None,
+        *,
+        observer_or_system_id: str | None = None,
+        domain_model_hash: str | None = None,
+    ) -> dict[str, Any]:
+        """Horizon review that measurably incorporates developmental memory while preserving hard gates.
+
+        This is the production navigation entry point for E10: durable history
+        may reduce orchestration burden, but current governance/payment/settlement
+        gates are evaluated AFTER memory — memory never creates an affordance.
+
+        If ``developmental_memory`` is None and both ``observer_or_system_id``
+        and ``domain_model_hash`` are supplied, the memory is retrieved on
+        demand via :meth:`get_developmental_memory`. When memory is absent
+        (no prior history) the method degenerates to the plain
+        :meth:`review_horizon` behavior with zero boost.
+
+        The returned review is persisted to ``horizon_reviews`` with an
+        additional ``developmental_memory_ref`` field for provenance, and its
+        ``ranked_affordances`` ordering reflects the memory-informed, gate-checked
+        ranking.
+        """
+        from godspeed_nav.developmental_memory import (  # noqa: PLC0415
+            apply_developmental_memory_to_candidates,
+        )
+
+        # Retrieval seam (E10) — on-demand projection when not supplied
+        memory = developmental_memory
+        if memory is None and observer_or_system_id and domain_model_hash:
+            try:
+                memory = self.get_developmental_memory(
+                    observer_or_system_id=observer_or_system_id,
+                    domain_model_hash=domain_model_hash,
+                )
+            except Exception:
+                memory = None
+
+        # Gate-evaluation-after-memory: influence THEN hard-gate check
+        # We apply the same pattern as rank_candidates_with_memory but at the
+        # affordance-review layer: memory boosts expected_horizon_delta/direction_score
+        # before payment/policy gates. Candidates that are currently unaffordable or
+        # lack a pathway remain rejected; memory does not manufacture a pathway.
+        influenced_candidates = apply_developmental_memory_to_candidates(candidates, memory)
+        review = self.review_horizon(direction_id, influenced_candidates)
+        # Annotate review with memory provenance (if any) without mutating its ledger copy
+        if memory is not None:
+            review["developmental_memory_ref"] = memory.get("event_id")
+            review["developmental_memory_capability_state"] = memory.get("payload", {}).get("capability_state")
+            # Also expose which candidates were memory-influenced for test observability
+            review["memory_influenced_ids"] = [
+                c["id"] for c in influenced_candidates if c.get("_memory_influenced")
+            ]
+        else:
+            review["developmental_memory_ref"] = None
+            review["memory_influenced_ids"] = []
+        # Persist the annotated review again with provenance (the base review was already stored;
+        # we append a second entry with memory provenance so the ledger retains the evidence link)
+        if memory is not None:
+            self.store.append("horizon_reviews_with_memory", review)
+        return review
+
     def review_representational_transition(
         self,
         current_state: dict[str, Any],
@@ -491,6 +685,63 @@ class NavigationRuntime:
         )
         return envelope["record"]
 
+    def ingest_canonical_evidence_recorded(
+        self,
+        event: dict[str, Any],
+        *,
+        local_model_sha256: str,
+        expected_work_request_id: str,
+        known_parent_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """T08: gate ONE canonical EvidenceRecorded into provisional storage.
+
+        Composition of the pure canonical gate
+        (:func:`godspeed_nav.evidence_ingest.ingest_evidence_recorded`) with
+        this runtime's provisional evidence path. STRICTLY PROVISIONAL
+        (frozen invariant I8): success writes ONLY the
+        ``canonical_execution_evidence`` ledger and returns an inert
+        provisional record; it can never create SettlementRecorded,
+        CapabilityUpdated, trajectories, repetition schedules, or any
+        metabolized capability. The lawful promotion path remains the
+        explicit :meth:`record_settlement` action, which this method does not
+        invoke or expose.
+
+        Re-delivery under stable identity is consequence-free: the prior
+        stored record is returned with status ``duplicate``.
+        """
+        from godspeed_nav.evidence_ingest import (  # noqa: PLC0415 — lazy import keeps module graph flat
+            EvidenceAdmission,
+            EvidenceIngestState,
+            ingest_evidence_recorded,
+        )
+
+        state = getattr(self, "_canonical_evidence_state", None)
+        if state is None:
+            state = EvidenceIngestState()
+            self._canonical_evidence_state = state
+
+        admission: EvidenceAdmission = ingest_evidence_recorded(
+            event,
+            local_model_sha256=local_model_sha256,
+            expected_work_request_id=expected_work_request_id,
+            state=state,
+            known_parent_ids=known_parent_ids,
+        )
+        if admission.status == "duplicate" or admission.record is None:
+            return {"status": "duplicate", "record": None}
+
+        # Mirror the legacy evidence boundary: only a persisted EXECUTABLE
+        # affordance may carry developmental evidence forward.
+        record = admission.record
+        self._require_executable_affordance(record.affordance_id)
+
+        stored, _appended = self.store.append_event_if_absent(
+            "canonical_execution_evidence",
+            {"id": f"cee-{uuid4().hex}", **record.to_ledger_record(now_iso())},
+            dedup_field="evidence_event_id",
+        )
+        return {"status": "provisional_recorded", "record": stored["record"]}
+
     def snapshot(self) -> dict[str, Any]:
         ledgers = {
             "desired_directions": self.store.read("desired_directions"),
@@ -677,3 +928,79 @@ class NavigationRuntime:
         }
         self.store.append("repetition_schedules", schedule)
         return schedule
+
+    def emit_developmental_event(
+        self,
+        event_type: str,
+        *,
+        work_request_id: str,
+        source_evidence_refs: list[str],
+        developmental_decision: dict[str, Any],
+        domain_model_sha256: str,
+        parent_evidence_ids: list[str],
+        payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """T09: project ONE explicit developmental decision into its canonical
+        E9 envelope and durably persist it through the idempotent memory gate
+        (:mod:`godspeed_nav.developmental_events`,
+        :mod:`godspeed_nav.developmental_memory`). godspeed_agent is the
+        exclusive producer of all five developmental event types; every
+        refusal happens before any write, and redelivery of an identical
+        envelope creates no duplicate history."""
+        from godspeed_nav.developmental_events import (  # noqa: PLC0415 — lazy import keeps module graph flat
+            project_developmental_event,
+        )
+        from godspeed_nav.developmental_memory import (  # noqa: PLC0415
+            persist_developmental_event,
+        )
+
+        envelope = project_developmental_event(
+            event_type,
+            work_request_id=work_request_id,
+            source_evidence_refs=source_evidence_refs,
+            developmental_decision=developmental_decision,
+            domain_model_hash=domain_model_sha256,
+            parent_evidence_ids=parent_evidence_ids,
+            payload=payload,
+        )
+        return persist_developmental_event(
+            self.store,
+            envelope,
+            local_model_sha256=domain_model_sha256,
+        )
+
+    def request_capability_promotion(
+        self,
+        capability_id: str,
+        target_lifecycle: str,
+        *,
+        variation_evidence: list[str],
+        work_request_id: str,
+        source_evidence_refs: list[str],
+        domain_model_sha256: str,
+        parent_evidence_ids: list[str],
+        rationale: str | None = None,
+    ) -> dict[str, Any]:
+        """T09/I9: request promotion of one capability through the SAME
+        canonical, gated, idempotent surface as every other developmental
+        decision. Metabolized capability is unreachable here without repeated
+        settlement under DECLARED variation recorded in durable history —
+        the durable memory gate refuses unearned promotions by name."""
+        return self.emit_developmental_event(
+            "CapabilityUpdated",
+            work_request_id=work_request_id,
+            source_evidence_refs=source_evidence_refs,
+            developmental_decision={
+                "action": "promote_capability",
+                "capability_id": capability_id,
+                "target_lifecycle": target_lifecycle,
+                "rationale": rationale or "",
+            },
+            domain_model_sha256=domain_model_sha256,
+            parent_evidence_ids=parent_evidence_ids,
+            payload={
+                "capability_id": capability_id,
+                "target_lifecycle": target_lifecycle,
+                "variation_evidence": variation_evidence,
+            },
+        )

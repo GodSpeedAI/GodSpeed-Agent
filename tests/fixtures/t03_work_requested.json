@@ -1,0 +1,26 @@
+{
+  "event_id": "a95dfab8-93ec-435e-b6b3-23e886cf556d",
+  "event_type": "WorkRequested",
+  "idempotency_key": "3d47ce3cf9971b6c431da9de0277ff2117a40364a2b2a9e18276e4dd21551959",
+  "occurred_at": "2026-08-26T19:24:13.960342+00:00",
+  "payload": {
+    "affordance_id": "aff-blue-green-001",
+    "desired_outcome": "deploy service via blue-green rotation",
+    "domain_model_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "namespace": "agentic_capability_loop",
+    "settlement_criteria": [
+      "health check green",
+      "zero-downtime observed"
+    ],
+    "work_request_id": "wr-gsa-001"
+  },
+  "provenance": {
+    "chain": [
+      "domain_model_hash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "caused_by:33333333-3333-3333-4444-555555555555"
+    ],
+    "origin": "godspeed-agent"
+  },
+  "schema_version": "v1",
+  "source_agent": "godspeed-agent"
+}
