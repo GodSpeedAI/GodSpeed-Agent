@@ -55,6 +55,7 @@ The documentation system is organized strictly according to the Diátaxis framew
 | **MCP & CLI Surfaces** | `docs/subsystems/mcp-and-cli-surfaces.md` | Reference / Architecture | Explore CLI commands and the 21 JSON-RPC MCP tools for Claude Code. | `getting-started.md` | `references/cli-reference.md` |
 | **Validation & Observability** | `docs/subsystems/validation-and-observability.md` | Reference / Architecture | Understand the 12-point enterprise audit suite and developmental reports. | `docs/architecture.md` | `how-to/run-enterprise-validation.md` |
 | **ML & Semantic Search** | `docs/subsystems/ml-and-semantic-search.md` | Reference / Architecture | Understand the dormant sklearn provider and local RuVector Node bridge. | `docs/architecture.md` | `how-to/add-a-custom-predictive-provider.md` |
+| **Calibration Training Report** | `docs/agentic-calibration-training-report.md` | Evidence / Evaluation | Inspect multi-dataset Hugging Face calibration results and held-out metrics across runs 001–005. | `docs/subsystems/ml-and-semantic-search.md` | `docs/plans/2026-06-03-agentic-calibration-pipeline.md` |
 
 ---
 

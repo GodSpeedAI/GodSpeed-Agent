@@ -1,12 +1,10 @@
 # Current Status
 
-Updated: 2026-07-30
+Updated: 2026-09-09
 
 ## Active Objective
 
-Implement `.agents/plans/2026-07-29-neatcode-audit-corrections.md` — restore
-canonical settlement authority across the GodSpeed-Agent runtime. **Status:
-all 10 tasks complete.**
+Complete and verify Hugging Face dataset calibration pipeline run `hf-calibration-005-features` with richer pre-outcome features and ensure solver convergence. **Status: Complete.**
 
 ## Last Completed Task
 

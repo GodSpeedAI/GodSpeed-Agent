@@ -7,19 +7,18 @@ when the active desired direction requires deeper history.
 
 ## Last Settlement
 
-- Date: 2026-06-03
-- Summary: hf-calibration-003 with held-out sklearn evaluation and multi-dataset
-  coverage. 1943 usable settlements from 2 datasets (swegym_openhands: 1892,
-  agenttrove: 51). sklearn ROC AUC: 0.7481, balanced accuracy: 0.7015,
-  F1: 0.4038. Beats success-rate baseline (0.1799) but not majority-class
-  baseline (0.8509). class_weight=balanced helped minority detection.
-  Leakage audit clean. 0 adapter errors across both datasets.
-- Settlement evidence: 536 tests pass, hf-calibration-003 exits 0.
+- Date: 2026-09-09
+- Summary: Completed hf-calibration-005-features with 5 richer pre-outcome features
+  (tool_diversity_count, error_recovery_ratio, action_observation_ratio,
+  avg_actions_per_step, dataset_id). Processed 6497 usable settlements across all
+  3 external datasets (swegym_openhands: 1892, agenttrove: 51, nebius_swe_agent: 4554).
+  Held-out sklearn evaluation achieved ROC-AUC 0.8266, balanced accuracy 0.7428,
+  and F1 0.5208, outperforming majority and success-rate baselines. Zero leakage
+  detected. Increased solver max_iter to 1000 for clean lbfgs convergence.
+- Settlement evidence: 45 tests pass, hf-calibration-005-features exits 0.
 - Proof classification: `external-proxy-calibration`.
-- Known limit: class imbalance (15% success) still limits sklearn. nebius_swe_agent
-  not yet exercised (target reached from first 2 datasets). Next move: add richer
-  pre-outcome features (tool diversity, action sequence patterns, error recovery
-  signals) and exercise nebius_swe_agent.
+- Known limit: External proxy data is for calibration only, not local settlement proof.
+  Next move: calibrate cognitive model controller weights against local harness execution traces.
 
 ## Active Desired Direction
 

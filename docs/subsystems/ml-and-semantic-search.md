@@ -73,9 +73,12 @@ To prevent premature reliance on predictive models ("imaginary muscles"), ML act
 When `model_provider: sklearn` is enabled and the extra is installed (`uv sync --extra ml`), `SklearnPredictiveModelAdapter`:
 1. Extracts calibration features from historical settlements using `build_calibration_frame`.
 2. Requires at least 10 calibration rows with both positive and negative settlement classes.
-3. Fits a standard scikit-learn `LogisticRegression` classifier over features:
-   `["payment_predicted_total", "horizon_delta", "risk_estimate", "debt_estimate"]`.
-4. Outputs calibrated probabilities in $[0.0, 1.0]$.
+3. Fits a standard scikit-learn `LogisticRegression(max_iter=1000, solver="lbfgs")` classifier over pre-outcome features:
+   - Scalar payment proxies: `payment_predicted_total`, `payment_actual_total`, `payment_error`, `horizon_delta`, `risk_estimate`, `debt_estimate`
+   - Behavioral dynamics: `tool_diversity_count`, `error_recovery_ratio`, `action_observation_ratio`, `avg_actions_per_step`, `dataset_id`
+4. Outputs calibrated probabilities in $[0.0, 1.0]$ for advisory horizon review.
+
+For complete multi-dataset empirical training results and leakage audit analysis across runs `001` through `005`, see the [Agentic Calibration Training Report](../agentic-calibration-training-report.md).
 
 ---
 

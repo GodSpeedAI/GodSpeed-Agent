@@ -119,6 +119,7 @@ Where should you go next?
 ### "I am debugging an operational failure or building an extension"
 - [Troubleshooting Common Failures](how-to/troubleshoot-common-failures.md): Resolving blocked transitions, unaffordable candidates, and circular motion.
 - [Add a Custom Predictive Provider](how-to/add-a-custom-predictive-provider.md): Implementing the `PredictiveModelPort` interface.
+- [Calibration & Training Report](agentic-calibration-training-report.md): Multi-dataset Hugging Face calibration results, behavioral features, and held-out evaluation metrics.
 - [Enterprise Validation Guide](how-to/run-enterprise-validation.md): Running the full enterprise audit suite.
 
 ### "I want to trace concepts back to implementation code"

@@ -1,0 +1,25 @@
+objective: "Complete HF calibration training run hf-calibration-005-features and eliminate lbfgs convergence warning."
+worktree_state: "clean; hf-calibration-005-features generated; max_iter increased to 1000 in calibration pipeline and ml adapter."
+changed_files:
+  - "scripts/settlement_datasets/run_calibration_pipeline.py"
+  - "godspeed_nav/ml.py"
+  - "CURRENT_STATE.md"
+  - "state/current_state.json"
+  - "state/milestones.jsonl"
+  - ".agents/CURRENT_STATUS.md"
+  - ".agents/current_status.yml"
+completed_work:
+  - "Executed hf-calibration-005-features across 3 Hugging Face datasets (swegym_openhands, agenttrove, nebius_swe_agent), producing 6,497 usable proxy settlements."
+  - "Evaluated predictive model with 5 new pre-outcome features, reaching ROC-AUC 0.8266 and F1 0.5208 with zero label leakage."
+  - "Increased LogisticRegression max_iter to 1000 in scripts/settlement_datasets/run_calibration_pipeline.py and godspeed_nav/ml.py to eliminate lbfgs ConvergenceWarning (converges at ~258 iterations)."
+  - "Updated CURRENT_STATE.md, state/current_state.json, and state/milestones.jsonl (sequence 79)."
+verification:
+  - "uv run python -m scripts.settlement_datasets.run_calibration_pipeline --manifest configs/settlement_datasets/calibration_sources.yaml --run-id hf-calibration-005-features --output-run-dir data/settlement_datasets/runs/hf-calibration-005-features --target-usable-settlements 5000 --min-confidence 0.65 --provider sklearn --sampling-strategy natural --min-datasets 3 (exited 0, report generated)"
+  - "uv run pytest tests/test_calibration_pipeline.py tests/test_computation.py -q (45 passed)"
+  - "uv run pytest tests/test_docs_alignment.py -q (18 passed)"
+remaining_steps:
+  - "Optionally calibrate controller weights against local harness execution traces."
+blockers: []
+decisions:
+  - "Kept external-proxy-calibration classification for all external datasets to preserve local capability settlement boundary."
+  - "Set max_iter=1000 to cleanly allow lbfgs convergence on unscaled feature matrices without altering estimator signatures."
