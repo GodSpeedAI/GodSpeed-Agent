@@ -1,8 +1,8 @@
 {
-  "event_id": "1f0db33f-daa9-4de4-89cb-0dfa903b52f5",
+  "event_id": "0376e56e-ce47-4bba-9624-a08214a360a4",
   "event_type": "WorkRequested",
   "idempotency_key": "3d47ce3cf9971b6c431da9de0277ff2117a40364a2b2a9e18276e4dd21551959",
-  "occurred_at": "2026-09-09T18:35:57.299771+00:00",
+  "occurred_at": "2026-09-15T20:05:51.646334+00:00",
   "payload": {
     "affordance_id": "aff-blue-green-001",
     "desired_outcome": "deploy service via blue-green rotation",

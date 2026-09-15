@@ -47,3 +47,10 @@ entry when resolved; do not use this file as a backlog of ideas.
 - Next move: when the addon bridge is stood up, import
   `developmental_memory.ingest_developmental_event` as its validation route.
 - Scope: no broker available in this environment.
+
+## Open: README fails the implementation-defined docs-alignment test
+- Observed: 2026-09-15 (T04 v006 features; pre-existing failure, not caused by T04)
+- Evidence: `uv run pytest tests/test_docs_alignment.py::test_readme_documents_implementation_defined_behavior_and_local_first_boundary -q` fails: `assert "Implementation-defined" in README.md`. Working tree at observation time contained only new T04 files (git status: two untracked files), so the failure predates T04.
+- Impact: `tests/test_docs_alignment.py` red in CI; the local-first/implementation-defined contract AGENTS.md requires user-facing docs to state is not actually stated in README.
+- Next move: add a short "Implementation-defined behavior" section to README.md (HARNESS.md already documents the behaviors; mirror the boundary statement).
+- Scope: docs-only; out of T04 scope.

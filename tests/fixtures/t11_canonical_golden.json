@@ -98,7 +98,7 @@
       "event_id": "c6ba3a3d-ec4f-5a52-a7a8-d6c738493aec",
       "event_type": "DesiredDirection",
       "idempotency_key": "897e6f8005b4759ea3fea298c102e16bcb8a0be42e3316f6163fa14808c092e0",
-      "occurred_at": "2026-09-09T18:36:16.207001+00:00",
+      "occurred_at": "2026-09-15T20:06:02.515255+00:00",
       "payload": {
         "desired_state": "deploy service via blue-green",
         "direction_id": "dir-t11-001",
@@ -401,7 +401,7 @@
       "event_id": "56dabf9b-294d-5b99-bfed-c0ffac35dcd4",
       "event_type": "WorkRequested",
       "idempotency_key": "dd2e8ec5b70faa731d9d4b20273f23ac4414df19cf98c946bf291a4543494be8",
-      "occurred_at": "2026-09-09T18:36:16.207055+00:00",
+      "occurred_at": "2026-09-15T20:06:02.515282+00:00",
       "payload": {
         "affordance_id": "aff-t11-canonical-001",
         "desired_outcome": "deploy service via blue-green rotation",
