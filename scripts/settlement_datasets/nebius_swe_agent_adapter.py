@@ -100,7 +100,9 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
                         "turn_index": idx,
                         "role": role,
                         "action_type": "message",
-                        "content": entry.get("content", ""),
+                        # Live HF rows (v006 finding) carry the message in
+                        # ``text``; fixtures carry legacy ``content``.
+                        "content": entry.get("text") or entry.get("content") or "",
                     }
                 )
         return actions
@@ -115,7 +117,9 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
                     {
                         "turn_index": idx,
                         "role": role,
-                        "content": entry.get("content", ""),
+                        # Live HF rows (v006 finding) carry the message in
+                        # ``text``; fixtures carry legacy ``content``.
+                        "content": entry.get("text") or entry.get("content") or "",
                     }
                 )
         return observations
