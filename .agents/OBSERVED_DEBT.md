@@ -48,9 +48,29 @@ entry when resolved; do not use this file as a backlog of ideas.
   `developmental_memory.ingest_developmental_event` as its validation route.
 - Scope: no broker available in this environment.
 
-## Open: README fails the implementation-defined docs-alignment test
-- Observed: 2026-09-15 (T04 v006 features; pre-existing failure, not caused by T04)
-- Evidence: `uv run pytest tests/test_docs_alignment.py::test_readme_documents_implementation_defined_behavior_and_local_first_boundary -q` fails: `assert "Implementation-defined" in README.md`. Working tree at observation time contained only new T04 files (git status: two untracked files), so the failure predates T04.
-- Impact: `tests/test_docs_alignment.py` red in CI; the local-first/implementation-defined contract AGENTS.md requires user-facing docs to state is not actually stated in README.
-- Next move: add a short "Implementation-defined behavior" section to README.md (HARNESS.md already documents the behaviors; mirror the boundary statement).
-- Scope: docs-only; out of T04 scope.
+## Open: nebius error_count in the v005 full-semantics family is a terminal-eval label proxy
+- Observed: 2026-09-15 (T06 independent audit, v006 plan)
+- Evidence: `scripts/settlement_datasets/nebius_swe_agent_adapter.py:163-168`
+  counts error keywords over terminal `eval_logs` (the outcome evidence
+  itself); univariate ROC-AUC vs label = 0.918 on the 225-parent nebius
+  corpus; consumed only by `v005_full_semantics` (A-full/C-full arms), never
+  by prefix arms (`.agents/reports/v006-critique.md` F1).
+- Impact: any full-trajectory control built with H semantics carries an
+  outcome-tainted feature for nebius; its numbers must not be cited as clean
+  trajectory-only evidence.
+- Next move: if a future plan needs a clean full-trajectory control, strip
+  `counts.error_count`-derived features for nebius (or per-source) and
+  re-preregister.
+- Scope: H semantics are frozen by definition; fixing would change the
+  historical contract, so it stays a documented caveat.
+
+## Open: AGENTS.md requires `just context-check` but no justfile exists
+- Observed: 2026-09-15 (T04, v006 plan)
+- Evidence: `which just` finds the binary at ~/.local/bin/just, but no
+  justfile/Justfile exists at repo root; `just context-check` fails with
+  "no justfile found".
+- Impact: a required pre-handoff gate is unexecutable as documented; CI may
+  run an equivalent, but local agents cannot.
+- Next move: either commit a justfile exposing `context-check` (CI parity)
+  or correct AGENTS.md to name the real command.
+- Scope: repo-tooling decision, out of v006 scope.

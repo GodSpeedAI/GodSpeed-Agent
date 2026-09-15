@@ -7,18 +7,26 @@ when the active desired direction requires deeper history.
 
 ## Last Settlement
 
-- Date: 2026-09-09
-- Summary: Completed hf-calibration-005-features with 5 richer pre-outcome features
-  (tool_diversity_count, error_recovery_ratio, action_observation_ratio,
-  avg_actions_per_step, dataset_id). Processed 6497 usable settlements across all
-  3 external datasets (swegym_openhands: 1892, agenttrove: 51, nebius_swe_agent: 4554).
-  Held-out sklearn evaluation achieved ROC-AUC 0.8266, balanced accuracy 0.7428,
-  and F1 0.5208, outperforming majority and success-rate baselines. Zero leakage
-  detected. Increased solver max_iter to 1000 for clean lbfgs convergence.
-- Settlement evidence: 45 tests pass, hf-calibration-005-features exits 0.
-- Proof classification: `external-proxy-calibration`.
-- Known limit: External proxy data is for calibration only, not local settlement proof.
-  Next move: calibrate cognitive model controller weights against local harness execution traces.
+- Date: 2026-09-15
+- Summary: v006 dual-model settlement classifier plan settled (PARTIAL).
+  Implemented corrected ingestion (agenttrove HF streaming, nebius null-safety:
+  441 crashes -> 0), a shared 1799-parent trajectory corpus (swegym 1574,
+  nebius 225; agenttrove REJECTED at live revision — label columns null;
+  Toucan-1.5M REJECTED — no verified outcome), three feature families
+  (v005_full_semantics bit-exact vs H, v005_prefix_compatible, v006@1 with 29
+  trajectory-state features), six causal prefix cuts, lightgbm 4.7.0 via uv,
+  and a frozen-preregistration experiment matrix. No preregistered gain earned
+  (representation -0.012, estimator +0.012, combined -0.010 macro-AUC vs the
+  +0.02 bar); v006 helps only near the trajectory end. Independent audit:
+  CONFIRM, zero blockers. Runtime default unchanged; historical v005 intact.
+- Settlement evidence: 907 tests pass / 2 skipped; validate gate pass; final
+  report `.agents/reports/godspeed-agent-v006-final.md`.
+- Proof classification: `external-proxy-calibration` (unchanged; no local
+  settlement claims made).
+- Known limit: H's recorded 0.8266 is not comparable to current grouped-split
+  numbers; swegym dataset license formally undetermined (corpus uncommitted).
+  Next move: operator decision — re-preregister a late-cut-only v006 endpoint
+  on a fresh corpus revision, or accept the negative settlement.
 
 ## Active Desired Direction
 

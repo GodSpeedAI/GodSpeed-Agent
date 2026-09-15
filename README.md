@@ -2426,6 +2426,40 @@ It should not be structurally impulsive.
 
 ---
 
+## Using The Harness With A Project
+
+- Local-first: **No external API calls by default.** Runtime state lives
+  under `.godspeed-harness`, and computation, ledgers, and reports stay on
+  local files.
+- The harness is developmental rather than arrival-centric: a settlement's
+  outcome completion is not terminal. A settled outcome becomes substrate and
+  exposes the next affordance.
+- Implementation-defined behavior (thresholds, storage shapes, provider
+  fallbacks) is documented in `HARNESS.md`; this README records the
+  user-facing consequences of those choices.
+- Policy gates and deterministic ranking stay authoritative. Predictive and
+  simulated surfaces are advisory and never bypass settlement evidence
+  rules.
+
+## Project Learning And Absorption
+
+Capability is metabolized only after repeated settlement survives. Skills
+and compiled guidance are earned from settled work, and the
+ingest/absorption surface decides what a project keeps, retries, or
+retires. Transfer, recovery, and decay are tracked in the ledger rather
+than assumed.
+
+## Self-Critique
+
+Falsification surfaces are part of the contract: the doctrine, policies,
+and mechanics of the harness are themselves subject to settlement and
+revision. Prefer small corrections that strengthen explainability, and
+when the framework fails in practice, document the mismatch and revise the
+relevant surface. The docs-alignment tests keep operator documentation
+honest about these boundaries.
+
+---
+
 ## Installation
 
 The package builds as a wheel and source distribution using Hatchling.

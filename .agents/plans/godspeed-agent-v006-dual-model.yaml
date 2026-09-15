@@ -7,10 +7,14 @@ schema_version: "1.0"
 metadata:
   id: "godspeed-agent-v006-dual-model"
   title: "v006 dual-model settlement classifier: richer trajectory-state features + LightGBM, experimentally validated against explicit H/A/P baselines"
-  status: "in_progress"
-  version: "0.3.0"
+  status: "settled"
+  version: "1.0.0"
   created: "2026-09-15"
   amended: "2026-09-15 (operator amendments 1-12 incorporated; see operator_amendments)"
+  settlement: >-
+    PARTIAL — implementation works but evidence does not justify changing the
+    default. All preregistered gains NOT EARNED; runtime unchanged; H intact.
+    Final report: .agents/reports/godspeed-agent-v006-final.md
 
   purpose: >-
     Upgrade the settlement calibration classifier into an experimentally
@@ -364,14 +368,21 @@ dependency_graph:
     - "final verification, docs, report (T08)"
 
 initial_state:
-  current_task: "T04"
-  last_settled_task: "T03"
-  ready: ["T04"]
-  blocked:
-    T05: ["T02", "T04"]
-    T06: ["T05"]
-    T07: ["T06"]
-    T08: ["T06", "T07"]
+  current_task: "none — plan settled"
+  last_settled_task: "T08"
+  ready: []
+  blocked: {}
+
+task_status_record:
+  T00: {status: settled, evidence: ".agents/reports/v006-v005-reconstruction.md"}
+  T01: {status: settled, evidence: ".agents/reports/v006-data-and-features.md"}
+  T02: {status: settled, evidence: "pyproject.toml ml extra + tests/test_computation.py (lightgbm 4.7.0)"}
+  T03: {status: settled, evidence: "build_trajectory_corpus.py + corpus_summary.json (T03+T03b corrections)"}
+  T04: {status: settled, evidence: "v006_features.py + tests/test_v006_features.py (92 feature/corpus tests)"}
+  T05: {status: settled, evidence: "preregistration + run_v006_experiments.py + results artifacts; all gains NOT EARNED"}
+  T06: {status: settled, evidence: ".agents/reports/v006-critique.md — VERDICT: CONFIRM, zero blockers"}
+  T07: {status: settled, evidence: ".agents/reports/v006-runtime-contract.md — documented no-integration decision (amendment-6/7 path)"}
+  T08: {status: settled, evidence: ".agents/reports/godspeed-agent-v006-final.md — PARTIAL; gates 907 passed / 2 skipped / 0 failed; validate pass"}
 
 # =============================================================================
 # TASK CONTRACTS
