@@ -15,7 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
-ml = ["scikit-learn>=1.4"]
+ml = ["scikit-learn>=1.4", "lightgbm>=4.6"]
 
 [project.scripts]
 godspeed-nav = "godspeed_nav.cli:main"
