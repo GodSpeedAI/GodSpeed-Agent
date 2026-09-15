@@ -1,0 +1,229 @@
+# =============================================================================
+# PREREGISTRATION: godspeed-agent-v007-recovery-prediction (T02, FROZEN)
+# =============================================================================
+# Frozen 2026-09-15 by the main agent BEFORE any v007 model training or
+# final-test examination. Embeds the plan's coordinator_decisions verbatim in
+# operational form, updated only with T01 corpus evidence (dataset verdicts,
+# yields, documented selection effects). Nothing below may change after final
+# test results are examined; the final test EVALUATES this system, never
+# redesigns it.
+
+preregistration_id: v007-recovery
+frozen_at: "2026-09-15"
+plan: godspeed-agent-v007-recovery-prediction
+
+# ---------------------------------------------------------------------------
+# 1. RECOVERY DEFINITION (operational, observable-event-grounded)
+# ---------------------------------------------------------------------------
+recovery_definition:
+  failure_episode:
+    opening_rule: >-
+      An episode opens at the first error observation (is_error=True) of a
+      MAXIMAL RUN of error observations, where intervening actions belong to
+      the failed state and the run is preceded by >=1 non-error observation
+      (leading context errors never open episodes). Failure event index = e.
+    eligibility: "e must not be the trajectory's final event (exclusion bucket failure_is_final_event; observed count: 0)."
+  escape:
+    definition: "First observation event with index > e and is_error=False. LABEL-SIDE ONLY; never a feature."
+  target: >-
+    recovery_success = 1 iff (parent terminal label == 1) AND (escape exists).
+    Otherwise 0. Escape without eventual verified settlement is NOT recovery;
+    a changed tool or another action alone is NOT recovery; terminal success
+    with no observable escape is labeled 0 (bucket no_escape_with_settlement).
+  rationale: >-
+    Recovery requires observable downstream consequence: the agent must leave
+    the failed state (escape observed) AND the trajectory must subsequently
+    reach verified settlement. Both components are observable events; neither
+    is an action, a tool change, or a claim.
+  audit_buckets_frozen:
+    escape_with_settlement: 8028
+    escape_no_settlement: 26512
+    no_escape_with_settlement: 414
+    no_escape_no_settlement: 2472
+    exclusion_failure_is_final_event: 0
+
+# ---------------------------------------------------------------------------
+# 2. ADMITTED DATASETS (evidence-cited; revisions + licensing)
+# ---------------------------------------------------------------------------
+datasets_admitted:
+  swegym_openhands:
+    source_uri: SWE-Gym/OpenHands-Sampled-Trajectories
+    split: train.raw
+    max_rows: 3000
+    revision_sha: baf3a4e4bff514d48ddc08a93a2ade5c126212c7
+    license_status: "ambiguous (HF card declares no license; companion repo SWE-Gym/SWE-Gym Apache-2.0); local training only, trajectory content never committed"
+    corpus: "identical parents to v006 build (parity verified: same ids, counts, event tuples, labels)"
+    episodes: 6987
+    episode_positives_pct: 10.1
+  nebius_swe_agent:
+    source_uri: nebius/SWE-agent-trajectories
+    split: train
+    max_rows: 5000
+    revision_sha: 68195a1450865274106246d0d0296a1d6807b88e
+    license_status: "identified: cc-by-4.0"
+    corpus_note: >-
+      REVIVED for v007: the v006 corpus's nebius events were empty-content due
+      to an adapter field bug ('content' vs 'text'); the v007 adapter reads
+      text-first with content fallback. v006 artifacts remain untouched; all
+      v006 nebius per-source numbers are hereby flagged as computed on
+      degenerate events (post-audit finding, recorded in the v007 final
+      report).
+    usable_parents: 4554
+    labels_s_f: [998, 3556]
+    is_error_incidence: "4554/4554 parents with >=1 is_error event after fix (54,768 events)"
+    episodes: 17642
+    episode_positives_pct: 14.1
+  swe_smith:
+    source_uri: SWE-bench/SWE-smith-trajectories
+    split: tool
+    max_rows: 5000
+    revision_sha: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
+    license_status: "identified: mit"
+    corpus_note: >-
+      ADMITTED by T01a: genuine mid-trajectory Tracebacks in tool observations,
+      post-failure behavior present, 'resolved' execution-derived (F2P/P2P test
+      run), MIT license. KNOWN SELECTION EFFECT (documented, accepted): the
+      0.65-confidence gate rejects zero-signal failures (resolved=false with no
+      error-keyword observations; 1,292 rows), so admitted swe_smith failures
+      skew toward error-rich trajectories and its episode positive rate (37.8%)
+      is gate-selected. Per-source reporting handles this; no cross-source
+      pooling claim relies on equal base rates.
+    usable_parents: 3708
+    labels_s_f: [2368, 1340]
+    is_error_incidence: "2435/3708 parents with >=1 is_error event"
+    episodes: 12797
+    episode_positives_pct: 37.8
+datasets_rejected:
+  Agent-Ark/Toucan-1.5M: "v006: no verified terminal outcome (synthesis-time assumptions; LLM-judge annotations do not gate success)."
+  SWE-Gym/SWE-Gym: "T01a: instance-level task metadata only; zero trajectory content."
+  R2E-Gym/R2EGym-SFT-Trajectories: "T01a: messages-only SFT set; no outcome field; success-filtered by construction; no IDs."
+  R2E-Gym/R2EGym-Verifier-Trajectories: "T01a: judge-derived rewards; no stable parent ID."
+  open-thoughts/AgentTrove: "v006/T01: all label columns null at live revision; agent self-report only."
+
+# ---------------------------------------------------------------------------
+# 3. UNITS, WINDOWS, SCHEMAS
+# ---------------------------------------------------------------------------
+units_and_windows:
+  primary_unit: failure episode (37,426 episodes; each yields one R0 row and one R1 row; 74,852 rows total)
+  R0: "Feature window closes at the failure event (opening error observation, inclusive): k0 = e + 1."
+  R1: >-
+    Feature window closes at the first post-failure ACTION plus any
+    consecutive observation events directly following it before the next
+    action (the attempt's immediate result, by construction in-window). This
+    makes attempt_result_is_error / attempt_result_same_hash_as_failure
+    causal at R1. Episodes always had a post-failure action in the realized
+    corpus (R0-only count: 0).
+  pooling_rule: "R0 and R1 are separate prediction tasks; never pooled into one model or one headline."
+
+feature_schemas:
+  v007_r0:
+    version: "v007_r0@1"
+    count: 44
+    composition: "v006 family at k0 (29) + v005-prefix family sans dataset_id (10) + episode-positional (5: fail_event_index, prior_episode_count, prior_escape_count, errors_opening_run_available_at_r0, current_streak_prior_nonerror)"
+    notes:
+      - "prior_escape_count counts PRIOR episodes' escapes strictly before e (causal); pinned by mutation invariance. Documented exception to the escape-name guard: CAUSAL_ESCAPE_FEATURE_EXCEPTION."
+      - "fail_event_index is an absolute event count (causal); fraction-of-final-length remains excluded and absent (guard-enforced)."
+  v007_r1:
+    version: "v007_r1@1"
+    count: 54
+    composition: "R0 features + 10 recovery-attempt additions (recovery_attempt_present, attempt_repeats_prior_action, has_prior_action, attempt_family_change, has_pre_failure_action, obs_between_failure_and_attempt, new_obs_between_failure_and_attempt, attempt_result_is_error, has_attempt_result, attempt_result_same_hash_as_failure)"
+  v005_minimal_recovery:
+    version: "v005_minimal_recovery@1"
+    count: 7
+    composition: "error_count_so_far, consecutive_error_observations, repeated_error_rate, error_rate, action_observation_ratio, tool_diversity_count, dataset_id"
+    role: "representation-ablation control (secondary hypothesis)"
+  identity_variant:
+    definition: >-
+      'with identity' = schema + dataset_id appended (frozen H mapping:
+      swegym_openhands=0, agenttrove=1, nebius_swe_agent=2, unknown/-1 which
+      swe_smith receives); 'without identity' = schema alone. Primary
+      endpoint uses WITH identity; the without-identity run is the
+      preregistered robustness check.
+
+# ---------------------------------------------------------------------------
+# 4. GROUPING, SPLITS, WEIGHTS
+# ---------------------------------------------------------------------------
+grouping:
+  split_group: "<dataset>:<repository> (version-tag-stripped instance prefix; swe_smith instance ids are fault-injection ids — finer than repository, the safe direction)"
+  rule: "All episodes of one split_group in one partition; guard-enforced in code and tests."
+splits:
+  holdout: "GroupShuffleSplit-equivalent per group_label stratum (group_label = max parent label in group), test_size=0.20, random_state=42; test touched EXACTLY ONCE."
+  selection: "GroupKFold(5) over train groups only; no test-derived choices."
+weights:
+  training: "sample_weight = 1/(number of TRAINING episodes of that parent) per episode row (parent-balanced; counts episode_ids, not rows)."
+  metrics: "Unweighted episode-level metrics are primary (operational truth); parent-aggregated AUC reported as the multiplicity-inflation check."
+source_balance:
+  primary: "Natural mixture (no source weights). Preregistered trigger for a source-balanced sensitivity arm: parent-with-episodes ratio > 3:1. Realized ratio nebius:swegym = 4261:1526 = 2.79 and swe_smith 2413 — TRIGGER NOT FIRED; sensitivity arm omitted."
+  co_reporting: "Per-source metrics + macro-source (unweighted mean over sources) ALWAYS reported beside pooled numbers."
+
+# ---------------------------------------------------------------------------
+# 5. MODELS, SELECTION, CALIBRATION
+# ---------------------------------------------------------------------------
+models:
+  R_LR: "LogisticRegression(class_weight='balanced', max_iter=1000, solver='lbfgs', random_state=42), C in {0.01, 0.1, 1.0}"
+  R_LGBM: "LGBMClassifier(random_state=42, verbose=-1, n_estimators in {150,400}, num_leaves in {15,31}, learning_rate in {0.05,0.1}, min_child_samples in {20,50}, subsample=0.9, colsample_bytree=0.9, reg_lambda=1.0)"
+  selection: "Per (point, schema, identity-variant): mean GroupKFold(5) train ROC-AUC; tiebreak mean AP. No early stopping. sample_weight passed to fit for both estimators."
+calibration:
+  rule: "OOF (GroupKFold on train) isotonic regression applied to the selected model iff its OOF ECE > 0.05; isotonic fit on train out-of-fold predictions only, never on test. Report test Brier + ECE before/after."
+  precedent: "v006 leakage-safe calibration pattern (critic-verified)."
+
+# ---------------------------------------------------------------------------
+# 6. METRICS
+# ---------------------------------------------------------------------------
+primary_metric: "Episode-level ROC-AUC, reported separately for R0 and R1 (operational truth: one prediction per failure event)."
+secondary_metrics:
+  - average_precision
+  - brier_score
+  - calibration_ece_10bin
+  - balanced_accuracy
+  - precision_recall_f1_at_fixed_0p5
+  - confusion_matrix
+  - parent_aggregated_auc (multiplicity-inflation check)
+  - per_source_metrics
+  - macro_source_metrics
+  - leave_one_source_out (3 folds; nebius/swegym/swe_smith)
+  - identity_removed_variants
+  - feature_importance (LR |std-coef| top-15; LGBM gain importance top-15)
+  - representative_predictions (3 highest-confidence correct + 3 incorrect per point, feature-snippet evidence)
+
+# ---------------------------------------------------------------------------
+# 7. HYPOTHESES + ACCEPTANCE (mechanical, frozen)
+# ---------------------------------------------------------------------------
+hypotheses:
+  primary: >-
+    LightGBM exploits interactions among failure, recovery, tool-use,
+    verification, and evidence-acquisition features to predict recoverability
+    better than LogisticRegression.
+  secondary: >-
+    The NeoHorse-derived trajectory-state representation (v007_r0/r1) is more
+    informative for conditional recovery prediction than the minimal
+    v005-compatible recovery feature set, at the same estimator and episodes.
+acceptance_criteria:
+  primary_hypothesis_earned: >-
+    R_LGBM beats R_LR by >= +0.02 episode-level ROC-AUC at a prediction point
+    (R0 or R1, primary identity variant) AND the direction holds in at least
+    2 of 3 per-source cells at that point AND is not reversed in the
+    without-identity variant.
+  secondary_hypothesis_earned: >-
+    v007 representation beats v005_minimal_recovery by >= +0.02 episode-level
+    ROC-AUC at the same estimator (R_LR) and point, with the same per-source
+    direction condition.
+  classification_rule: >-
+    SETTLED-earned / PARTIAL / NOT EARNED assigned mechanically from these
+    criteria; PARTIAL requires at least one point with ROC-AUC materially
+    above its class-prior baseline with the other evidence insufficient;
+    NOT EARNED when no point clears useful discrimination; BLOCKED only if
+    the experiment cannot be constructed trustworthily.
+falsifiers:
+  - "R_LGBM <= R_LR at both points under the primary identity variant."
+  - "Any gain present only with dataset_id and reversed without it."
+  - "Representation gain absent at the fixed estimator (R_LR)."
+known_confounds:
+  - "Episode multiplicity within parents (weights + parent-aggregated secondary metric)."
+  - "swe_smith gate-selection of error-rich failures (37.8% positives; per-source cells)."
+  - "nebius near-universal keyword error incidence (100% of parents; episode rule handles opening runs)."
+  - "Dataset identity as proxy for label priors (identity-removed variants + LOSO)."
+reproducibility:
+  random_state: 42
+  determinism: "Two full runs must produce identical metric tables."
+  artifact_sha_rule: "Preregistration sha256 recorded in the experiment manifest; manifest written after this file is committed."
