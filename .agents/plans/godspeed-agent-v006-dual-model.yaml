@@ -364,11 +364,10 @@ dependency_graph:
     - "final verification, docs, report (T08)"
 
 initial_state:
-  current_task: "T03"
-  last_settled_task: "T02"
-  ready: ["T03"]
+  current_task: "T04"
+  last_settled_task: "T03"
+  ready: ["T04"]
   blocked:
-    T04: ["T03"]
     T05: ["T02", "T04"]
     T06: ["T05"]
     T07: ["T06"]
@@ -403,11 +402,34 @@ tasks:
 
   T03:
     title: "Corrected ingestion + shared trajectory corpus (contemporary, A-feeding)"
-    initial_status: ready
-    depends_on: ["T00", "T01"]
-    proof_level: P1
-    confirmation: builder_with_main_agent_review
+    status: settled
     settles: ["REQ-V006-DATA", "REQ-V006-LICENSING"]
+    evidence: >-
+      scripts/settlement_datasets/build_trajectory_corpus.py +
+      configs/settlement_datasets/v006_corpus.yaml + tests/test_v006_corpus.py +
+      data/settlement_datasets/runs/hf-calibration-006-experiments/corpus_summary.json
+      (+ local gitignored corpus under data/settlement_datasets/corpora/v006-trajectories/)
+    settlement_note: >-
+      SETTLED after builder pass (T03) + correction pass (T03b), both verified
+      by main agent. Ingestion corrections: agenttrove adapter now streams HF
+      when no input_path (local-file bug fixed); nebius extract_payment +
+      metadata fields null-safe (441 historical crashes -> 0). Identity model:
+      parent_id = trajectory run (dataset:instance:run_discriminator with
+      content-hash component); group_key = dataset:instance (splits and prefix
+      grouping key on group_key — same-instance runs never straddle partitions);
+      dedup = true content duplicates only. AGENTTROVE REJECTED at live revision
+      b395a4307a2bc9950a90dc899438f149e115fc60: every label column (task_binary,
+      judgment, verifier_output, result, ground_truth) is null; README-documented
+      reward/task_id columns absent at this revision; only remaining label path
+      is agent self-report (confidence 0.6 < 0.65 gate) — amends T01's
+      conditional-admit finding (revision drift is material). Final corpus:
+      swegym_openhands 1574 parents (240 S / 1334 F; 318 true duplicates
+      dropped), nebius_swe_agent 225 parents (59 S / 166 F; 4329 exact
+      duplicates dropped — source is dominated by repeated identical runs),
+      total 1799 parents / 299 successes (16.6%). Dataset strategy for T05 is
+      TWO sources; LODO degenerates to two folds — reported but marked weak;
+      swegym = 87.8% of parents so amendment-5 source-balance reporting is
+      mandatory.
     changes: >-
       (1) CORRECT ingestion where justified (amendment 8): agenttrove adapter
       gains a real HF streaming path (source_uri/split honored; local-file

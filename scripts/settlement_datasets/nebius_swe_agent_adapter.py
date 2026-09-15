@@ -85,7 +85,7 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
     def normalize_task(self, raw: dict[str, Any]) -> dict[str, Any]:
         return {
             "type": "implementation",
-            "description": raw.get("instance_id", ""),
+            "description": raw.get("instance_id") or "",
             "settlement_target": "pass_all_tests",
         }
 
@@ -155,10 +155,12 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
         ai_turns = sum(1 for e in trajectory if e.get("role") in ("ai", "assistant"))
         user_turns = sum(1 for e in trajectory if e.get("role") in ("user", "tool"))
 
-        patch = raw.get("generated_patch", "")
+        # Null-safe: HF rows can carry explicit nulls for these string
+        # fields (v005 observed 441 adapter errors from len(None)/.lower()).
+        patch = raw.get("generated_patch") or ""
         patch_size = len(patch)
 
-        eval_logs = raw.get("eval_logs", "")
+        eval_logs = raw.get("eval_logs") or ""
         error_like_count = sum(
             1
             for kw in ("error", "fail", "assertion", "traceback", "exception")
@@ -226,7 +228,7 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
         return {
             "dataset": self.name,
             "domain": self.domain,
-            "task_id": raw.get("instance_id", ""),
+            "task_id": raw.get("instance_id") or "",
             "source_uri": self.source_uri,
             "desired_direction": task,
             "environment": {
@@ -262,8 +264,8 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
             },
             "metadata": {
                 "settlement_classification": "external-proxy-settlement",
-                "model_name": raw.get("model_name", ""),
-                "exit_status": raw.get("exit_status", ""),
+                "model_name": raw.get("model_name") or "",
+                "exit_status": raw.get("exit_status") or "",
                 "raw_source_uri": self.source_uri,
             },
         }

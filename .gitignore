@@ -13,6 +13,7 @@ data/agenttrove/settlements/*.jsonl
 data/agenttrove/settlements/*.sqlite
 data/agenttrove/evals/*.jsonl
 data/agenttrove/sft/*.jsonl
+data/settlement_datasets/corpora/
 policies/generated/*.yaml
 evals/agenttrove/*.jsonl
 .serena/

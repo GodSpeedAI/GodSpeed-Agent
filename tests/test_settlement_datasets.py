@@ -4,6 +4,7 @@ import json
 import sqlite3
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -806,3 +807,123 @@ class TestAgentTroveBackwardCompatibility:
                 "failure_without_signal",
                 "unknown",
             }
+
+
+class TestAgentTroveHFStreaming:
+    """Without input_path, agenttrove must stream from Hugging Face
+    instead of silently returning when the retired default file is absent."""
+
+    def _fake_rows(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "trace_id": "hf-row-0",
+                "messages": [{"role": "user", "content": "task zero"}],
+            },
+            {
+                "trace_id": "hf-row-1",
+                "messages": [{"role": "user", "content": "task one"}],
+            },
+        ]
+
+    def test_stream_without_input_path_streams_from_hf(self, monkeypatch):
+        from scripts.settlement_datasets import hf_stream
+
+        calls: list[tuple[str, str]] = []
+
+        def fake_load_hf_stream(source_uri, split):
+            calls.append((source_uri, split))
+            return iter(self._fake_rows())
+
+        monkeypatch.setattr(hf_stream, "load_hf_stream", fake_load_hf_stream)
+
+        adapter = AgentTroveAdapter()
+        rows = list(adapter.stream())
+
+        assert rows == self._fake_rows()
+        assert calls == [("open-thoughts/AgentTrove", "train")]
+
+    def test_stream_without_input_path_honors_limit(self, monkeypatch):
+        from scripts.settlement_datasets import hf_stream
+
+        monkeypatch.setattr(
+            hf_stream,
+            "load_hf_stream",
+            lambda source_uri, split: iter(self._fake_rows()),
+        )
+
+        adapter = AgentTroveAdapter()
+        rows = list(adapter.stream(limit=1))
+
+        assert len(rows) == 1
+        assert rows[0]["trace_id"] == "hf-row-0"
+
+    def test_stream_hf_kwargs_override_source_uri_and_split(self, monkeypatch):
+        from scripts.settlement_datasets import hf_stream
+
+        calls: list[tuple[str, str]] = []
+
+        def fake_load_hf_stream(source_uri, split):
+            calls.append((source_uri, split))
+            return iter(self._fake_rows())
+
+        monkeypatch.setattr(hf_stream, "load_hf_stream", fake_load_hf_stream)
+
+        adapter = AgentTroveAdapter()
+        rows = list(
+            adapter.stream(source_uri="mirror/AgentTrove", split="validation")
+        )
+
+        assert len(rows) == 2
+        assert calls == [("mirror/AgentTrove", "validation")]
+
+
+class TestNebiusSWEAgentNullSafety:
+    """Explicit HF null string fields must normalize, not crash.
+    v005 observed 441 adapter errors from len(None) / .lower() on nulls."""
+
+    @pytest.fixture
+    def adapter(self):
+        from scripts.settlement_datasets.nebius_swe_agent_adapter import (
+            NebiusSWEAgentAdapter,
+        )
+
+        return NebiusSWEAgentAdapter()
+
+    def _null_row(self) -> dict[str, Any]:
+        return {
+            "instance_id": "repo__null-fields",
+            "model_name": None,
+            "target": False,
+            "trajectory": json.dumps(
+                [
+                    {"role": "system", "content": "agent"},
+                    {"role": "ai", "content": "edit file"},
+                    {"role": "user", "content": "tests failed"},
+                ]
+            ),
+            "exit_status": None,
+            "generated_patch": None,
+            "eval_logs": None,
+        }
+
+    def test_extract_payment_with_null_patch_and_eval_logs(self, adapter):
+        payment = adapter.extract_payment(self._null_row())
+        assert payment["elapsed_steps"] == 3
+        assert "patch_size=0" in payment["evidence"]
+        assert "error_like_in_logs=0" in payment["evidence"]
+
+    def test_to_settlement_record_with_null_string_fields(self, adapter):
+        record = adapter.to_settlement_record(self._null_row())
+        assert record["dataset"] == "nebius_swe_agent"
+        assert record["outcome"]["success"] is False
+        assert record["metadata"]["model_name"] == ""
+        assert record["metadata"]["exit_status"] == ""
+        assert adapter.validate_record(record) == []
+
+    def test_null_instance_id_and_trajectory_normalize(self, adapter):
+        raw = self._null_row()
+        raw["instance_id"] = None
+        raw["trajectory"] = None
+        record = adapter.to_settlement_record(raw)
+        assert record["task_id"] == ""
+        assert record["payment"]["elapsed_steps"] == 0
