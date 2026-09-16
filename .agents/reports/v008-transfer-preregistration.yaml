@@ -1,0 +1,127 @@
+# =============================================================================
+# PREREGISTRATION: godspeed-agent-v008-r1-transfer (V2, FROZEN)
+# =============================================================================
+# Frozen 2026-09-15 by the main agent BEFORE any held-out-source test result
+# was examined. Embeds the plan's coordinator_decisions verbatim, updated only
+# with V1 audit evidence (gate threshold confirmation, normalization record).
+# The final held-out-source evaluation tests this preregistered system; it
+# never redesigns it.
+
+preregistration_id: v008-r1-transfer
+frozen_at: "2026-09-15"
+plan: godspeed-agent-v008-r1-transfer
+
+# ---------------------------------------------------------------------------
+# 1. DATA (admitted sources, revisions, normalization record)
+# ---------------------------------------------------------------------------
+data:
+  units: "Corrected R1 recovery episodes from the normalized v008 corpus."
+  sources:
+    swegym_openhands:
+      revision_sha: baf3a4e4bff514d48ddc08a93a2ade5c126212c7
+      license_status: "ambiguous (card silent; companion repo Apache-2.0); local training only, content never committed"
+      r1_episodes: 7037
+    nebius_swe_agent:
+      revision_sha: 68195a1450865274106246d0d0296a1d6807b88e
+      license_status: "identified: cc-by-4.0"
+      r1_episodes: 17642
+    swe_smith:
+      revision_sha: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
+      license_status: "identified: mit"
+      r1_episodes: 12797
+  totals: {r1_rows: 37476, positives: 8028}
+  normalizations_recorded:
+    N2: "corpus marker gating moved from role=='assistant' to kind=='action' (nebius actions use role 'ai'; prior cmd_family/mentions_bash were 100% degenerate for nebius)"
+    N1: "swegym assistant tool_calls rendered into action content (empty-content actions 48% -> 0%)"
+    N3: "nebius pre-first-action user entries reclassified as context (leading error runs 4554 -> 183 genuine; has_failure==1 artifact removed)"
+  documented_selection_effects:
+    - "swe_smith F4: 1,271/3,708 parents (34.3%, all label=1) store observations as user messages and yield zero events; they contribute no episodes (unchanged from v007c; N4 out of scope)"
+    - "swegym episode count +50 vs v007c: N1 rendering differentiates previously-deduped trajectories (52 more distinct parents); all 50 new episodes are recovery_success=0"
+    - "nebius episode count unchanged: N3 removed feature-side contamination without changing enumeration"
+  fourth_source:
+    verdict: "CONDITIONAL-ADMIT, DEFERRED"
+    candidate: "nebius/SWE-rebench-openhands-trajectories (sha 35455389, cc-by-4.0, 67,074 trajectories, execution-derived resolved)"
+    reason: "Admission requires its own adapter + resolved-mechanism verification + role-semantics precautions; not cheap; v008 proceeds with three sources per the operator's non-prerequisite rule."
+
+# ---------------------------------------------------------------------------
+# 2. PREDICTION POINT + TARGET (unchanged from corrected v007)
+# ---------------------------------------------------------------------------
+point_and_target:
+  point: "R1 only: failure -> first recovery attempt -> its immediate observable result; features observable through that point only."
+  target: "recovery_success = 1 iff meaningful failure occurred AND subsequent escape observed AND parent reached verified terminal settlement (v007 definition, unchanged)."
+
+# ---------------------------------------------------------------------------
+# 3. REPRESENTATIONS
+# ---------------------------------------------------------------------------
+representations:
+  M_primary: "v005_minimal_recovery sans dataset_id (6): error_count, consecutive_error_observations, repeated_error_rate, error_rate, action_observation_ratio, tool_diversity_count"
+  M_diagnostic: "M + dataset_id (reported separately, never primary)"
+  F: "v007_r1@1 complete (54 features; identity-free by construction)"
+  T: "Derived per held-out cell from that cell's two training sources ONLY, by the mechanical rule in section 4. The three selected sets are reported with pairwise overlap as descriptive transfer evidence."
+
+# ---------------------------------------------------------------------------
+# 4. T SELECTION RULE (mechanical; training-pool data only)
+# ---------------------------------------------------------------------------
+t_selection_rule:
+  candidates: "F's 54 features."
+  folds: "GroupKFold(5) over the training pool's split_group."
+  per_fold_measurements:
+    - "weighted LR coefficient sign (spec below, C=1.0, StandardScaler fit on fold-train)"
+    - "univariate AUC(feature, recovery_success) computed SEPARATELY within each training source's fold-train rows; sign(AUC - 0.5)"
+    - "per-source constant/degenerate check"
+  gates_all_required:
+    - "univariate direction consistent across BOTH training sources in >= 80% of folds (measured consistency values are {0.0, 0.6, 0.8, 1.0}; V1a)"
+    - "coefficient sign consistent in >= 80% of folds"
+    - "NOT an environment identifier: worst-case (max) one-vs-rest source-identifiability AUC < 0.85 (V1a measured break: six features at >= 0.857, next 0.673)"
+    - "non-constant in both training sources (V1c: former constants now populated; gate retained)"
+  size_rules: "If |T| < 5, fill to 5 by stability score (fold-consistency counts, ties lexicographic); if |T| > 20, keep top 20 by min(direction consistency, coefficient consistency)."
+  provenance_note: "V1a's stability tables were computed on the pre-normalization corpus as advisory evidence; the gate itself is applied mechanically per training pool on the normalized v008 corpus at run time. Audit reports did not and do not set acceptance thresholds after seeing held-out results."
+
+# ---------------------------------------------------------------------------
+# 5. WEIGHTING, PREPROCESSING, ESTIMATOR, CALIBRATION
+# ---------------------------------------------------------------------------
+weighting:
+  primary: "parent-balanced x source-balanced within the training pool: each training source contributes equal total weight; within a source, each parent equal (weight = 1/(training episodes of that parent), normalized per source). Weights used in fit only, never in metrics."
+  sensitivity: "parent-balanced only (no source balancing) — preregistered comparison."
+preprocessing:
+  rule: "StandardScaler fit on the training pool's rows (fitted statistics never touch the held-out source), applied to all splits of that cell. Rationale: preregistered because cross-source scale differences were measured (V1a); recorded per cell."
+estimator:
+  spec: "LogisticRegression(class_weight='balanced', max_iter=1000, solver='lbfgs', random_state=42)"
+  hyperparameters: "C in {0.01, 0.1, 1.0}, selected per (held-out cell, representation) by GroupKFold(5) mean ROC-AUC inside the training pool. No LightGBM in primary arms. Known non-convergence at max_iter=1000 documented in v007; frozen spec kept."
+calibration:
+  rule: "Isotonic on out-of-fold (GroupKFold) training-pool predictions iff selected model OOF ECE > 0.05; applied to the held-out source; never fit on it. Report per-cell Brier/ECE before-after."
+
+# ---------------------------------------------------------------------------
+# 6. EVALUATION DESIGN
+# ---------------------------------------------------------------------------
+evaluation:
+  design: "Leave-one-source-out: for each held-out source C, train on A+B; test once on C. Three cells."
+  isolation: "Feature selection (T), scaling statistics, hyperparameter tuning, and calibration fitting use ONLY A+B. No held-out-source rows (features or labels) influence anything before its single test evaluation. Test-structure enforced by guards and tested."
+  metrics_per_cell: [roc_auc, average_precision, brier, ece_10bin, balanced_accuracy, precision_recall_f1_at_0p5, confusion_matrix]
+  macro: "Unweighted mean over the three held-out cells = primary transfer metric."
+  pooled: "Reported as secondary context only; never an adoption criterion."
+  diagnostics: "F+identity and T+identity arms reported separately, never primary. Parent-only weighting sensitivity. T-set overlap across cells."
+  error_analysis: "Per held-out cell: 3 TP / 3 TN / 3 FP / 3 FN (T arm) with feature snippets; causes classified into representation mismatch | feature scaling | adapter semantics | label semantics | environment policy differences | genuinely different recovery dynamics."
+
+# ---------------------------------------------------------------------------
+# 7. ACCEPTANCE (frozen before any held-out test execution)
+# ---------------------------------------------------------------------------
+acceptance:
+  primary_T_earned:
+    - "macro(T) - macro(M) >= +0.02"
+    - "T >= M in >= 2 of 3 held-out cells"
+    - "no held-out cell with T < M - 0.03 (large-degradation guard)"
+    - "parent-only-weighting sensitivity preserves the direction of the macro difference"
+    - "schema audit: no dataset_id or equivalent identity in any primary arm"
+  secondary_T_vs_F: "Reported; 'T improves transfer over F' iff macro(T) - macro(F) >= +0.02 AND T >= F in >= 2/3 cells (lower pooled performance acceptable)."
+  descriptive: "F vs M macro; T-set overlap; per-feature gate tables."
+  failure_result: "If T earns nothing, report plainly and stop optimizing this hypothesis."
+  classification_mapping:
+    SETTLED_earned: "primary_T_earned fully met"
+    PARTIAL: "recovery signal persists held-out (T and/or F materially above chance in most cells) but the frozen T-gate is not fully met"
+    NOT_EARNED: "no representation demonstrates held-out transfer above the degradation-guarded bar"
+    BLOCKED: "trustworthy transfer evaluation could not be completed"
+reproducibility:
+  random_state: 42
+  determinism: "Two full runs byte-identical results.json."
+  manifest_rule: "Round manifest records this file's committed sha256 BEFORE artifacts are written."
