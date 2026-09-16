@@ -7,7 +7,7 @@ schema_version: "1.0"
 metadata:
   id: "godspeed-agent-v008-r1-transfer"
   title: "R1 recovery-signal transfer: does any recovery representation survive a change of agent environment?"
-  status: "in_progress"
+  status: "settled"
   version: "1.0.0"
   created: "2026-09-15"
 
@@ -171,3 +171,15 @@ guardrails:
   - "No runtime/controller wiring."
   - "v006/v007 artifacts untouched; corrected ctx accounting preserved."
   - "No weak fourth source; no tuning on held-out sources."
+
+# -----------------------------------------------------------------------------
+# EXECUTION RECORD (settled 2026-09-15)
+# -----------------------------------------------------------------------------
+execution_record:
+  V1a: {status: settled, evidence: ".agents/reports/v008-feature-stability.md (gate break: max-OVR 0.85)"}
+  V1b: {status: settled, evidence: ".agents/reports/v008-adapter-semantics.md + v008-fourth-source.md (19/21/14 semantics; SWE-rebench conditional-admit deferred)"}
+  V1c: {status: settled, evidence: "c5839ff — N1-N3 normalizations; nebius markers 0%->populated; swegym empty actions 48%->0%; leading runs 4554->183"}
+  V2: {status: settled, evidence: "b61edc3 — prereg frozen before held-out evaluation"}
+  V3: {status: settled, evidence: "runs/v008-transfer/ — macro M 0.6013 / F 0.6602 / T 0.6370; primary_T_earned TRUE; secondary T-vs-F FALSE; determinism x3 byte-identical"}
+  V4: {status: settled, evidence: ".agents/reports/v008-critique.md — VERDICT CONFIRM, zero blockers/majors; critic re-derived T gate + re-ran matrix byte-identically"}
+  V5: {status: settled, evidence: ".agents/reports/godspeed-agent-v008-r1-transfer-final.md — classification: SETTLED (transferable R1 recovery representation earned); scope: F transfers best, T>F refuted"}

@@ -8,23 +8,22 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-09-15
-- Summary: v007 correction slice settled (SETTLED - corrected evidence confirms
-  the existing v007 conclusion). Removed the v005-prefix context-total leak
-  (per-event ctx counts; prefix elapsed = ctx + k; schema @2; truncation-
-  equivalence regression tests on all three datasets), rebuilt the corpus at
-  the same revisions, and reran the frozen recovery matrix cleanly (round 3).
-  Deltas vs round 2: -0.0009..-0.0032 on v007-schema cells; minimal-recovery
-  control cells byte-identical. All round-2 verdicts stand: LightGBM does not
-  beat LogisticRegression, the representation stays below the +0.02 bar
-  (R1 +0.0120, direction 3/3), cross-source generalization remains the limit.
-  Independent audit: CONFIRM; critic reproduced the run byte-identically.
-- Settlement evidence: 1,062 tests pass / 2 skipped; validate pass; corrected
-  report `.agents/reports/godspeed-agent-v007-corrected-final.md`.
+- Summary: v008 R1-transfer plan settled (SETTLED - transferable R1 recovery
+  representation earned). Leave-one-source-out with LR only, after semantic
+  normalizations N1-N3 (nebius ai-role marker gating; swegym tool_calls
+  rendering; nebius issue-text reclassification) and a frozen preregistration.
+  Held-out macro ROC-AUC: minimal 0.6013, full v007 representation 0.6602,
+  transfer subset 0.6370 - T earned the preregistered gate (+0.0357, 3/3
+  environments, no degradation, identity-free), and the full corrected
+  representation transfers best. Secondary T>F refuted. Independent audit:
+  CONFIRM; three byte-identical executions. No runtime deployment.
+- Settlement evidence: 1,099 tests pass / 2 skipped; validate pass; final
+  report `.agents/reports/godspeed-agent-v008-r1-transfer-final.md`.
 - Proof classification: `external-proxy-calibration` (no local claims).
-- Known limit: v006 prefix projection inherited this leak (v006 artifacts
-  untouched; quantified immaterial there).
-  Next move: none required; optional re-preregistration of the R1
-  representation direction only if operationally wanted.
+- Known limit: swe_smith base-rate calibration failure (label-prior shift);
+  F4 selection effect; 3-environment evidence only.
+  Next move: N4 swe_smith dual-format ingestion fix + calibration re-check;
+  SWE-rebench fourth environment as follow-up.
 
 ## Active Desired Direction
 
