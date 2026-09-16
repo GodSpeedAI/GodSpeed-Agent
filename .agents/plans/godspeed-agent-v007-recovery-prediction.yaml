@@ -204,15 +204,60 @@ dependency_graph:
     - "runtime posture + final report"
 
 initial_state:
-  current_task: "T01a"
-  last_settled_task: null
-  ready: ["T01a", "T01b"]
+  current_task: "T03 (Amendment-1 correction round)"
+  last_settled_task: "T02"
+  ready: []
   blocked:
-    T02: ["T01a", "T01b"]
     T03: ["T02"]
     T04: ["T03"]
     T05: ["T04"]
-    T06: ["T05"]
+
+# -----------------------------------------------------------------------------
+# EXECUTION RECORD (appended as tasks settle; contracts above unchanged)
+# -----------------------------------------------------------------------------
+execution_record:
+  T01a:
+    status: settled
+    evidence: ".agents/reports/v007-dataset-research.md"
+    note: >-
+      SWE-bench/SWE-smith-trajectories ADMITTED (rev 08e109b4, MIT,
+      execution-derived resolved label). SWE-Gym original + R2E-Gym sets
+      rejected with evidence. nebius REVIVABLE: v006's zero-error finding was
+      an adapter field bug (live events carry 'text'; adapter read 'content')
+      — verified first-hand by the main agent against the live schema
+      (92/93 sampled events non-empty text, 0 non-empty content).
+  T01b:
+    status: settled
+    evidence: "scripts/settlement_datasets/v007_recovery.py + tests (105 focused tests green)"
+    note: "Episode builder per frozen decisions; swegym-only first build gave 6,987 episodes; definitional nuances (CAUSAL_ESCAPE_FEATURE_EXCEPTION, fourth audit cell) documented in-module."
+  T01c:
+    status: settled
+    evidence: "nebius adapter text-first fix; new swe_smith adapter; configs/settlement_datasets/v007_corpus.yaml; corpus at corpora/v007-trajectories (swegym parity vs v006 verified)"
+    note: >-
+      Inserted task (emerged from T01a's revivable verdict). v007 corpus:
+      swegym 1574 parents (identical to v006), nebius 4554 usable (998 S/3556
+      F; 100% parents with is_error after fix — v006 nebius per-source numbers
+      hereby flagged as computed on degenerate events), swe_smith 3708 usable
+      (2368 S/1340 F). Episode table: 37,426 episodes / 74,852 R0+R1 rows,
+      21.4% positive; per-parent mean 4.56, max 68 (parent-balanced weights
+      load-bearing). Main agent independently recomputed counts + spot-checked
+      corpus contents.
+  T02:
+    status: settled
+    evidence: ".agents/reports/v007-experiment-preregistration.yaml (committed 033d578 before any training)"
+    note: "Frozen with T01c evidence; source-balanced sensitivity trigger evaluated: NOT fired (2.79 < 3)."
+  T03:
+    status: in_correction
+    note: >-
+      Round 1 executed all frozen cells; mechanically: primary NOT EARNED,
+      secondary EARNED at R1 only. Main agent caught a degenerate test
+      composition (all 11 swegym groups in train → zero swegym test rows,
+      hollowing three frozen per-source cells). Amendment-1 recorded in the
+      prereg (holdout strata = (dataset, group_label); no endpoint/metric/
+      acceptance change); round-1 artifacts preserved at
+      runs/v007-recovery/round1-stratum-defect/; round 2 is the reported run.
+      NOTE: the main agent's earlier 1,382-repository swegym estimate was a
+      buggy greedy-regex artifact; 11 repositories is correct.
 
 # =============================================================================
 # TASK CONTRACTS

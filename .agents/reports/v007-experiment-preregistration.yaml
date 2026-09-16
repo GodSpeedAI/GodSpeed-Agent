@@ -227,3 +227,14 @@ reproducibility:
   random_state: 42
   determinism: "Two full runs must produce identical metric tables."
   artifact_sha_rule: "Preregistration sha256 recorded in the experiment manifest; manifest written after this file is committed."
+
+# ---------------------------------------------------------------------------
+# AMENDMENT 1 (2026-09-15, pre-round-2) -- holdout strata correction
+# ---------------------------------------------------------------------------
+amendment_1 (2026-09-15, pre-round-2): >-
+  holdout strata are (dataset, group_label) — each source contributes ~20%
+  of its groups to test. Reason: round-1 stratum-on-group_label-only
+  produced a test partition with zero swegym rows, making three frozen
+  per-source evaluation cells impossible. No endpoint, metric, model, or
+  acceptance criterion changes. Round-1 artifacts preserved at
+  runs/v007-recovery/round1-stratum-defect/.
