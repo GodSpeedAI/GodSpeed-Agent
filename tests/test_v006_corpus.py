@@ -36,6 +36,9 @@ EXPECTED_EVENT_KEYS = {
     "is_error",
     "cmd_family",
     "has_terminal_output",
+    # Context-scoping annotation (v007 correction MAJOR-1): the number
+    # of context messages strictly below the event's turn index.
+    "ctx",
 }
 
 

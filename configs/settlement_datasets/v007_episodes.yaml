@@ -17,6 +17,14 @@
 # is newly admitted.  The builder still handles a zero-episode source
 # gracefully and records the zero in the manifest.
 #
+# C1 correction rerun: sources now point at the v007c corrected corpus
+# (data/settlement_datasets/corpora/v007c-trajectories/, built by
+# configs/settlement_datasets/v007c_corpus.yaml with per-event context
+# scoping -- v007 critique MAJOR-1).  Every episode-definition parameter
+# below is UNCHANGED; only the corpus paths, output paths, and ids move
+# to v007c so the round-2 episode table
+# (data/settlement_datasets/corpora/v007-episodes/) stays intact.
+#
 # Identity model (v007): parent identity is inherited from the corpus
 # (group_key = "<dataset>:<instance_or_task_id>").  The v007 PARTITION
 # key is coarser: split_group = "<dataset>:<repository>", where
@@ -32,23 +40,23 @@
 # the repository -- finer than the SWE-bench convention, which is the
 # safe direction for the partition guard (groups never straddle).
 
-episodes_id: v007-episodes
-source_corpus: v007-trajectories
+episodes_id: v007c-episodes
+source_corpus: v007c-trajectories
 settlement_classification: external-proxy-settlement
 
 sources:
   - name: swegym_openhands
-    corpus_path: data/settlement_datasets/corpora/v007-trajectories/swegym_openhands.jsonl
+    corpus_path: data/settlement_datasets/corpora/v007c-trajectories/swegym_openhands.jsonl
     revision_sha: baf3a4e4bff514d48ddc08a93a2ade5c126212c7
     license_status: "ambiguous (dataset card declares no license; companion repo SWE-Gym/SWE-Gym is Apache-2.0)"
 
   - name: nebius_swe_agent
-    corpus_path: data/settlement_datasets/corpora/v007-trajectories/nebius_swe_agent.jsonl
+    corpus_path: data/settlement_datasets/corpora/v007c-trajectories/nebius_swe_agent.jsonl
     revision_sha: 68195a1450865274106246d0d0296a1d6807b88e
     license_status: "identified: cc-by-4.0"
 
   - name: swe_smith
-    corpus_path: data/settlement_datasets/corpora/v007-trajectories/swe_smith.jsonl
+    corpus_path: data/settlement_datasets/corpora/v007c-trajectories/swe_smith.jsonl
     revision_sha: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
     license_status: "identified: mit"
 
@@ -119,6 +127,6 @@ splits: >-
   (T03). Enforced with assert_grouped_by_split_group.
 
 output:
-  root: data/settlement_datasets/corpora/v007-episodes
-  episode_table: data/settlement_datasets/corpora/v007-episodes/episodes.jsonl
-  manifest: data/settlement_datasets/corpora/v007-episodes/manifest.json
+  root: data/settlement_datasets/corpora/v007c-episodes
+  episode_table: data/settlement_datasets/corpora/v007c-episodes/episodes.jsonl
+  manifest: data/settlement_datasets/corpora/v007c-episodes/manifest.json

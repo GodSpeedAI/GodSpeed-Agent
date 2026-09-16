@@ -23,17 +23,26 @@ plan, amendments 1 and 10):
   formulas onto any event prefix.  **This is NOT the historical v005
   model; the prediction point and therefore some semantics differ**:
   - ``payment_predicted_total`` (elapsed_steps) for a prefix =
-    ``n_context_events + k`` (context messages + events so far), under
-    the documented assumption that context messages precede the
-    action/observation stream.  VERIFIED against the adapters on raw
-    fixture rows and local raw samples: swegym_openhands messages lead
-    with ``system``/``user`` before the first assistant/tool message,
-    and nebius trajectories lead with ``system`` (its user entries are
-    observations, not context).  DEVIATION: agenttrove (fixture-only
-    source, rejected from the live v006 corpus) interleaves user turns
-    through the stream, so the context-first estimate can overcount
-    elapsed steps mid-trajectory for that source; the corpus builder
-    already documents the related action-cap undercount.
+    ``ctx_through_cut + k``, where ``ctx_through_cut`` is the cut's last
+    event's ``ctx`` value -- the number of context messages whose
+    raw-sequence index is strictly below that event's turn index,
+    recorded per event by the corpus builder from the adapter's
+    ``context_positions(raw)``.  v007 CORRECTION (critique MAJOR-1):
+    v006 estimated elapsed as ``n_context_events + k`` under the
+    documented assumption that context messages precede the
+    action/observation stream, but live swegym_openhands and swe_smith
+    rows interleave context messages mid-trajectory (measured: up to 98
+    future messages on swe_smith, 20 on swegym; nebius clean), so the
+    full-trajectory context count leaked FUTURE context into the five
+    elapsed-derived prefix features (payment_predicted_total,
+    payment_error, horizon_delta, risk_estimate, avg_actions_per_step).
+    The ctx-scoped rule counts only context absorbed at or before the
+    cut.  Parents built without context positions
+    (``context_scoped=false``) carry ``ctx`` 0, so elapsed = k; that
+    fallback is valid only for sources with genuinely no scoped context.
+    The prefix length ``k`` is the operating contract of the corpus cut
+    planner (1 <= k <= n_events); ``k = 0`` yields ``elapsed_raw = 0``
+    under the ctx rule (previously ``n_context_events``).
   - Prefix payment counters are derived from prefix events:
     ``turns`` = prefix actions, ``tool_calls`` = prefix observations,
     ``commands`` = prefix ``mentions_bash`` actions, ``errors`` = prefix
@@ -95,7 +104,9 @@ disambiguation matters, a separate ``has_*`` indicator carries the
 condition -- semantics are never smuggled into the value.
 
 Schema version tags (normative): ``v005_full_semantics@1``,
-``v005_prefix_compatible@1``, ``v006@1`` (``SCHEMA_VERSIONS``).
+``v005_prefix_compatible@2`` (bumped from @1 by the v007 ctx-scoped
+elapsed correction, MAJOR-1: semantics changed, names/count unchanged),
+``v006@1`` (``SCHEMA_VERSIONS``).
 
 Determinism: no randomness, no clocks; every function is a pure
 function of its inputs.
@@ -116,7 +127,7 @@ FEATURE_FAMILIES: tuple[str, ...] = (
 
 SCHEMA_VERSIONS: dict[str, str] = {
     "v005_full_semantics": "v005_full_semantics@1",
-    "v005_prefix_compatible": "v005_prefix_compatible@1",
+    "v005_prefix_compatible": "v005_prefix_compatible@2",
     "v006": "v006@1",
 }
 
@@ -333,8 +344,12 @@ def v005_full_semantics_features(parent: dict[str, Any]) -> dict[str, Any]:
 def v005_prefix_compatible_features(parent: dict[str, Any], k: int) -> dict[str, Any]:
     """The 11 H formulas recomputed causally on the first ``k`` events.
 
-    See the module docstring for the documented semantic deviations
-    (context-first elapsed estimate; event-derived payment counters).
+    Elapsed time through the cut is prefix-scoped (v007 correction
+    MAJOR-1): the cut's last event's ``ctx`` count plus ``k`` -- never
+    the trajectory-total ``n_context_events``.  See the module docstring
+    for the documented semantic deviations (ctx-scoped elapsed estimate;
+    event-derived payment counters) and the ``ctx``-0 fallback for
+    parents built without context positions.
     """
     events = parent["events"][:k]
     n_actions = sum(1 for ev in events if ev["kind"] == "action")
@@ -350,7 +365,12 @@ def v005_prefix_compatible_features(parent: dict[str, Any], k: int) -> dict[str,
     tool_calls = n_observations
     commands = n_bash_actions
 
-    elapsed_raw = parent["n_context_events"] + k
+    # Context messages absorbed at or before the cut (v007 correction
+    # MAJOR-1): recorded per event by the corpus builder from the
+    # adapter's context_positions; parents without the annotation
+    # (context_scoped=false) default to 0, so elapsed = k.
+    ctx_through_cut = events[-1].get("ctx", 0) if events else 0
+    elapsed_raw = ctx_through_cut + k
     elapsed = max(elapsed_raw, 1)
 
     error_rate = error_count / elapsed

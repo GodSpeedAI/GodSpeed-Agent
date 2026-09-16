@@ -84,6 +84,21 @@ entries as observations), and non-observation user messages for
 agenttrove -- noting agenttrove's labeler caps ``actions`` at 20
 entries, so the subtraction can undercount context on long traces.
 
+**Context scoping (v007 correction MAJOR-1):** live rows interleave
+context messages mid-trajectory, so the trajectory-total
+``n_context_events`` says nothing about how much context an agent had
+absorbed at prefix time.  Each event therefore carries ``ctx``: the
+number of context messages whose raw-sequence index is strictly below
+the event's turn index, derived from the adapter's
+``context_positions(raw)`` at stream time.  ``context_scoped`` marks
+whether real position data was supplied (legacy callers that skip it
+get ``ctx`` 0 on every event); ``trailing_context`` is the diagnostic
+count of context messages at or after the last event
+(``n_context_events - ctx of last event``; expected >= 0).  ``ctx`` is
+excluded from the trajectory content hash, so identity (``parent_id``)
+is invariant to the annotation and the corrected corpus keeps v007
+parent ids.
+
 **Label provenance:** ``label`` is 1 iff ``outcome.success is True``,
 0 iff ``outcome.success is False``; records with undefined success or
 confidence below ``min_confidence`` are rejected (reason recorded,
@@ -93,16 +108,20 @@ never swallowed).
 from __future__ import annotations
 
 import argparse
+import bisect
 import hashlib
 import json
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import yaml
 
-from scripts.settlement_datasets.adapter_base import write_records_jsonl
+from scripts.settlement_datasets.adapter_base import (
+    SettlementDatasetAdapter,
+    write_records_jsonl,
+)
 from scripts.settlement_datasets.registry import get_adapter
 from scripts.settlement_datasets.run_scoped_paths import utc_now_iso
 
@@ -250,9 +269,21 @@ def _event_from_entry(entry: dict[str, Any], kind: str) -> dict[str, Any]:
 
 
 def _trajectory_content_hash(events: list[dict[str, Any]], label: int) -> str:
-    """Stable sha1 over the canonical event list including the label."""
+    """Stable sha1 over the canonical event list including the label.
+
+    ``ctx`` is excluded from the canonical form: it is a derived
+    context-scoping annotation (v007 correction MAJOR-1), and identity
+    must stay invariant to it so the ctx-annotated rebuild keeps the
+    v007 corpus parent ids.
+    """
     canonical = json.dumps(
-        {"events": events, "label": label},
+        {
+            "events": [
+                {key: value for key, value in event.items() if key != "ctx"}
+                for event in events
+            ],
+            "label": label,
+        },
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -308,11 +339,24 @@ def build_parent(
     revision_sha: str,
     license_status: str,
     min_confidence: float,
+    context_positions: Sequence[int] | None = None,
 ) -> tuple[dict[str, Any] | None, str | None]:
     """Convert a settlement record into a parent-trajectory record.
 
     Returns ``(parent, None)`` on success or ``(None, rejection_reason)``
     when the usability rule rejects the record.
+
+    ``context_positions`` is the sorted list of raw-sequence indices of
+    context (non-event) messages, from
+    ``SettlementDatasetAdapter.context_positions(raw)``.  Each event
+    gains ``ctx`` = the number of positions strictly below its turn
+    index (how much off-stream context the agent had absorbed by that
+    event), the parent gains ``context_scoped=True``, and
+    ``trailing_context`` records context at or after the last event.
+    Callers that omit the parameter (legacy signature) get ``ctx`` 0 on
+    every event and ``context_scoped=False`` -- valid only for sources
+    with genuinely no scoped context, and prefix features then fall back
+    to ``elapsed = k``.
     """
     outcome = record.get("outcome", {})
     success = outcome.get("success")
@@ -336,6 +380,16 @@ def build_parent(
     total_messages = int(payment.get("elapsed_steps", 0) or 0)
     n_context_events = max(total_messages - len(actions) - len(observations), 0)
 
+    # Context scoping (v007 correction MAJOR-1): per-event cumulative
+    # context counts strictly below each event's turn index.
+    context_scoped = context_positions is not None
+    positions = sorted(context_positions) if context_positions else []
+    for event in events:
+        event["ctx"] = bisect.bisect_left(positions, event["i"])
+    trailing_context = (
+        n_context_events - events[-1]["ctx"] if events else n_context_events
+    )
+
     metadata = record.get("metadata", {})
     tool_names_manifest = [t for t in (metadata.get("tool_names") or []) if t]
 
@@ -353,6 +407,8 @@ def build_parent(
         "label_source": _label_source(outcome),
         "outcome_confidence": float(confidence),
         "n_context_events": n_context_events,
+        "context_scoped": context_scoped,
+        "trailing_context": trailing_context,
         "total_messages": total_messages,
         "tool_names_manifest": tool_names_manifest,
         # Verbatim v005 payment counters for exact feature reproduction.
@@ -420,6 +476,15 @@ def build_corpus(
         ds_name = source["name"]
         adapter = get_adapter(source["adapter"])
         max_rows = source.get("max_rows")
+        # Context scoping (v007 correction MAJOR-1): adapters that
+        # implement context_positions scope their parents; adapters on
+        # the base default declare no separable context and stay
+        # unscoped (ctx 0, context_scoped=false) rather than claiming a
+        # scope they cannot see.
+        adapter_scopes_context = (
+            type(adapter).context_positions
+            is not SettlementDatasetAdapter.context_positions
+        )
 
         stream_kwargs: dict[str, Any] = {}
         if source.get("input_path"):
@@ -464,6 +529,11 @@ def build_corpus(
                 revision_sha=str(source["revision_sha"]),
                 license_status=str(source["license_status"]),
                 min_confidence=min_confidence,
+                context_positions=(
+                    adapter.context_positions(raw)
+                    if adapter_scopes_context
+                    else None
+                ),
             )
             if parent is None:
                 rejection_reasons[reason] += 1
@@ -491,6 +561,10 @@ def build_corpus(
             "max_rows": max_rows,
             "revision_sha": source["revision_sha"],
             "license_status": source["license_status"],
+            # Context scoping (v007 correction MAJOR-1): true iff every
+            # surviving parent was built from real context positions.
+            "context_scoped": bool(parents)
+            and all(parent["context_scoped"] for parent in parents),
             **counts,
             "label_counts": label_counts,
             "top_rejection_reasons": _top_rejection_reasons(rejection_reasons),
@@ -533,6 +607,7 @@ def build_corpus(
                 "rejected": ds["rejected"],
                 "adapter_errors": ds["adapter_errors"],
                 "duplicates_dropped": ds["duplicates_dropped"],
+                "context_scoped": ds["context_scoped"],
                 "label_counts": ds["label_counts"],
                 "top_rejection_reasons": ds["top_rejection_reasons"],
                 "revision_sha": ds["revision_sha"],

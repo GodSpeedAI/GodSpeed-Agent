@@ -25,6 +25,7 @@ from scripts.settlement_datasets.run_calibration_pipeline import (
 )
 from scripts.settlement_datasets.v006_features import (
     CANONICAL_CUT_KINDS,
+    DATASET_ID_MAP,
     LEAKY_FEATURE_PATTERNS,
     SCHEMA_VERSIONS,
     V005_FEATURES,
@@ -736,8 +737,478 @@ class TestDeterminism:
             build_prefix_frame(_fixture_parents()[:1], ["v006", "nope"])
 
     def test_schema_versions_are_the_three_normative_tags(self):
+        # @2: v005_prefix_compatible semantics changed under the v007
+        # ctx-scoped elapsed correction (MAJOR-1); names/count unchanged.
         assert SCHEMA_VERSIONS == {
             "v005_full_semantics": "v005_full_semantics@1",
-            "v005_prefix_compatible": "v005_prefix_compatible@1",
+            "v005_prefix_compatible": "v005_prefix_compatible@2",
             "v006": "v006@1",
         }
+
+
+# ---------------------------------------------------------------------------
+# 8. CONTEXT SCOPING (v007 correction MAJOR-1): prefix elapsed counts only
+#    context at or before the cut, never the trajectory-total context count
+# ---------------------------------------------------------------------------
+
+_INTERLEAVED_DATASETS = ("swegym_openhands", "nebius_swe_agent", "swe_smith")
+
+
+def _interleaved_raw_row(dataset: str) -> dict[str, Any]:
+    """Synthesized raw row with leading, mid-trajectory, and trailing
+    context messages.
+
+    Event stream (identical shape for all three datasets):
+    A@2  O@3(error)  A@5  O@6, with context at raw positions
+    0, 1 (leading), 4 (mid), 7 (trailing).  All content is fake.
+    """
+    if dataset == "swegym_openhands":
+        return {
+            "instance_id": "synthetic__pkg-1",
+            "run_id": "run_1",
+            "resolved": True,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Fix the failing test."},
+                {"role": "assistant", "content": "run git status via bash"},
+                {"role": "tool", "content": "OBSERVATION:\nError: tests failed"},
+                {"role": "user", "content": "mid-trajectory user note"},
+                {"role": "assistant", "content": "pytest -q now"},
+                {"role": "tool", "content": "OBSERVATION:\nall ok"},
+                {"role": "user", "content": "trailing session note"},
+            ],
+            "tools": [
+                {"function": {"name": "execute_bash"}, "type": "function"}
+            ],
+            "test_result": {"report": {"resolved": True}},
+        }
+    if dataset == "nebius_swe_agent":
+        return {
+            "instance_id": "repo__synthetic-1",
+            "model_name": "synthetic-model",
+            "target": True,
+            "trajectory": [
+                {"role": "system", "content": "agent"},
+                {"role": "system", "content": "second leading note"},
+                {"role": "ai", "content": "run git status"},
+                {"role": "user", "content": "Error: tests failed"},
+                {"role": "system", "content": "mid-trajectory system note"},
+                {"role": "ai", "content": "pytest -q"},
+                {"role": "user", "content": "all ok"},
+                {"role": "system", "content": "trailing session note"},
+            ],
+            "exit_status": "submitted",
+            "generated_patch": "diff --git a/x.py b/x.py",
+            "eval_logs": "PASS",
+        }
+    if dataset == "swe_smith":
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "Synthetic task: fix it."}],
+            },
+            {
+                "role": "assistant",
+                "content": "checking state first",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "bash",
+                            "arguments": "{\"command\": \"git status\"}",
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "content": [
+                    {"type": "text", "text": "OBSERVATION:\nAssertionError: boom"}
+                ],
+                "tool_call_ids": ["call_1"],
+            },
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "mid-trajectory user note"}],
+            },
+            {
+                "role": "assistant",
+                "content": "running the tests now",
+                "tool_calls": [
+                    {
+                        "id": "call_2",
+                        "type": "function",
+                        "function": {
+                            "name": "bash",
+                            "arguments": "{\"command\": \"pytest -q\"}",
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "content": [{"type": "text", "text": "OBSERVATION:\nall ok"}],
+                "tool_call_ids": ["call_2"],
+            },
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "trailing session note"}],
+            },
+        ]
+        return {
+            "messages": json.dumps(messages),
+            "instance_id": "synthetic__pkg-1.abcdef.fault.x",
+            "resolved": True,
+            "model": "synthetic-model",
+            "traj_id": "traj-synthetic-1",
+            "patch": "diff --git a/w.py b/w.py",
+        }
+    raise ValueError(dataset)
+
+
+def _message_list(dataset: str, raw: dict[str, Any]) -> list[dict[str, Any]]:
+    """The raw row's message sequence (parsed for JSON-encoded fields)."""
+    from scripts.settlement_datasets.nebius_swe_agent_adapter import _parse_trajectory
+    from scripts.settlement_datasets.swe_smith_adapter import _parse_messages
+
+    if dataset == "swegym_openhands":
+        return raw["messages"]
+    if dataset == "nebius_swe_agent":
+        return _parse_trajectory(raw)
+    return _parse_messages(raw)
+
+
+def _truncate_raw(
+    dataset: str, raw: dict[str, Any], last_message_index: int
+) -> dict[str, Any]:
+    """Deep-copied raw row cut at ``last_message_index`` (inclusive).
+
+    payment.elapsed_steps then equals the cut-consistent message count
+    because every adapter derives it from len(messages).
+    """
+    trunc = copy.deepcopy(raw)
+    messages = _message_list(dataset, trunc)[: last_message_index + 1]
+    if dataset == "nebius_swe_agent":
+        trunc["trajectory"] = messages
+    elif dataset == "swe_smith":
+        trunc["messages"] = json.dumps(messages)
+    else:
+        trunc["messages"] = messages
+    return trunc
+
+
+def _build_scoped_parent(dataset: str, raw: dict[str, Any]) -> dict[str, Any]:
+    """Raw row -> settlement record -> parent via the real corpus builder,
+    with the adapter's context positions supplied."""
+    from scripts.settlement_datasets.registry import get_adapter
+
+    adapter = get_adapter(dataset)
+    record = adapter.to_settlement_record(raw)
+    parent, reason = build_parent(
+        record,
+        revision_sha="rev",
+        license_status="l",
+        min_confidence=0.65,
+        context_positions=adapter.context_positions(raw),
+    )
+    assert parent is not None, reason
+    return parent
+
+
+class TestAdapterContextPositions:
+    def test_positions_match_extraction_role_sets(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        for dataset in _INTERLEAVED_DATASETS:
+            adapter = get_adapter(dataset)
+            raw = _interleaved_raw_row(dataset)
+            positions = adapter.context_positions(raw)
+            assert positions == [0, 1, 4, 7]
+            consumed = {
+                idx
+                for entry in (
+                    adapter.extract_actions(raw) + adapter.extract_observations(raw)
+                )
+                for idx in (entry["turn_index"],)
+            }
+            assert sorted(consumed) == [2, 3, 5, 6]
+            assert sorted(consumed | set(positions)) == list(range(8))
+
+    def test_base_adapter_default_is_unscoped(self):
+        from scripts.settlement_datasets.adapter_base import SettlementDatasetAdapter
+        from scripts.settlement_datasets.registry import get_adapter
+
+        # agenttrove does not override context_positions: it stays on the
+        # base default, which is exactly how build_corpus detects
+        # "adapter cannot see its context" (parent stays unscoped).
+        adapter = get_adapter("agenttrove")
+        assert (
+            type(adapter).context_positions
+            is SettlementDatasetAdapter.context_positions
+        )
+        assert adapter.context_positions({}) == []
+
+
+class TestTruncationEquivalence:
+    """T1 (decisive): prefix features on a full interleaved raw row equal
+    the features of a parent rebuilt from the raw row TRUNCATED at the
+    cut -- no future event and no future context message may matter."""
+
+    @pytest.mark.parametrize("dataset", _INTERLEAVED_DATASETS)
+    @pytest.mark.parametrize("k", [2, 3, 4])  # before, after mid-ctx, at end
+    def test_prefix_features_equal_truncated_rebuild(self, dataset, k):
+        raw = _interleaved_raw_row(dataset)
+        full = _build_scoped_parent(dataset, raw)
+        assert full["context_scoped"] is True
+
+        cut_index = full["events"][k - 1]["i"]
+        trunc = _build_scoped_parent(dataset, _truncate_raw(dataset, raw, cut_index))
+        # The truncation is cut-consistent: same events (with ctx), and
+        # elapsed_steps covers exactly the messages through the cut.
+        assert trunc["events"] == full["events"][:k]
+        assert trunc["total_messages"] == cut_index + 1
+        assert trunc["counts"]["elapsed_steps"] == cut_index + 1
+
+        expected = v005_prefix_compatible_features(full, k)
+        actual = v005_prefix_compatible_features(trunc, k)
+        assert actual == expected  # exact: all 11 features, bit-identical
+
+
+class TestFutureAppendInvariance:
+    """T2: appending events AND context after the cut (raising
+    n_context_events and trailing context positions) leaves prefix
+    features at k bit-identical."""
+
+    @pytest.mark.parametrize("dataset", _INTERLEAVED_DATASETS)
+    def test_appended_future_context_and_events_change_nothing(self, dataset):
+        raw = _interleaved_raw_row(dataset)
+        parent = _build_scoped_parent(dataset, raw)
+
+        appended = copy.deepcopy(raw)
+        messages = _message_list(dataset, appended)
+        # "system" is a context role in all three adapters; the appended
+        # assistant/tool pair becomes future events.
+        messages.extend(
+            [
+                {"role": "system", "content": "future context A"},
+                {"role": "assistant", "content": "pip install pytest"},
+                {"role": "tool", "content": "OBSERVATION:\nError: traceback"},
+                {"role": "system", "content": "future context B"},
+            ]
+        )
+        if dataset == "nebius_swe_agent":
+            appended["trajectory"] = messages
+        elif dataset == "swe_smith":
+            appended["messages"] = json.dumps(messages)
+        bigger = _build_scoped_parent(dataset, appended)
+
+        assert bigger["n_context_events"] > parent["n_context_events"]
+        assert bigger["trailing_context"] > 0
+        for k in (1, 2, 3, 4):
+            assert (
+                v005_prefix_compatible_features(bigger, k)
+                == v005_prefix_compatible_features(parent, k)
+            )
+            # The cut's ctx itself is invariant to positions at/after it.
+            assert bigger["events"][k - 1]["ctx"] == parent["events"][k - 1]["ctx"]
+
+
+class TestAffectedFeaturesUsePrefixScopedContext:
+    """T3: the five elapsed-derived features follow ctx_through_cut + k,
+    NOT n_context_events + k, on interleaved parents."""
+
+    @pytest.mark.parametrize("dataset", _INTERLEAVED_DATASETS)
+    def test_payment_predicted_total_is_ctx_scoped(self, dataset):
+        raw = _interleaved_raw_row(dataset)
+        parent = _build_scoped_parent(dataset, raw)
+        assert parent["n_context_events"] == 4
+        assert parent["trailing_context"] == 1
+
+        for k, ctx_through_cut in ((2, 2), (3, 3)):
+            events = parent["events"][:k]
+            ctx = events[-1]["ctx"]
+            assert ctx == ctx_through_cut
+            feats = v005_prefix_compatible_features(parent, k)
+            assert feats["payment_predicted_total"] == float(ctx + k)
+
+        # Decisive: at the cut BEFORE the mid-trajectory context message,
+        # the old full-context rule overcounted by the future context.
+        k = 2
+        old_rule = float(parent["n_context_events"] + k)
+        new_rule = float(parent["events"][k - 1]["ctx"] + k)
+        assert old_rule != new_rule
+        assert (
+            v005_prefix_compatible_features(parent, k)["payment_predicted_total"]
+            == new_rule
+        )
+
+    def test_all_five_elapsed_derived_features_match_truncated_rule(self):
+        # payment_error, horizon_delta, risk_estimate, avg_actions_per_step
+        # inherit the corrected elapsed; verify each against a hand
+        # computation with elapsed = ctx_through_cut + k.
+        raw = _interleaved_raw_row("swegym_openhands")
+        parent = _build_scoped_parent("swegym_openhands", raw)
+        k = 2
+        events = parent["events"][:k]
+        elapsed = events[-1]["ctx"] + k
+        n_actions = sum(1 for ev in events if ev["kind"] == "action")
+        n_obs = sum(1 for ev in events if ev["kind"] == "observation")
+        n_bash = sum(1 for ev in events if ev["kind"] == "action" and ev["mentions_bash"])
+        error_count = sum(1 for ev in events if ev["is_error"])
+        feats = v005_prefix_compatible_features(parent, k)
+
+        actual_total = float(n_actions + n_obs + n_bash + error_count)
+        assert feats["payment_actual_total"] == actual_total
+        assert feats["payment_error"] == abs(actual_total - float(elapsed))
+        error_rate = error_count / elapsed
+        assert feats["risk_estimate"] == min(1.0, error_rate)
+        payment_efficiency = (n_actions + n_obs + n_bash) / max(elapsed, 1)
+        raw_delta = (1.0 - min(error_rate, 1.0)) * 0.6 + min(payment_efficiency, 1.0) * 0.4
+        assert feats["horizon_delta"] == round(min(max(raw_delta, 0.0), 1.0), 4)
+        assert feats["avg_actions_per_step"] == round(n_actions / max(elapsed, 1), 4)
+
+
+class TestUnaffectedFeaturesStable:
+    """T4: error_recovery_ratio, action_observation_ratio, debt_estimate,
+    tool_diversity_count, dataset_id never used elapsed -- identical under
+    the correction and equal to the documented formulas."""
+
+    def test_documented_formulas_hold_on_fixture_corpus(self):
+        for parent in _fixture_parents():
+            ks = {k for _, k in generate_prefixes(parent)}
+            for k in ks:
+                feats = v005_prefix_compatible_features(parent, k)
+                events = parent["events"][:k]
+                n_actions = sum(1 for ev in events if ev["kind"] == "action")
+                n_obs = sum(1 for ev in events if ev["kind"] == "observation")
+
+                error_obs_i = [
+                    ev["i"] for ev in events if ev["kind"] == "observation" and ev["is_error"]
+                ]
+                non_error_obs_i = [
+                    ev["i"]
+                    for ev in events
+                    if ev["kind"] == "observation" and not ev["is_error"]
+                ]
+                if error_obs_i:
+                    recoveries = sum(
+                        1
+                        for eidx in error_obs_i
+                        if any(nidx > eidx for nidx in non_error_obs_i)
+                    )
+                    expected_recovery = round(recoveries / len(error_obs_i), 4)
+                else:
+                    expected_recovery = 0.0
+                assert feats["error_recovery_ratio"] == expected_recovery
+
+                assert feats["action_observation_ratio"] == (
+                    round(n_actions / n_obs, 4) if n_obs > 0 else 0.0
+                )
+
+                expected_debt = (
+                    min(n_actions / 20.0, 1.0) if n_actions > 0 and n_obs == 0 else 0.0
+                )
+                assert feats["debt_estimate"] == round(expected_debt, 4)
+
+                assert feats["tool_diversity_count"] == len(
+                    set(parent["tool_names_manifest"])
+                )
+                assert feats["dataset_id"] == DATASET_ID_MAP.get(parent["dataset"], -1)
+
+    def test_context_count_changes_leave_unaffected_features_identical(self):
+        raw = _interleaved_raw_row("swe_smith")
+        parent = _build_scoped_parent("swe_smith", raw)
+        unscoped_twin = copy.deepcopy(parent)
+        unscoped_twin["n_context_events"] = 99  # elapsed-only field
+        unscoped_twin["total_messages"] = 99
+        for ev in unscoped_twin["events"]:
+            ev["ctx"] = 99
+        stable = (
+            "error_recovery_ratio",
+            "action_observation_ratio",
+            "debt_estimate",
+            "tool_diversity_count",
+            "dataset_id",
+        )
+        for k in (1, 2, 3, 4):
+            base = v005_prefix_compatible_features(parent, k)
+            twin = v005_prefix_compatible_features(unscoped_twin, k)
+            for name in stable:
+                assert base[name] == twin[name]
+
+
+class TestFullSemanticsUntouched:
+    """T5: the full family keeps the verbatim counts block (all
+    messages, H semantics) even on interleaved parents."""
+
+    def test_full_family_predicted_total_uses_verbatim_counts(self):
+        raw = _interleaved_raw_row("swegym_openhands")
+        parent = _build_scoped_parent("swegym_openhands", raw)
+        n = len(parent["events"])
+
+        full = v005_full_semantics_features(parent)
+        assert full["payment_predicted_total"] == float(parent["counts"]["elapsed_steps"])
+        assert full["payment_predicted_total"] == float(parent["total_messages"])
+
+        prefix_at_n = v005_prefix_compatible_features(parent, n)
+        assert prefix_at_n["payment_predicted_total"] == float(
+            parent["events"][-1]["ctx"] + n
+        )
+        # Trailing context exists on the interleaved fixture, so the
+        # full-trajectory value exceeds the prefix-scoped one at k=n.
+        assert parent["trailing_context"] == 1
+        assert full["payment_predicted_total"] != prefix_at_n["payment_predicted_total"]
+
+    def test_full_semantics_equivalence_suite_still_passes_unmodified(self):
+        # The frozen equivalence contract is re-run here against scoped
+        # parents: build_parent WITH context positions must not perturb
+        # the full-family features (counts block is verbatim).
+        from scripts.settlement_datasets.run_calibration_pipeline import (
+            external_record_to_model_calibration,
+        )
+        from godspeed_nav.cognitive_model import build_calibration_frame
+        from scripts.settlement_datasets.registry import get_adapter
+
+        for dataset in _INTERLEAVED_DATASETS:
+            adapter = get_adapter(dataset)
+            raw = _interleaved_raw_row(dataset)
+            record = adapter.to_settlement_record(raw)
+            parent = _build_scoped_parent(dataset, raw)
+            h_row = build_calibration_frame(
+                [external_record_to_model_calibration(record)]
+            ).iloc[0]
+            mine = v005_full_semantics_features(parent)
+            for name in V005_FEATURES:
+                assert float(h_row[name]) == float(mine[name]), (
+                    f"{dataset} column {name}"
+                )
+
+
+class TestUnscopedBackwardCompatibility:
+    """T6: parents built without context positions (legacy signature)
+    keep ctx 0 everywhere and prefix elapsed = k.  That fallback is
+    acceptable only for sources with genuinely no scoped context."""
+
+    def test_legacy_build_parent_is_marked_unscoped(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        raw = _interleaved_raw_row("nebius_swe_agent")
+        record = get_adapter("nebius_swe_agent").to_settlement_record(raw)
+        parent, reason = build_parent(
+            record, revision_sha="rev", license_status="l", min_confidence=0.65
+        )
+        assert parent is not None, reason
+        assert parent["context_scoped"] is False
+        assert all(ev["ctx"] == 0 for ev in parent["events"])
+        assert parent["trailing_context"] == parent["n_context_events"]
+
+        # Documented fallback: ctx defaults to 0 -> elapsed = k.
+        feats = v005_prefix_compatible_features(parent, 3)
+        assert feats["payment_predicted_total"] == 3.0
+        # The same row built scoped counts its context instead (ctx=3
+        # through the cut at k=3: system entries at 0, 1, 4).
+        scoped = _build_scoped_parent("nebius_swe_agent", raw)
+        scoped_feats = v005_prefix_compatible_features(scoped, 3)
+        assert scoped_feats["payment_predicted_total"] == 6.0

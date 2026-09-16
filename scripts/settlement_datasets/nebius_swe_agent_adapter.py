@@ -124,6 +124,21 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
                 )
         return observations
 
+    def context_positions(self, raw: dict[str, Any]) -> list[int]:
+        """Indices of context (non-event) messages in the raw message
+        sequence; enables prefix-scoped elapsed counts.
+
+        Actions are ``ai``/``assistant`` entries and observations are
+        ``user``/``tool`` entries of the parsed trajectory (matching
+        ``extract_actions``/``extract_observations``), so every other
+        role (system context) is a context position.
+        """
+        return [
+            idx
+            for idx, entry in enumerate(_parse_trajectory(raw))
+            if entry.get("role", "") not in ("ai", "assistant", "user", "tool")
+        ]
+
     def extract_outcome(self, raw: dict[str, Any]) -> dict[str, Any]:
         target = raw.get("target", False)
         eval_logs = raw.get("eval_logs", "")

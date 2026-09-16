@@ -104,6 +104,21 @@ class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
                 )
         return observations
 
+    def context_positions(self, raw: dict[str, Any]) -> list[int]:
+        """Indices of context (non-event) messages in the raw message
+        sequence; enables prefix-scoped elapsed counts.
+
+        Actions are ``assistant`` messages and observations are ``tool``
+        messages (matching ``extract_actions``/``extract_observations``),
+        so every other role (system/user context, interleaved or leading)
+        is a context position.
+        """
+        return [
+            idx
+            for idx, msg in enumerate(raw.get("messages", []))
+            if msg.get("role") not in ("assistant", "tool")
+        ]
+
     def extract_outcome(self, raw: dict[str, Any]) -> dict[str, Any]:
         resolved = raw.get("resolved", False)
         test_result = raw.get("test_result", {})
