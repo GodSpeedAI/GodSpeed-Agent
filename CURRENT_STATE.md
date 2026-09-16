@@ -8,25 +8,25 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-09-15
-- Summary: v006 dual-model settlement classifier plan settled (PARTIAL).
-  Implemented corrected ingestion (agenttrove HF streaming, nebius null-safety:
-  441 crashes -> 0), a shared 1799-parent trajectory corpus (swegym 1574,
-  nebius 225; agenttrove REJECTED at live revision — label columns null;
-  Toucan-1.5M REJECTED — no verified outcome), three feature families
-  (v005_full_semantics bit-exact vs H, v005_prefix_compatible, v006@1 with 29
-  trajectory-state features), six causal prefix cuts, lightgbm 4.7.0 via uv,
-  and a frozen-preregistration experiment matrix. No preregistered gain earned
-  (representation -0.012, estimator +0.012, combined -0.010 macro-AUC vs the
-  +0.02 bar); v006 helps only near the trajectory end. Independent audit:
-  CONFIRM, zero blockers. Runtime default unchanged; historical v005 intact.
-- Settlement evidence: 907 tests pass / 2 skipped; validate gate pass; final
-  report `.agents/reports/godspeed-agent-v006-final.md`.
-- Proof classification: `external-proxy-calibration` (unchanged; no local
-  settlement claims made).
-- Known limit: H's recorded 0.8266 is not comparable to current grouped-split
-  numbers; swegym dataset license formally undetermined (corpus uncommitted).
-  Next move: operator decision — re-preregister a late-cut-only v006 endpoint
-  on a fresh corpus revision, or accept the negative settlement.
+- Summary: v007 recovery-predictor plan settled (PARTIAL). Built failure-episode
+  corpus from 3 admitted sources (37,426 episodes / 74,852 R0+R1 rows, 21.4%
+  positive): swegym 1,574 parents, nebius 4,554 (REVIVED — v006's zero-error
+  finding was an adapter text-vs-content field bug, fixed), swe_smith 3,708
+  (newly admitted, MIT). Frozen preregistration executed twice (Amendment-1
+  fixed a degenerate test draw; round-1 evidence preserved). Round-2 verdicts:
+  PRIMARY NOT EARNED (LightGBM <= LogisticRegression at both points),
+  SECONDARY NOT EARNED (representation +0.0129 at R1, direction 3/3, below the
+  +0.02 bar). Signal exists (ROC-AUC 0.76/0.77 pooled; 0.63-0.73 per-source)
+  but cross-source generalization is weak (macro ~0.67) and nothing was
+  deployed. Independent audit: CONFIRM, zero blockers; one verdict-immaterial
+  inherited leak flagged in the v005-prefix family (context-count assumption).
+- Settlement evidence: 1,039 tests pass / 2 skipped; validate gate pass; final
+  report `.agents/reports/godspeed-agent-v007-recovery-final.md`.
+- Proof classification: `external-proxy-calibration` (no local settlement claims).
+- Known limit: external proxy data only; v005-prefix context-total leak needs a
+  correction slice before any future re-freeze.
+  Next move: operator decision — context-total correction slice + one clean
+  re-run, or accept the negative settlement.
 
 ## Active Desired Direction
 

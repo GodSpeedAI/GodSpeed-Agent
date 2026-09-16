@@ -7,8 +7,8 @@ schema_version: "1.0"
 metadata:
   id: "godspeed-agent-v007-recovery-prediction"
   title: "v007 conditional recovery predictor: failure-episode construction, R0/R1 prediction points, LR-vs-LightGBM on the NeoHorse-derived representation"
-  status: "in_progress"
-  version: "0.1.0"
+  status: "settled"
+  version: "1.0.0"
   created: "2026-09-15"
 
   purpose: >-
@@ -204,13 +204,10 @@ dependency_graph:
     - "runtime posture + final report"
 
 initial_state:
-  current_task: "T03 (Amendment-1 correction round)"
-  last_settled_task: "T02"
+  current_task: "none — plan settled"
+  last_settled_task: "T05"
   ready: []
-  blocked:
-    T03: ["T02"]
-    T04: ["T03"]
-    T05: ["T04"]
+  blocked: {}
 
 # -----------------------------------------------------------------------------
 # EXECUTION RECORD (appended as tasks settle; contracts above unchanged)
@@ -247,17 +244,40 @@ execution_record:
     evidence: ".agents/reports/v007-experiment-preregistration.yaml (committed 033d578 before any training)"
     note: "Frozen with T01c evidence; source-balanced sensitivity trigger evaluated: NOT fired (2.79 < 3)."
   T03:
-    status: in_correction
+    status: settled
+    evidence: "run_v007_experiments.py + runs/v007-recovery/ (round 2) + round1-stratum-defect/ (preserved) + tests/test_v007_experiments.py"
     note: >-
-      Round 1 executed all frozen cells; mechanically: primary NOT EARNED,
-      secondary EARNED at R1 only. Main agent caught a degenerate test
-      composition (all 11 swegym groups in train → zero swegym test rows,
-      hollowing three frozen per-source cells). Amendment-1 recorded in the
-      prereg (holdout strata = (dataset, group_label); no endpoint/metric/
-      acceptance change); round-1 artifacts preserved at
-      runs/v007-recovery/round1-stratum-defect/; round 2 is the reported run.
-      NOTE: the main agent's earlier 1,382-repository swegym estimate was a
-      buggy greedy-regex artifact; 11 repositories is correct.
+      Round 1 executed all frozen cells but its group_label-only strata put
+      all 11 swegym groups in train (zero swegym test rows), hollowing frozen
+      per-source cells and producing a spurious "secondary EARNED" verdict.
+      Amendment-1 recorded in the prereg (strata = (dataset, group_label); no
+      endpoint/model/metric change); round 2 re-ran everything and is the
+      reported run. Round-2 mechanical verdicts: PRIMARY NOT EARNED (LGBM <=
+      LR at both points, direction 1/3; falsifier #1 realized), SECONDARY NOT
+      EARNED (R1 +0.0129 direction 3/3 below the +0.02 bar; R0 +0.0058).
+      Main agent independently recomputed all headline + per-source numbers
+      from raw predictions (exact match). NOTE: the main agent's earlier
+      1,382-repository swegym estimate was a buggy greedy-regex artifact;
+      11 repositories is correct.
+  T04:
+    status: settled
+    evidence: ".agents/reports/v007-critique.md — VERDICT: CONFIRM, zero blockers"
+    note: >-
+      Critic reproduced all headlines/buckets/calibration/split composition;
+      30/30 mutation checks; one MAJOR finding verified first-hand by the
+      main agent: v005-prefix family uses FULL-trajectory context counts
+      (context-first assumption fails corpus-wide for swe_smith 1271/3708 and
+      swegym 918/1574; nebius clean 0/4554), leaking post-cut info into 5
+      features; quantified verdict-immaterial (+0.0003/+0.0009 AUC without
+      them); inherited by v006's prefix projection (v006 untouched, flagged).
+  T05:
+    status: settled
+    evidence: ".agents/reports/godspeed-agent-v007-recovery-final.md — classification: PARTIAL (recovery signal exists but evidence/generalization is insufficient)"
+    note: >-
+      Runtime posture: nothing deployed; deterministic governance sole
+      authority; control surface documented as future work. Smallest next
+      move: v005-prefix context-total correction slice + one clean re-run of
+      the frozen matrix.
 
 # =============================================================================
 # TASK CONTRACTS
