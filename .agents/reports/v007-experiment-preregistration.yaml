@@ -238,3 +238,32 @@ amendment_1 (2026-09-15, pre-round-2): >-
   per-source evaluation cells impossible. No endpoint, metric, model, or
   acceptance criterion changes. Round-1 artifacts preserved at
   runs/v007-recovery/round1-stratum-defect/.
+
+# ---------------------------------------------------------------------------
+# AMENDMENT 2 (2026-09-15, correction slice godspeed-agent-v007-prefix-correction)
+# ---------------------------------------------------------------------------
+amendment_2:
+  recorded_before_rerun: true
+  change: >-
+    The v005-prefix family's elapsed computation is corrected from
+    'n_context_events + k' (full-trajectory context count) to
+    'ctx_through_cut + k' (prefix-scoped per-event context counts recorded by
+    the corpus builder from adapter context_positions). Schema tag
+    v005_prefix_compatible bumped @1 -> @2; feature names and counts
+    unchanged. Affected features: payment_predicted_total, payment_error,
+    horizon_delta, risk_estimate, avg_actions_per_step.
+  provenance: "v007 critique MAJOR-1, verified first-hand by the main agent; regression-tested by truncation equivalence on all three datasets."
+  scope: >-
+    This is the audit-mandated narrowly-necessary schema change. Every frozen
+    cell is reaffirmed unchanged: recovery_success definition, R0/R1
+    definitions, admitted datasets and revisions (baf3a4e4 / 68195a14 /
+    08e109b4), grouping (split_group = dataset:repository; strata =
+    (dataset, group_label) per Amendment-1), parent weighting, source
+    handling, model families and grids, calibration rule, primary/secondary
+    metrics, acceptance thresholds.
+  data_note: >-
+    Corrected corpus rebuilt deterministically at the same revisions into
+    v007c-trajectories (v007-trajectories preserved); episode construction
+    verified identical (keys and values) — only the five feature values
+    change, in 6,580/74,852 rows.
+  round_label: "round 3 (post-correction) is the reported run; round 2 preserved at runs/v007-recovery/round2-pre-correction/."
