@@ -6,64 +6,64 @@
     "identity_variant": "with_identity",
     "importance": [
       {
-        "feature": "payment_actual_total",
-        "importance": 8.362219778030765
-      },
-      {
-        "feature": "n_events",
-        "importance": 3.950584863783572
-      },
-      {
-        "feature": "fail_event_index",
-        "importance": 3.788374472441561
-      },
-      {
-        "feature": "n_actions",
-        "importance": 2.7847158706257966
-      },
-      {
-        "feature": "error_count",
-        "importance": 2.288968851978812
-      },
-      {
-        "feature": "recovery_attempt_count",
-        "importance": 2.246022967121861
-      },
-      {
         "feature": "payment_predicted_total",
-        "importance": 1.122921686047016
+        "importance": 22.567900223103074
       },
       {
-        "feature": "n_observations",
-        "importance": 0.8136140225185782
+        "feature": "payment_actual_total",
+        "importance": 17.80807117531083
       },
       {
         "feature": "payment_error",
-        "importance": 0.7353958113008949
+        "importance": 2.9751402167705474
       },
       {
-        "feature": "distinct_error_count",
-        "importance": 0.5314616254661805
+        "feature": "fail_event_index",
+        "importance": 2.7493871969814414
+      },
+      {
+        "feature": "n_events",
+        "importance": 2.5274085579872083
+      },
+      {
+        "feature": "error_count",
+        "importance": 1.3706611094556402
+      },
+      {
+        "feature": "recovery_attempt_count",
+        "importance": 1.3031051314321023
+      },
+      {
+        "feature": "n_actions",
+        "importance": 1.0074303605669974
       },
       {
         "feature": "verification_after_recovery_count",
-        "importance": 0.5223674717560403
+        "importance": 0.5434061577774331
       },
       {
-        "feature": "tool_diversity_count",
-        "importance": 0.337031537225469
+        "feature": "distinct_error_count",
+        "importance": 0.5189357001357189
+      },
+      {
+        "feature": "dataset_id",
+        "importance": 0.3407588840664369
       },
       {
         "feature": "prior_episode_count",
-        "importance": 0.31679793009616936
+        "importance": 0.31931215370656607
       },
       {
         "feature": "prior_escape_count",
-        "importance": 0.31679793009616936
+        "importance": 0.31931215370656607
       },
       {
         "feature": "verification_action_count",
-        "importance": 0.3049132330300502
+        "importance": 0.31581081706922454
+      },
+      {
+        "feature": "verification_after_edit_count",
+        "importance": 0.2813218180969207
       }
     ]
   },
@@ -74,64 +74,64 @@
     "identity_variant": "without_identity",
     "importance": [
       {
-        "feature": "n_events",
-        "importance": 12.224611203123395
-      },
-      {
         "feature": "payment_actual_total",
-        "importance": 11.45317361860761
-      },
-      {
-        "feature": "n_actions",
-        "importance": 4.66182747595451
-      },
-      {
-        "feature": "fail_event_index",
-        "importance": 4.621555869117728
-      },
-      {
-        "feature": "recovery_attempt_count",
-        "importance": 2.9019901493625047
-      },
-      {
-        "feature": "error_count",
-        "importance": 2.561810278507311
+        "importance": 27.901799359473358
       },
       {
         "feature": "payment_predicted_total",
-        "importance": 2.5217897903352693
+        "importance": 17.5700467431005
       },
       {
-        "feature": "n_observations",
-        "importance": 1.4475097197039826
+        "feature": "n_events",
+        "importance": 9.59690036990254
+      },
+      {
+        "feature": "fail_event_index",
+        "importance": 7.807983844529547
       },
       {
         "feature": "payment_error",
-        "importance": 1.2462909624053673
+        "importance": 5.095253395408092
+      },
+      {
+        "feature": "n_observations",
+        "importance": 3.061186024568263
+      },
+      {
+        "feature": "n_actions",
+        "importance": 1.7397876242776884
+      },
+      {
+        "feature": "recovery_attempt_count",
+        "importance": 1.5783099905728566
+      },
+      {
+        "feature": "error_count",
+        "importance": 1.2816270205937959
       },
       {
         "feature": "distinct_error_count",
-        "importance": 0.9491237348574683
+        "importance": 0.9971390452437305
       },
       {
         "feature": "verification_after_recovery_count",
-        "importance": 0.8643640822118578
+        "importance": 0.9129775813593889
       },
       {
         "feature": "verification_action_count",
-        "importance": 0.5297498363843897
-      },
-      {
-        "feature": "verification_after_edit_count",
-        "importance": 0.38475544926861677
+        "importance": 0.5776028653343277
       },
       {
         "feature": "repeated_error_rate",
-        "importance": 0.3799599958673003
+        "importance": 0.40745092898789814
       },
       {
-        "feature": "prior_escape_count",
-        "importance": 0.3598044182605291
+        "feature": "verification_after_edit_count",
+        "importance": 0.3863742453408451
+      },
+      {
+        "feature": "prior_episode_count",
+        "importance": 0.3707128597357733
       }
     ]
   },
@@ -143,63 +143,63 @@
     "importance": [
       {
         "feature": "dataset_id",
-        "importance": 4690.061428487301
-      },
-      {
-        "feature": "action_observation_ratio",
-        "importance": 1091.5965581834316
+        "importance": 4694.279490113258
       },
       {
         "feature": "observation_novelty_rate",
-        "importance": 1065.868782043457
+        "importance": 1140.845313668251
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 1027.6590073108673
       },
       {
         "feature": "tool_switch_rate",
-        "importance": 946.2894048988819
+        "importance": 948.2888728380203
       },
       {
         "feature": "n_events",
-        "importance": 557.6549843549728
-      },
-      {
-        "feature": "horizon_delta",
-        "importance": 494.3482021689415
-      },
-      {
-        "feature": "avg_actions_per_step",
-        "importance": 479.5063209235668
+        "importance": 609.8215838372707
       },
       {
         "feature": "payment_actual_total",
-        "importance": 470.0453904867172
+        "importance": 506.0175508260727
       },
       {
-        "feature": "payment_predicted_total",
-        "importance": 420.2141523361206
-      },
-      {
-        "feature": "repeated_action_rate",
-        "importance": 401.79427459836006
-      },
-      {
-        "feature": "error_rate",
-        "importance": 386.825202614069
+        "feature": "horizon_delta",
+        "importance": 440.97770473361015
       },
       {
         "feature": "recovery_latency_mean",
-        "importance": 299.04383140802383
+        "importance": 388.42625921964645
+      },
+      {
+        "feature": "repeated_action_rate",
+        "importance": 387.5708750486374
+      },
+      {
+        "feature": "error_rate",
+        "importance": 358.9905779361725
       },
       {
         "feature": "current_streak_prior_nonerror",
-        "importance": 246.27285712957382
+        "importance": 249.11205488443375
       },
       {
         "feature": "risk_estimate",
-        "importance": 236.87768375873566
+        "importance": 242.66016873717308
+      },
+      {
+        "feature": "avg_actions_per_step",
+        "importance": 233.00821483135223
       },
       {
         "feature": "verification_rate",
-        "importance": 205.5527587532997
+        "importance": 221.51474913954735
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 217.7273689508438
       }
     ]
   },
@@ -211,63 +211,63 @@
     "importance": [
       {
         "feature": "tool_switch_rate",
-        "importance": 2339.2549018859863
+        "importance": 2358.9355984330177
       },
       {
         "feature": "repeated_action_rate",
-        "importance": 1716.3527827262878
-      },
-      {
-        "feature": "action_observation_ratio",
-        "importance": 1414.2968084812164
+        "importance": 1630.7547501921654
       },
       {
         "feature": "observation_novelty_rate",
-        "importance": 1327.4552142620087
+        "importance": 1374.2110999822617
       },
       {
-        "feature": "tool_diversity_count",
-        "importance": 697.3315130472183
+        "feature": "action_observation_ratio",
+        "importance": 1337.6489717364311
       },
       {
         "feature": "n_events",
-        "importance": 630.8871911168098
+        "importance": 865.6289427280426
       },
       {
-        "feature": "horizon_delta",
-        "importance": 589.0063165128231
-      },
-      {
-        "feature": "payment_predicted_total",
-        "importance": 472.75309389829636
-      },
-      {
-        "feature": "payment_actual_total",
-        "importance": 468.85966259241104
+        "feature": "tool_diversity_count",
+        "importance": 697.7141538858414
       },
       {
         "feature": "error_rate",
-        "importance": 365.21594393253326
+        "importance": 466.1343292593956
+      },
+      {
+        "feature": "horizon_delta",
+        "importance": 450.00062251091003
+      },
+      {
+        "feature": "payment_actual_total",
+        "importance": 378.38970786333084
       },
       {
         "feature": "recovery_latency_mean",
-        "importance": 329.7326958179474
-      },
-      {
-        "feature": "avg_actions_per_step",
-        "importance": 321.9231356084347
-      },
-      {
-        "feature": "max_repeated_action_run",
-        "importance": 298.36508044600487
+        "importance": 369.2866075336933
       },
       {
         "feature": "current_streak_prior_nonerror",
-        "importance": 286.4514953792095
+        "importance": 337.6877055168152
+      },
+      {
+        "feature": "max_repeated_action_run",
+        "importance": 330.7354901731014
       },
       {
         "feature": "used_family_diversity",
-        "importance": 278.2652214169502
+        "importance": 310.94516637921333
+      },
+      {
+        "feature": "n_observations",
+        "importance": 304.33084189891815
+      },
+      {
+        "feature": "risk_estimate",
+        "importance": 228.39093279838562
       }
     ]
   },
@@ -278,64 +278,64 @@
     "identity_variant": "with_identity",
     "importance": [
       {
-        "feature": "payment_actual_total",
-        "importance": 7.401579961971812
-      },
-      {
-        "feature": "fail_event_index",
-        "importance": 4.551602327368766
+        "feature": "payment_predicted_total",
+        "importance": 15.496903268183493
       },
       {
         "feature": "n_events",
-        "importance": 3.017947029950525
+        "importance": 6.871893168637893
+      },
+      {
+        "feature": "payment_actual_total",
+        "importance": 6.868147536171197
+      },
+      {
+        "feature": "fail_event_index",
+        "importance": 2.087993801515907
       },
       {
         "feature": "recovery_attempt_count",
-        "importance": 2.765453407300218
+        "importance": 1.9782324351712641
       },
       {
         "feature": "error_count",
-        "importance": 2.6858449916946645
+        "importance": 1.8792322812779294
       },
       {
         "feature": "n_actions",
-        "importance": 1.912438603345374
-      },
-      {
-        "feature": "payment_predicted_total",
-        "importance": 1.3618345823766256
-      },
-      {
-        "feature": "distinct_error_count",
-        "importance": 0.6167541273509662
-      },
-      {
-        "feature": "payment_error",
-        "importance": 0.5790186885858055
-      },
-      {
-        "feature": "verification_after_recovery_count",
-        "importance": 0.5780116951109079
+        "importance": 1.8694464984238337
       },
       {
         "feature": "n_observations",
-        "importance": 0.4054020431938044
+        "importance": 1.566963105783666
+      },
+      {
+        "feature": "distinct_error_count",
+        "importance": 0.6332948985691195
+      },
+      {
+        "feature": "verification_after_recovery_count",
+        "importance": 0.5591787488964987
+      },
+      {
+        "feature": "payment_error",
+        "importance": 0.456730275622985
       },
       {
         "feature": "verification_action_count",
-        "importance": 0.359257426414657
+        "importance": 0.354328492482451
       },
       {
-        "feature": "prior_episode_count",
-        "importance": 0.31698436006704445
+        "feature": "dataset_id",
+        "importance": 0.3187984677364872
       },
       {
         "feature": "prior_escape_count",
-        "importance": 0.31698436006704445
+        "importance": 0.3150907187771125
       },
       {
-        "feature": "tool_diversity_count",
-        "importance": 0.3087314835666043
+        "feature": "prior_episode_count",
+        "importance": 0.3150907187771125
       }
     ]
   },
@@ -347,63 +347,63 @@
     "importance": [
       {
         "feature": "payment_actual_total",
-        "importance": 9.217316433691325
+        "importance": 10.395664218547207
       },
       {
         "feature": "fail_event_index",
-        "importance": 6.714390345301565
-      },
-      {
-        "feature": "n_events",
-        "importance": 3.1934049503085262
+        "importance": 7.210288309266052
       },
       {
         "feature": "payment_predicted_total",
-        "importance": 2.2739964028553956
-      },
-      {
-        "feature": "recovery_attempt_count",
-        "importance": 2.077437682502064
-      },
-      {
-        "feature": "error_count",
-        "importance": 2.0108861967645772
+        "importance": 2.0011497994857055
       },
       {
         "feature": "n_observations",
-        "importance": 1.6814886177180464
+        "importance": 1.9327429388496262
+      },
+      {
+        "feature": "recovery_attempt_count",
+        "importance": 1.6392962783491312
+      },
+      {
+        "feature": "n_actions",
+        "importance": 1.6108241771821565
+      },
+      {
+        "feature": "error_count",
+        "importance": 1.5885412747876388
       },
       {
         "feature": "payment_error",
-        "importance": 0.9231063054433383
+        "importance": 1.1911445600651451
       },
       {
         "feature": "distinct_error_count",
-        "importance": 0.647499384380125
+        "importance": 0.6533713825811924
+      },
+      {
+        "feature": "n_events",
+        "importance": 0.6367546508113225
       },
       {
         "feature": "verification_after_recovery_count",
-        "importance": 0.5856096785546359
+        "importance": 0.5647701572597708
       },
       {
         "feature": "verification_action_count",
-        "importance": 0.3651488853098045
-      },
-      {
-        "feature": "tool_diversity_count",
-        "importance": 0.3363148209052464
+        "importance": 0.3545119843410234
       },
       {
         "feature": "prior_episode_count",
-        "importance": 0.3211875839182086
+        "importance": 0.3275569374875992
       },
       {
         "feature": "prior_escape_count",
-        "importance": 0.3211875839182086
+        "importance": 0.3275569374875992
       },
       {
         "feature": "used_family_diversity",
-        "importance": 0.2961628273747724
+        "importance": 0.3061004150438726
       }
     ]
   },
@@ -415,63 +415,63 @@
     "importance": [
       {
         "feature": "dataset_id",
-        "importance": 4564.852228999138
+        "importance": 4577.971910119057
       },
       {
         "feature": "observation_novelty_rate",
-        "importance": 1738.1285336613655
+        "importance": 1747.3784670829773
       },
       {
         "feature": "avg_actions_per_step",
-        "importance": 1383.0150964260101
+        "importance": 967.7057377696037
       },
       {
         "feature": "tool_switch_rate",
-        "importance": 758.9875770807266
+        "importance": 761.2889294624329
       },
       {
         "feature": "horizon_delta",
-        "importance": 519.3260468244553
-      },
-      {
-        "feature": "action_observation_ratio",
-        "importance": 489.5167061984539
-      },
-      {
-        "feature": "new_obs_between_failure_and_attempt",
-        "importance": 422.27061837911606
+        "importance": 632.902229309082
       },
       {
         "feature": "error_rate",
-        "importance": 414.6783153414726
+        "importance": 544.6318712830544
       },
       {
-        "feature": "unresolved_action_rate",
-        "importance": 368.42513942718506
+        "feature": "action_observation_ratio",
+        "importance": 460.55362966656685
       },
       {
-        "feature": "used_family_diversity",
-        "importance": 365.72820222377777
-      },
-      {
-        "feature": "recovery_latency_mean",
-        "importance": 358.31238678097725
+        "feature": "new_obs_between_failure_and_attempt",
+        "importance": 427.94261050224304
       },
       {
         "feature": "repeated_action_rate",
-        "importance": 347.49015694856644
+        "importance": 396.6939628124237
+      },
+      {
+        "feature": "unresolved_action_rate",
+        "importance": 394.88129806518555
+      },
+      {
+        "feature": "used_family_diversity",
+        "importance": 390.47180688381195
+      },
+      {
+        "feature": "recovery_latency_mean",
+        "importance": 332.552864998579
       },
       {
         "feature": "payment_actual_total",
-        "importance": 317.4692433476448
+        "importance": 288.63438642024994
       },
       {
-        "feature": "payment_predicted_total",
-        "importance": 263.3388669490814
+        "feature": "n_events",
+        "importance": 265.62929022312164
       },
       {
-        "feature": "risk_estimate",
-        "importance": 250.49161857366562
+        "feature": "current_streak_prior_nonerror",
+        "importance": 237.9212175309658
       }
     ]
   },
@@ -483,63 +483,63 @@
     "importance": [
       {
         "feature": "tool_switch_rate",
-        "importance": 2353.606896877289
+        "importance": 2389.1958246529102
       },
       {
         "feature": "observation_novelty_rate",
-        "importance": 1741.692745566368
+        "importance": 1775.3906731903553
       },
       {
         "feature": "repeated_action_rate",
-        "importance": 1420.0544490218163
+        "importance": 1477.2261101603508
       },
       {
         "feature": "avg_actions_per_step",
-        "importance": 1147.8605308830738
-      },
-      {
-        "feature": "tool_diversity_count",
-        "importance": 873.1482079029083
+        "importance": 813.6262398958206
       },
       {
         "feature": "used_family_diversity",
-        "importance": 765.822109490633
+        "importance": 774.6979547739029
       },
       {
-        "feature": "new_obs_between_failure_and_attempt",
-        "importance": 638.6286042928696
+        "feature": "tool_diversity_count",
+        "importance": 767.019526720047
       },
       {
         "feature": "action_observation_ratio",
-        "importance": 622.0098273158073
+        "importance": 686.8986873924732
+      },
+      {
+        "feature": "new_obs_between_failure_and_attempt",
+        "importance": 667.759699434042
       },
       {
         "feature": "error_rate",
-        "importance": 479.6767486333847
+        "importance": 535.897828400135
       },
       {
         "feature": "n_events",
-        "importance": 473.45715898275375
+        "importance": 520.7526675462723
       },
       {
         "feature": "horizon_delta",
-        "importance": 430.4793258011341
-      },
-      {
-        "feature": "unresolved_action_rate",
-        "importance": 366.077041387558
-      },
-      {
-        "feature": "recovery_latency_mean",
-        "importance": 339.8919287621975
+        "importance": 470.7964890599251
       },
       {
         "feature": "payment_actual_total",
-        "importance": 310.9617944955826
+        "importance": 333.44448202848434
       },
       {
-        "feature": "risk_estimate",
-        "importance": 282.3591351509094
+        "feature": "unresolved_action_rate",
+        "importance": 332.8063886165619
+      },
+      {
+        "feature": "recovery_latency_mean",
+        "importance": 318.457539498806
+      },
+      {
+        "feature": "current_streak_prior_nonerror",
+        "importance": 256.6785092651844
       }
     ]
   },

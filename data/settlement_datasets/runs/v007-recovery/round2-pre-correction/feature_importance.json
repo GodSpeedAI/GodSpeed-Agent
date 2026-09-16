@@ -1,0 +1,682 @@
+{
+  "R0|R_LR|v007_r0|with_identity": {
+    "point": "R0",
+    "arm": "R_LR",
+    "schema": "v007_r0",
+    "identity_variant": "with_identity",
+    "importance": [
+      {
+        "feature": "payment_actual_total",
+        "importance": 8.362219778030765
+      },
+      {
+        "feature": "n_events",
+        "importance": 3.950584863783572
+      },
+      {
+        "feature": "fail_event_index",
+        "importance": 3.788374472441561
+      },
+      {
+        "feature": "n_actions",
+        "importance": 2.7847158706257966
+      },
+      {
+        "feature": "error_count",
+        "importance": 2.288968851978812
+      },
+      {
+        "feature": "recovery_attempt_count",
+        "importance": 2.246022967121861
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 1.122921686047016
+      },
+      {
+        "feature": "n_observations",
+        "importance": 0.8136140225185782
+      },
+      {
+        "feature": "payment_error",
+        "importance": 0.7353958113008949
+      },
+      {
+        "feature": "distinct_error_count",
+        "importance": 0.5314616254661805
+      },
+      {
+        "feature": "verification_after_recovery_count",
+        "importance": 0.5223674717560403
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 0.337031537225469
+      },
+      {
+        "feature": "prior_episode_count",
+        "importance": 0.31679793009616936
+      },
+      {
+        "feature": "prior_escape_count",
+        "importance": 0.31679793009616936
+      },
+      {
+        "feature": "verification_action_count",
+        "importance": 0.3049132330300502
+      }
+    ]
+  },
+  "R0|R_LR|v007_r0|without_identity": {
+    "point": "R0",
+    "arm": "R_LR",
+    "schema": "v007_r0",
+    "identity_variant": "without_identity",
+    "importance": [
+      {
+        "feature": "n_events",
+        "importance": 12.224611203123395
+      },
+      {
+        "feature": "payment_actual_total",
+        "importance": 11.45317361860761
+      },
+      {
+        "feature": "n_actions",
+        "importance": 4.66182747595451
+      },
+      {
+        "feature": "fail_event_index",
+        "importance": 4.621555869117728
+      },
+      {
+        "feature": "recovery_attempt_count",
+        "importance": 2.9019901493625047
+      },
+      {
+        "feature": "error_count",
+        "importance": 2.561810278507311
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 2.5217897903352693
+      },
+      {
+        "feature": "n_observations",
+        "importance": 1.4475097197039826
+      },
+      {
+        "feature": "payment_error",
+        "importance": 1.2462909624053673
+      },
+      {
+        "feature": "distinct_error_count",
+        "importance": 0.9491237348574683
+      },
+      {
+        "feature": "verification_after_recovery_count",
+        "importance": 0.8643640822118578
+      },
+      {
+        "feature": "verification_action_count",
+        "importance": 0.5297498363843897
+      },
+      {
+        "feature": "verification_after_edit_count",
+        "importance": 0.38475544926861677
+      },
+      {
+        "feature": "repeated_error_rate",
+        "importance": 0.3799599958673003
+      },
+      {
+        "feature": "prior_escape_count",
+        "importance": 0.3598044182605291
+      }
+    ]
+  },
+  "R0|R_LGBM|v007_r0|with_identity": {
+    "point": "R0",
+    "arm": "R_LGBM",
+    "schema": "v007_r0",
+    "identity_variant": "with_identity",
+    "importance": [
+      {
+        "feature": "dataset_id",
+        "importance": 4690.061428487301
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 1091.5965581834316
+      },
+      {
+        "feature": "observation_novelty_rate",
+        "importance": 1065.868782043457
+      },
+      {
+        "feature": "tool_switch_rate",
+        "importance": 946.2894048988819
+      },
+      {
+        "feature": "n_events",
+        "importance": 557.6549843549728
+      },
+      {
+        "feature": "horizon_delta",
+        "importance": 494.3482021689415
+      },
+      {
+        "feature": "avg_actions_per_step",
+        "importance": 479.5063209235668
+      },
+      {
+        "feature": "payment_actual_total",
+        "importance": 470.0453904867172
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 420.2141523361206
+      },
+      {
+        "feature": "repeated_action_rate",
+        "importance": 401.79427459836006
+      },
+      {
+        "feature": "error_rate",
+        "importance": 386.825202614069
+      },
+      {
+        "feature": "recovery_latency_mean",
+        "importance": 299.04383140802383
+      },
+      {
+        "feature": "current_streak_prior_nonerror",
+        "importance": 246.27285712957382
+      },
+      {
+        "feature": "risk_estimate",
+        "importance": 236.87768375873566
+      },
+      {
+        "feature": "verification_rate",
+        "importance": 205.5527587532997
+      }
+    ]
+  },
+  "R0|R_LGBM|v007_r0|without_identity": {
+    "point": "R0",
+    "arm": "R_LGBM",
+    "schema": "v007_r0",
+    "identity_variant": "without_identity",
+    "importance": [
+      {
+        "feature": "tool_switch_rate",
+        "importance": 2339.2549018859863
+      },
+      {
+        "feature": "repeated_action_rate",
+        "importance": 1716.3527827262878
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 1414.2968084812164
+      },
+      {
+        "feature": "observation_novelty_rate",
+        "importance": 1327.4552142620087
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 697.3315130472183
+      },
+      {
+        "feature": "n_events",
+        "importance": 630.8871911168098
+      },
+      {
+        "feature": "horizon_delta",
+        "importance": 589.0063165128231
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 472.75309389829636
+      },
+      {
+        "feature": "payment_actual_total",
+        "importance": 468.85966259241104
+      },
+      {
+        "feature": "error_rate",
+        "importance": 365.21594393253326
+      },
+      {
+        "feature": "recovery_latency_mean",
+        "importance": 329.7326958179474
+      },
+      {
+        "feature": "avg_actions_per_step",
+        "importance": 321.9231356084347
+      },
+      {
+        "feature": "max_repeated_action_run",
+        "importance": 298.36508044600487
+      },
+      {
+        "feature": "current_streak_prior_nonerror",
+        "importance": 286.4514953792095
+      },
+      {
+        "feature": "used_family_diversity",
+        "importance": 278.2652214169502
+      }
+    ]
+  },
+  "R1|R_LR|v007_r1|with_identity": {
+    "point": "R1",
+    "arm": "R_LR",
+    "schema": "v007_r1",
+    "identity_variant": "with_identity",
+    "importance": [
+      {
+        "feature": "payment_actual_total",
+        "importance": 7.401579961971812
+      },
+      {
+        "feature": "fail_event_index",
+        "importance": 4.551602327368766
+      },
+      {
+        "feature": "n_events",
+        "importance": 3.017947029950525
+      },
+      {
+        "feature": "recovery_attempt_count",
+        "importance": 2.765453407300218
+      },
+      {
+        "feature": "error_count",
+        "importance": 2.6858449916946645
+      },
+      {
+        "feature": "n_actions",
+        "importance": 1.912438603345374
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 1.3618345823766256
+      },
+      {
+        "feature": "distinct_error_count",
+        "importance": 0.6167541273509662
+      },
+      {
+        "feature": "payment_error",
+        "importance": 0.5790186885858055
+      },
+      {
+        "feature": "verification_after_recovery_count",
+        "importance": 0.5780116951109079
+      },
+      {
+        "feature": "n_observations",
+        "importance": 0.4054020431938044
+      },
+      {
+        "feature": "verification_action_count",
+        "importance": 0.359257426414657
+      },
+      {
+        "feature": "prior_episode_count",
+        "importance": 0.31698436006704445
+      },
+      {
+        "feature": "prior_escape_count",
+        "importance": 0.31698436006704445
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 0.3087314835666043
+      }
+    ]
+  },
+  "R1|R_LR|v007_r1|without_identity": {
+    "point": "R1",
+    "arm": "R_LR",
+    "schema": "v007_r1",
+    "identity_variant": "without_identity",
+    "importance": [
+      {
+        "feature": "payment_actual_total",
+        "importance": 9.217316433691325
+      },
+      {
+        "feature": "fail_event_index",
+        "importance": 6.714390345301565
+      },
+      {
+        "feature": "n_events",
+        "importance": 3.1934049503085262
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 2.2739964028553956
+      },
+      {
+        "feature": "recovery_attempt_count",
+        "importance": 2.077437682502064
+      },
+      {
+        "feature": "error_count",
+        "importance": 2.0108861967645772
+      },
+      {
+        "feature": "n_observations",
+        "importance": 1.6814886177180464
+      },
+      {
+        "feature": "payment_error",
+        "importance": 0.9231063054433383
+      },
+      {
+        "feature": "distinct_error_count",
+        "importance": 0.647499384380125
+      },
+      {
+        "feature": "verification_after_recovery_count",
+        "importance": 0.5856096785546359
+      },
+      {
+        "feature": "verification_action_count",
+        "importance": 0.3651488853098045
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 0.3363148209052464
+      },
+      {
+        "feature": "prior_episode_count",
+        "importance": 0.3211875839182086
+      },
+      {
+        "feature": "prior_escape_count",
+        "importance": 0.3211875839182086
+      },
+      {
+        "feature": "used_family_diversity",
+        "importance": 0.2961628273747724
+      }
+    ]
+  },
+  "R1|R_LGBM|v007_r1|with_identity": {
+    "point": "R1",
+    "arm": "R_LGBM",
+    "schema": "v007_r1",
+    "identity_variant": "with_identity",
+    "importance": [
+      {
+        "feature": "dataset_id",
+        "importance": 4564.852228999138
+      },
+      {
+        "feature": "observation_novelty_rate",
+        "importance": 1738.1285336613655
+      },
+      {
+        "feature": "avg_actions_per_step",
+        "importance": 1383.0150964260101
+      },
+      {
+        "feature": "tool_switch_rate",
+        "importance": 758.9875770807266
+      },
+      {
+        "feature": "horizon_delta",
+        "importance": 519.3260468244553
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 489.5167061984539
+      },
+      {
+        "feature": "new_obs_between_failure_and_attempt",
+        "importance": 422.27061837911606
+      },
+      {
+        "feature": "error_rate",
+        "importance": 414.6783153414726
+      },
+      {
+        "feature": "unresolved_action_rate",
+        "importance": 368.42513942718506
+      },
+      {
+        "feature": "used_family_diversity",
+        "importance": 365.72820222377777
+      },
+      {
+        "feature": "recovery_latency_mean",
+        "importance": 358.31238678097725
+      },
+      {
+        "feature": "repeated_action_rate",
+        "importance": 347.49015694856644
+      },
+      {
+        "feature": "payment_actual_total",
+        "importance": 317.4692433476448
+      },
+      {
+        "feature": "payment_predicted_total",
+        "importance": 263.3388669490814
+      },
+      {
+        "feature": "risk_estimate",
+        "importance": 250.49161857366562
+      }
+    ]
+  },
+  "R1|R_LGBM|v007_r1|without_identity": {
+    "point": "R1",
+    "arm": "R_LGBM",
+    "schema": "v007_r1",
+    "identity_variant": "without_identity",
+    "importance": [
+      {
+        "feature": "tool_switch_rate",
+        "importance": 2353.606896877289
+      },
+      {
+        "feature": "observation_novelty_rate",
+        "importance": 1741.692745566368
+      },
+      {
+        "feature": "repeated_action_rate",
+        "importance": 1420.0544490218163
+      },
+      {
+        "feature": "avg_actions_per_step",
+        "importance": 1147.8605308830738
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 873.1482079029083
+      },
+      {
+        "feature": "used_family_diversity",
+        "importance": 765.822109490633
+      },
+      {
+        "feature": "new_obs_between_failure_and_attempt",
+        "importance": 638.6286042928696
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 622.0098273158073
+      },
+      {
+        "feature": "error_rate",
+        "importance": 479.6767486333847
+      },
+      {
+        "feature": "n_events",
+        "importance": 473.45715898275375
+      },
+      {
+        "feature": "horizon_delta",
+        "importance": 430.4793258011341
+      },
+      {
+        "feature": "unresolved_action_rate",
+        "importance": 366.077041387558
+      },
+      {
+        "feature": "recovery_latency_mean",
+        "importance": 339.8919287621975
+      },
+      {
+        "feature": "payment_actual_total",
+        "importance": 310.9617944955826
+      },
+      {
+        "feature": "risk_estimate",
+        "importance": 282.3591351509094
+      }
+    ]
+  },
+  "R0|R_LR|v005_minimal_recovery|with_identity": {
+    "point": "R0",
+    "arm": "R_LR",
+    "schema": "v005_minimal_recovery",
+    "identity_variant": "with_identity",
+    "importance": [
+      {
+        "feature": "dataset_id",
+        "importance": 0.5798155676196994
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 0.5285157069452127
+      },
+      {
+        "feature": "error_count_so_far",
+        "importance": 0.4516047075363149
+      },
+      {
+        "feature": "repeated_error_rate",
+        "importance": 0.3501976900630165
+      },
+      {
+        "feature": "error_rate",
+        "importance": 0.10057253832890956
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 0.029224472829561376
+      },
+      {
+        "feature": "consecutive_error_observations",
+        "importance": 0.0
+      }
+    ]
+  },
+  "R0|R_LR|v005_minimal_recovery|without_identity": {
+    "point": "R0",
+    "arm": "R_LR",
+    "schema": "v005_minimal_recovery",
+    "identity_variant": "without_identity",
+    "importance": [
+      {
+        "feature": "tool_diversity_count",
+        "importance": 0.5535281616341297
+      },
+      {
+        "feature": "error_count_so_far",
+        "importance": 0.5348433795939143
+      },
+      {
+        "feature": "repeated_error_rate",
+        "importance": 0.5097160894689239
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 0.3543427913460532
+      },
+      {
+        "feature": "error_rate",
+        "importance": 0.19664304735574667
+      },
+      {
+        "feature": "consecutive_error_observations",
+        "importance": 0.0
+      }
+    ]
+  },
+  "R1|R_LR|v005_minimal_recovery|with_identity": {
+    "point": "R1",
+    "arm": "R_LR",
+    "schema": "v005_minimal_recovery",
+    "identity_variant": "with_identity",
+    "importance": [
+      {
+        "feature": "dataset_id",
+        "importance": 0.6219239576076975
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 0.5082578877687532
+      },
+      {
+        "feature": "repeated_error_rate",
+        "importance": 0.40496314504374664
+      },
+      {
+        "feature": "error_count_so_far",
+        "importance": 0.40354100032941853
+      },
+      {
+        "feature": "error_rate",
+        "importance": 0.11009690683629998
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 0.10342217176718582
+      },
+      {
+        "feature": "consecutive_error_observations",
+        "importance": 0.047597942460144926
+      }
+    ]
+  },
+  "R1|R_LR|v005_minimal_recovery|without_identity": {
+    "point": "R1",
+    "arm": "R_LR",
+    "schema": "v005_minimal_recovery",
+    "identity_variant": "without_identity",
+    "importance": [
+      {
+        "feature": "repeated_error_rate",
+        "importance": 0.5782537372568011
+      },
+      {
+        "feature": "tool_diversity_count",
+        "importance": 0.5186979098243957
+      },
+      {
+        "feature": "error_count_so_far",
+        "importance": 0.459803967044978
+      },
+      {
+        "feature": "action_observation_ratio",
+        "importance": 0.2887015987800127
+      },
+      {
+        "feature": "error_rate",
+        "importance": 0.20419765267572873
+      },
+      {
+        "feature": "consecutive_error_observations",
+        "importance": 0.13724747845966995
+      }
+    ]
+  }
+}

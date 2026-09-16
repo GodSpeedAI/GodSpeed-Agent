@@ -7,7 +7,7 @@ schema_version: "1.0"
 metadata:
   id: "godspeed-agent-v007-prefix-correction"
   title: "Remove the v005-prefix context-total leak; rerun the frozen v007 recovery matrix cleanly"
-  status: "in_progress"
+  status: "settled"
   version: "1.0.0"
   created: "2026-09-15"
 
@@ -128,3 +128,19 @@ guardrails:
   - "No runtime deployment."
   - "v005_full_semantics and v006 artifacts untouched."
   - "Same dataset revisions; forced changes surfaced before interpretation."
+
+# -----------------------------------------------------------------------------
+# EXECUTION RECORD (settled 2026-09-15)
+# -----------------------------------------------------------------------------
+execution_record:
+  C1: {status: settled, evidence: "aabf707 — ctx field + feature fix + regression tests; parity verified by main agent"}
+  C2: {status: settled, evidence: "fc3f984 — Amendment-2 committed before rerun"}
+  C3: {status: settled, note: >-
+      First rerun attempt by the delegated agent was INVALID (runner default
+      consumed the old v007-episodes table; results byte-identical to round 2).
+      Detected by main-agent provenance check; re-executed directly with
+      --episode-table v007c-episodes --corpus-root v007c-trajectories, twice,
+      byte-identical (md5 b06ee86b). Runner gained a provenance-only
+      --corpus-root flag (frozen design untouched).}
+  C4: {status: settled, evidence: ".agents/reports/v007c-critique.md — VERDICT CONFIRM, zero blockers/majors; critic independently re-ran the matrix byte-identically"}
+  final: {classification: "SETTLED — corrected evidence confirms the existing v007 conclusion", report: ".agents/reports/godspeed-agent-v007-corrected-final.md"}

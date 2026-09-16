@@ -1089,6 +1089,7 @@ def _cell_id(cell: dict[str, Any]) -> str:
 def run_matrix(
     episode_table: Path = EPISODE_TABLE,
     results_root: Path = RESULTS_ROOT,
+    corpus_root: Path = CORPUS_ROOT,
     log: bool = True,
 ) -> dict[str, Any]:
     t_start = time.time()
@@ -1096,7 +1097,10 @@ def run_matrix(
     build_manifest_path = episode_table.parent / "manifest.json"
     build_manifest = json.loads(build_manifest_path.read_text(encoding="utf-8"))
     prereg_sha = _sha256_file(PREREG_PATH)
-    corpus_shas = {name: _sha256_file(CORPUS_ROOT / name) for name in CORPUS_FILES}
+    # corpus_root is CLI-selectable (C3 round-3 rerun consumes the corrected
+    # v007c-trajectories corpus so manifest provenance matches the table);
+    # the frozen design (cells, seeds, splits, grids) is untouched.
+    corpus_shas = {name: _sha256_file(corpus_root / name) for name in CORPUS_FILES}
 
     frame = load_episode_table(episode_table)
     n_episodes = int(frame["episode_id"].nunique())
@@ -1330,7 +1334,7 @@ def run_matrix(
             },
         },
         "corpus": {
-            "root": str(CORPUS_ROOT),
+            "root": str(corpus_root),
             "sha256_by_file": corpus_shas,
         },
         "group_label_definition": (
@@ -1616,8 +1620,20 @@ def main(argv: list[str] | None = None) -> int:
         "--results-root", type=Path, default=RESULTS_ROOT,
         help="Directory under which experiment artifacts are written",
     )
+    parser.add_argument(
+        "--corpus-root", type=Path, default=CORPUS_ROOT,
+        help=(
+            "Trajectory-corpus directory recorded for provenance sha256s "
+            "(C3: pass the corrected v007c-trajectories corpus when "
+            "--episode-table points at v007c-episodes)"
+        ),
+    )
     args = parser.parse_args(argv)
-    run_matrix(episode_table=args.episode_table, results_root=args.results_root)
+    run_matrix(
+        episode_table=args.episode_table,
+        results_root=args.results_root,
+        corpus_root=args.corpus_root,
+    )
     return 0
 
 

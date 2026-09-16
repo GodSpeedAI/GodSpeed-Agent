@@ -8,25 +8,23 @@ when the active desired direction requires deeper history.
 ## Last Settlement
 
 - Date: 2026-09-15
-- Summary: v007 recovery-predictor plan settled (PARTIAL). Built failure-episode
-  corpus from 3 admitted sources (37,426 episodes / 74,852 R0+R1 rows, 21.4%
-  positive): swegym 1,574 parents, nebius 4,554 (REVIVED — v006's zero-error
-  finding was an adapter text-vs-content field bug, fixed), swe_smith 3,708
-  (newly admitted, MIT). Frozen preregistration executed twice (Amendment-1
-  fixed a degenerate test draw; round-1 evidence preserved). Round-2 verdicts:
-  PRIMARY NOT EARNED (LightGBM <= LogisticRegression at both points),
-  SECONDARY NOT EARNED (representation +0.0129 at R1, direction 3/3, below the
-  +0.02 bar). Signal exists (ROC-AUC 0.76/0.77 pooled; 0.63-0.73 per-source)
-  but cross-source generalization is weak (macro ~0.67) and nothing was
-  deployed. Independent audit: CONFIRM, zero blockers; one verdict-immaterial
-  inherited leak flagged in the v005-prefix family (context-count assumption).
-- Settlement evidence: 1,039 tests pass / 2 skipped; validate gate pass; final
-  report `.agents/reports/godspeed-agent-v007-recovery-final.md`.
-- Proof classification: `external-proxy-calibration` (no local settlement claims).
-- Known limit: external proxy data only; v005-prefix context-total leak needs a
-  correction slice before any future re-freeze.
-  Next move: operator decision — context-total correction slice + one clean
-  re-run, or accept the negative settlement.
+- Summary: v007 correction slice settled (SETTLED - corrected evidence confirms
+  the existing v007 conclusion). Removed the v005-prefix context-total leak
+  (per-event ctx counts; prefix elapsed = ctx + k; schema @2; truncation-
+  equivalence regression tests on all three datasets), rebuilt the corpus at
+  the same revisions, and reran the frozen recovery matrix cleanly (round 3).
+  Deltas vs round 2: -0.0009..-0.0032 on v007-schema cells; minimal-recovery
+  control cells byte-identical. All round-2 verdicts stand: LightGBM does not
+  beat LogisticRegression, the representation stays below the +0.02 bar
+  (R1 +0.0120, direction 3/3), cross-source generalization remains the limit.
+  Independent audit: CONFIRM; critic reproduced the run byte-identically.
+- Settlement evidence: 1,062 tests pass / 2 skipped; validate pass; corrected
+  report `.agents/reports/godspeed-agent-v007-corrected-final.md`.
+- Proof classification: `external-proxy-calibration` (no local claims).
+- Known limit: v006 prefix projection inherited this leak (v006 artifacts
+  untouched; quantified immaterial there).
+  Next move: none required; optional re-preregistration of the R1
+  representation direction only if operationally wanted.
 
 ## Active Desired Direction
 
