@@ -707,3 +707,76 @@ class TestSchemaHygiene:
         frame = build_episode_frame([parent])
         assert list(frame.columns) == list(FRAME_COLUMNS)
         assert len(set(frame.columns)) == len(frame.columns)
+
+
+# ---------------------------------------------------------------------------
+# 9. v008 N3: nebius leading issue statement is context, not observation
+# ---------------------------------------------------------------------------
+
+
+class TestNebiusIssueReclassification:
+    """N3: user entries before the first ai action are the task issue
+    statement.  Reclassifying them as context removes the 100%
+    leading-error-run artifact (issue text commonly names the bug) while
+    leaving the frozen episode definition untouched."""
+
+    def _nebius_parent(self) -> dict[str, Any]:
+        """Raw nebius row -> settlement record -> scoped parent."""
+        from scripts.settlement_datasets.registry import get_adapter
+
+        raw = {
+            "instance_id": "repo__issue-1",
+            "model_name": "synthetic-model",
+            "target": False,
+            "trajectory": [
+                {"role": "system", "content": "agent"},
+                {
+                    "role": "user",
+                    "content": (
+                        "We're currently solving the following issue.\n"
+                        "TypeError: cannot concatenate str and int"
+                    ),
+                },
+                {"role": "ai", "content": "run bash: git status"},
+                {"role": "user", "content": "OBSERVATION: clean checkout"},
+                {"role": "ai", "content": "pytest -q"},
+                {"role": "user", "content": "OBSERVATION: 1 failed"},
+                {"role": "ai", "content": "sed -i s/a/b/ src/x.py"},
+                {"role": "user", "content": "OBSERVATION: all ok"},
+            ],
+            "exit_status": "submitted",
+            "generated_patch": "diff --git a/x.py b/x.py",
+            "eval_logs": "FAIL",
+        }
+        adapter = get_adapter("nebius_swe_agent")
+        record = adapter.to_settlement_record(raw)
+        parent, reason = build_parent(
+            record,
+            revision_sha="rev",
+            license_status="l",
+            min_confidence=0.65,
+            context_positions=adapter.context_positions(raw),
+        )
+        assert parent is not None, reason
+        return parent
+
+    def test_issue_text_no_longer_fires_leading_error_runs(self):
+        parent = self._nebius_parent()
+        scan = build_failure_scan(parent)
+        # The issue text contains "TypeError" but is context now: no
+        # leading error run fires on it.
+        assert scan["leading_error_runs"] == 0
+
+    def test_post_action_error_still_opens_episode(self):
+        parent = self._nebius_parent()
+        # Events: A@2 O@3(ok) A@4 O@5(error) A@6 O@7(ok) -- list
+        # positions 0..5; the maximal error run [3] is preceded by the
+        # non-error observation at 1.
+        episodes = build_failure_episodes(parent)
+        assert len(episodes) == 1
+        assert episodes[0]["e"] == 3
+        assert episodes[0]["r0_k"] == 4
+        # R1 closes at the attempt (position 4) plus its consecutive
+        # result (position 5): the cut count is 6.
+        assert episodes[0]["r1_k"] == 6
+        assert episodes[0]["audit_bucket"] == AUDIT_ESCAPE_NO_SETTLEMENT

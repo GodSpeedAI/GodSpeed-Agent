@@ -743,3 +743,250 @@ class TestBuildCorpusFromFixtures:
         assert ds["rejected"] == 2
         reasons = {r["reason"]: r["count"] for r in ds["top_rejection_reasons"]}
         assert reasons.get(REASON_CONFIDENCE_BELOW_THRESHOLD) == 2
+
+
+# ---------------------------------------------------------------------------
+# v008 normalizations (N1/N2/N3)
+# ---------------------------------------------------------------------------
+
+
+class TestKindBasedMarkerGating:
+    """N2: cmd_family/mentions_bash are gated on kind == "action" alone.
+
+    The builder only emits kind="action" for adapter actions, which are
+    the agent's own acts by construction; gating on the role string
+    degenerated every nebius action (its harness carries role "ai").
+    """
+
+    def _ai_action_record(self) -> dict[str, Any]:
+        record = _rich_record()
+        record["dataset"] = "nebius_style_ds"
+        record["affordance_path"] = {
+            "actions": [
+                {
+                    "turn_index": 1,
+                    "role": "ai",
+                    "action_type": "message",
+                    "content": "run bash: python -m pytest tests/",
+                }
+            ],
+            "observations": [
+                {"turn_index": 2, "role": "user", "content": "all ok"}
+            ],
+            "recovery_events": [],
+        }
+        return record
+
+    def test_ai_roled_action_gets_markers(self):
+        parent, reason = build_parent(
+            self._ai_action_record(),
+            revision_sha="rev-test",
+            license_status="test-license",
+            min_confidence=0.65,
+        )
+        assert reason is None
+        action = parent["events"][0]
+        assert action["kind"] == "action"
+        assert action["role"] == "ai"
+        assert action["mentions_bash"] is True
+        assert action["cmd_family"] == "test"
+
+    def test_observation_markers_unchanged(self):
+        parent, _ = build_parent(
+            self._ai_action_record(),
+            revision_sha="rev-test",
+            license_status="test-license",
+            min_confidence=0.65,
+        )
+        observation = parent["events"][1]
+        assert observation["kind"] == "observation"
+        assert observation["cmd_family"] is None
+        assert observation["mentions_bash"] is False
+
+
+class TestSWEGymToolCallRendering:
+    """N1: swegym assistant tool_calls are rendered into the action
+    content so the corpus builder's cmd_family/mentions_bash derivation
+    and action hashes are meaningful; messages without tool_calls are
+    unchanged."""
+
+    def _raw_with_tool_calls(self) -> dict[str, Any]:
+        return {
+            "instance_id": "pkg__repo-1",
+            "run_id": "run_1",
+            "resolved": True,
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Fix the failing test."},
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": "call_1",
+                            "type": "function",
+                            "function": {
+                                "name": "execute_bash",
+                                "arguments": '{"command": "pytest -q tests/test_x.py"}',
+                            },
+                        }
+                    ],
+                },
+                {"role": "tool", "content": "OBSERVATION:\n1 passed"},
+                {"role": "assistant", "content": "plain prose reply"},
+                {"role": "tool", "content": "OBSERVATION:\ndone"},
+            ],
+            "tools": [{"function": {"name": "execute_bash"}, "type": "function"}],
+            "test_result": {"report": {"resolved": True}},
+        }
+
+    def test_tool_calls_rendered_into_action_content(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        adapter = get_adapter("swegym_openhands")
+        actions = adapter.extract_actions(self._raw_with_tool_calls())
+        assert actions[0]["content"] == (
+            'execute_bash {"command": "pytest -q tests/test_x.py"}'
+        )
+
+    def test_assistant_without_tool_calls_unchanged(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        adapter = get_adapter("swegym_openhands")
+        actions = adapter.extract_actions(self._raw_with_tool_calls())
+        assert actions[1]["content"] == "plain prose reply"
+
+    def test_rendering_is_null_safe(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        adapter = get_adapter("swegym_openhands")
+        raw = {
+            "messages": [
+                # Live-schema shape: null content, absent tool_calls.
+                {"role": "assistant", "content": None},
+                # Malformed tool_calls entries are skipped.
+                {
+                    "role": "assistant",
+                    "content": "prose",
+                    "tool_calls": ["nope", {"function": "nope"}, {}],
+                },
+            ]
+        }
+        actions = adapter.extract_actions(raw)
+        assert [action["content"] for action in actions] == ["", "prose"]
+
+    def test_rendered_content_drives_corpus_markers(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        adapter = get_adapter("swegym_openhands")
+        raw = self._raw_with_tool_calls()
+        record = adapter.to_settlement_record(raw)
+        parent, reason = build_parent(
+            record,
+            revision_sha="rev",
+            license_status="l",
+            min_confidence=0.65,
+            context_positions=adapter.context_positions(raw),
+        )
+        assert reason is None
+        by_i = {event["i"]: event for event in parent["events"]}
+        # execute_bash(...) -> "bash" in the rendered tool name and
+        # pytest in the arguments -> test family.
+        assert by_i[2]["cmd_family"] == "test"
+        assert by_i[2]["mentions_bash"] is True
+        # Prose-only action keeps prose semantics.
+        assert by_i[4]["mentions_bash"] is False
+        assert by_i[4]["cmd_family"] == "other"
+        # The empty-content hash degeneration is gone: the two actions
+        # no longer share one hash.
+        assert by_i[2]["hash"] != by_i[4]["hash"]
+
+
+class TestNebiusLeadingIssueContext:
+    """N3: nebius user entries before the first ai/assistant action are
+    the task issue statement -- context, not observations."""
+
+    def _raw(self) -> dict[str, Any]:
+        return {
+            "instance_id": "repo__issue-1",
+            "model_name": "synthetic-model",
+            "target": False,
+            "trajectory": [
+                {"role": "system", "content": "agent"},
+                {
+                    "role": "user",
+                    "content": (
+                        "We're currently solving the following issue.\n"
+                        "TypeError: cannot concatenate str and int"
+                    ),
+                },
+                {"role": "ai", "content": "run bash: git status"},
+                {"role": "user", "content": "OBSERVATION: clean checkout"},
+                {"role": "ai", "content": "pytest -q"},
+                {"role": "user", "content": "OBSERVATION: 1 failed"},
+                {"role": "ai", "content": "sed -i s/a/b/ src/x.py"},
+                {"role": "user", "content": "OBSERVATION: all ok"},
+            ],
+            "exit_status": "submitted",
+            "generated_patch": "diff --git a/x.py b/x.py",
+            "eval_logs": "FAIL",
+        }
+
+    def test_issue_entry_is_context_not_observation(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        adapter = get_adapter("nebius_swe_agent")
+        raw = self._raw()
+        assert [action["turn_index"] for action in adapter.extract_actions(raw)] == [
+            2,
+            4,
+            6,
+        ]
+        assert [
+            observation["turn_index"]
+            for observation in adapter.extract_observations(raw)
+        ] == [3, 5, 7]
+        # Context = system role + pre-first-action user entries.
+        assert adapter.context_positions(raw) == [0, 1]
+
+    def test_issue_entry_not_among_events_and_counted_in_ctx(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        adapter = get_adapter("nebius_swe_agent")
+        raw = self._raw()
+        record = adapter.to_settlement_record(raw)
+        parent, reason = build_parent(
+            record,
+            revision_sha="rev",
+            license_status="l",
+            min_confidence=0.65,
+            context_positions=adapter.context_positions(raw),
+        )
+        assert reason is None
+        event_indices = [event["i"] for event in parent["events"]]
+        assert 1 not in event_indices
+        assert event_indices == [2, 3, 4, 5, 6, 7]
+        # n_context_events = 8 total - 3 actions - 3 observations = 2,
+        # and the first action has already witnessed both.
+        assert parent["n_context_events"] == 2
+        assert parent["trailing_context"] == 0
+        assert parent["events"][0]["ctx"] == 2
+        # The ai-roled actions carry real markers (N2 integration).
+        assert parent["events"][0]["cmd_family"] == "git"
+        assert parent["events"][2]["cmd_family"] == "test"
+
+    def test_trajectory_without_actions_keeps_legacy_observations(self):
+        from scripts.settlement_datasets.registry import get_adapter
+
+        adapter = get_adapter("nebius_swe_agent")
+        raw = {
+            "trajectory": [
+                {"role": "system", "content": "agent"},
+                {"role": "user", "content": "issue statement"},
+            ]
+        }
+        assert [
+            observation["turn_index"]
+            for observation in adapter.extract_observations(raw)
+        ] == [1]
+        assert adapter.context_positions(raw) == [0]

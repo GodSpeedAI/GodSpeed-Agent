@@ -52,8 +52,9 @@ never re-parsed raw rows):**
   observations (user entries carry tool output); agenttrove's
   settlement record carries actions only (user/system context is
   therefore represented as a count, not as events).
-- ``cmd_family`` (actions with role ``assistant`` only, first match
-  wins, case-insensitive keyword regexes):
+- ``cmd_family`` (actions only -- every adapter action is the agent's
+  own act by construction, whatever role string its harness carries;
+  first match wins, case-insensitive keyword regexes):
   1. ``git``: ``\\bgit\\b``
   2. ``install``: pip/apt/conda/npm/uv install forms
   3. ``test``: pytest/unittest/tox/nosetests/npm test/make test/cargo test
@@ -66,7 +67,7 @@ never re-parsed raw rows):**
   empty content -> ``None``; all other events -> ``None``.
 - ``is_error``: observations whose lowercased content contains any of
   ``error``/``fail``/``traceback``/``exception``/``assertionerror``.
-- ``mentions_bash``: assistant content contains ``bash``.
+- ``mentions_bash``: action content contains ``bash``.
 - ``has_terminal_output``: observation content contains
   ``New Terminal Output:`` (agenttrove terminal marker).  Because the
   agenttrove settlement record carries no observations, this marker is
@@ -250,19 +251,22 @@ def _event_from_entry(entry: dict[str, Any], kind: str) -> dict[str, Any]:
     lowered = content.lower()
     is_action = kind == "action"
     is_observation = kind == "observation"
-    is_assistant = role == "assistant"
+    # Marker gating is KIND-based, not role-based (v008 normalization N2):
+    # the builder only emits kind="action" for adapter actions, which are
+    # the agent's own acts by construction.  Gating on role == "assistant"
+    # degenerated every action of sources whose harness uses another role
+    # string (nebius carries "ai": 100% of its actions had cmd_family None
+    # and mentions_bash False).
     return {
         "i": entry.get("turn_index", 0),
         "kind": kind,
         "role": role,
         "content_len": len(content),
         "hash": hashlib.sha1(content.encode("utf-8")).hexdigest()[:10],
-        "mentions_bash": is_action and is_assistant and "bash" in lowered,
+        "mentions_bash": is_action and "bash" in lowered,
         "is_error": is_observation
         and any(kw in lowered for kw in _ERROR_KEYWORDS),
-        "cmd_family": _classify_cmd_family(content)
-        if is_action and is_assistant
-        else None,
+        "cmd_family": _classify_cmd_family(content) if is_action else None,
         "has_terminal_output": is_observation
         and "New Terminal Output:" in content,
     }
