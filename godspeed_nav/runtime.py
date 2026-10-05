@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from godspeed_nav.world_ref import pinned_world_ref
 from godspeed_nav.metabolization import compute_metabolization, plan_repetition
 from godspeed_nav.cognitive_model import rank_candidates_by_controller
 from godspeed_nav.metrics import (
@@ -727,7 +728,10 @@ class NavigationRuntime:
             expected_work_request_id=expected_work_request_id,
             state=state,
             known_parent_ids=known_parent_ids,
-            local_world_ref=local_world_ref,
+            # An explicit pin wins; otherwise the deployment pin (GSA_WORLD_REF).
+            local_world_ref=(
+                local_world_ref if local_world_ref is not None else pinned_world_ref()
+            ),
         )
         if admission.status == "duplicate" or admission.record is None:
             return {"status": "duplicate", "record": None}

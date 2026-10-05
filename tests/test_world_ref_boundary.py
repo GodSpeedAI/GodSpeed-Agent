@@ -212,10 +212,18 @@ def _gate(envelope, *, local_world_ref):
     )
 
 
-def test_evidence_without_a_world_is_provisional_and_unbound(golden):  # noqa: F811
+def test_evidence_without_a_world_is_refused_when_a_world_is_pinned(golden):  # noqa: F811
     envelope = _envelope(golden)
     envelope["payload"].pop("world_ref", None)
-    record = _gate(envelope, local_world_ref=WORLD).record
+    with pytest.raises(DomainRuleError) as err:
+        _gate(envelope, local_world_ref=WORLD)
+    assert err.value.code == "world_ref_missing"
+
+
+def test_evidence_without_a_world_is_provisional_and_unbound_when_none_pinned(golden):  # noqa: F811
+    envelope = _envelope(golden)
+    envelope["payload"].pop("world_ref", None)
+    record = _gate(envelope, local_world_ref=None).record
     assert record.classification == "provisional"
     assert record.world_binding == "unbound"
     assert record.world_ref is None

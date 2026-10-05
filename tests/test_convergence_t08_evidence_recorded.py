@@ -63,6 +63,12 @@ def _fixture() -> dict[str, Any]:
     return json.loads(_FIXTURE_PATH.read_text(encoding="utf-8"))
 
 
+@pytest.fixture(autouse=True)
+def _pinned_world(monkeypatch):
+    """The runtime reads this deployment's world from the environment."""
+    monkeypatch.setenv("GSA_WORLD_REF", WORLD_REF)
+
+
 @pytest.fixture(scope="module")
 def golden() -> dict[str, Any]:
     return _fixture()
@@ -71,11 +77,14 @@ def golden() -> dict[str, Any]:
 #: The locally-resolved model digest THIS deployment binds against — the one
 #: the real sxr emitter stamped into the golden fixture.
 if _FIXTURE_PATH.exists():  # pragma: no branch - fixture ships with the tree
-    MODEL_HASH = json.loads(_FIXTURE_PATH.read_text(encoding="utf-8"))[
-        "domain_model_sha256"
-    ]
+    _FX = json.loads(_FIXTURE_PATH.read_text(encoding="utf-8"))
+    MODEL_HASH = _FX["domain_model_sha256"]
+    #: The semantic world this deployment is pinned to (the one the fixture's
+    #: producer was pinned to).
+    WORLD_REF = _FX["world_ref"]
 else:  # pragma: no cover - only when the sxr checkout is absent
     MODEL_HASH = "a" * 64
+    WORLD_REF = "world:t08@sha256:" + "a" * 64
 
 
 def _envelope(golden: dict[str, Any]) -> dict[str, Any]:
@@ -89,6 +98,7 @@ def _gate(
     expected_work_request_id: str = WORK_REQUEST_ID,
     known_parent_ids: list[str] | None = None,
     model_hash: str | None = None,
+    local_world_ref: str | None = WORLD_REF,
 ):
     return ingest_evidence_recorded(
         envelope,
@@ -96,6 +106,7 @@ def _gate(
         expected_work_request_id=expected_work_request_id,
         state=state if state is not None else EvidenceIngestState(),
         known_parent_ids=known_parent_ids,
+        local_world_ref=local_world_ref,
     )
 
 
