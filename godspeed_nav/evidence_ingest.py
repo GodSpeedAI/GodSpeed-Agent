@@ -45,6 +45,7 @@ from typing import Any
 
 from godspeed_nav.canonical_events import verify_domain_model_hash
 from godspeed_nav.schemas import DomainRuleError
+from godspeed_nav.world_ref import verify_world_ref
 
 SCHEMA_VERSION = "v1"
 NAMESPACE = "agentic_capability_loop"
@@ -181,6 +182,12 @@ class ProvisionalEvidence:
     domain_model_hash: str
     verdict: str
     classification: str = "provisional"
+    #: Semantic world the evidence declares, when the producer carried one.
+    world_ref: str | None = None
+    #: "bound" = declared world equals this deployment's pinned world;
+    #: "unbound" = the producer carried no world_ref, so the evidence says
+    #: nothing about which world it is relative to (unknown, never assumed).
+    world_binding: str = "unbound"
 
     def to_ledger_record(self, created_at: str) -> dict[str, Any]:
         """Project into a plain JSON-safe ledger record (still provisional)."""
@@ -196,6 +203,8 @@ class ProvisionalEvidence:
             "domain_model_hash": self.domain_model_hash,
             "verdict": self.verdict,
             "classification": self.classification,
+            "world_ref": self.world_ref,
+            "world_binding": self.world_binding,
             "source_event_type": EVENT_TYPE,
             "source_producer": PRODUCER,
             "created_at": created_at,
@@ -241,6 +250,7 @@ def ingest_evidence_recorded(
     expected_work_request_id: str,
     state: EvidenceIngestState,
     known_parent_ids: list[str] | None = None,
+    local_world_ref: str | None = None,
 ) -> EvidenceAdmission:
     """Gate ONE canonical EvidenceRecorded delivery.
 
@@ -317,6 +327,28 @@ def ingest_evidence_recorded(
             f"EvidenceRecorded domain_model_hash drift: expected "
             f"{local_model_sha256}, got {declared}.",
         )
+
+    # 3b. Semantic world (CEP-0008 world_ref). Syntax and equality only; the
+    # digest is verified by SEA-Forge, not here. A declared world must match
+    # the deployment's pinned one; an absent world leaves the evidence
+    # "unbound" (unknown), which stays provisional and is flagged.
+    world_ref = payload.get("world_ref")
+    world_binding = "unbound"
+    if world_ref is not None:
+        verify_world_ref(world_ref)
+        if local_world_ref is None:
+            raise DomainRuleError(
+                "world_ref_unpinned",
+                "EvidenceRecorded declares a world_ref but this deployment pins "
+                "none; the evidence cannot be compared and is refused.",
+            )
+        if world_ref != verify_world_ref(local_world_ref):
+            raise DomainRuleError(
+                "world_ref_drift",
+                f"EvidenceRecorded world_ref drift: expected {local_world_ref}, "
+                f"got {world_ref}.",
+            )
+        world_binding = "bound"
 
     # 4. Namespace / schema tampering (payload level).
     if payload.get("namespace") != NAMESPACE:
@@ -507,5 +539,7 @@ def ingest_evidence_recorded(
             operational_settlement_ref=operational_settlement_ref,
             domain_model_hash=declared,
             verdict=difference["verdict"],
+            world_ref=world_ref,
+            world_binding=world_binding,
         ),
     )

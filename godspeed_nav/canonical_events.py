@@ -28,6 +28,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from godspeed_nav.schemas import DomainRuleError
+from godspeed_nav.world_ref import verify_world_ref
 
 SCHEMA_VERSION = "v1"
 NAMESPACE = "agentic_capability_loop"
@@ -87,16 +88,22 @@ def _envelope(
     source_agent: str,
     payload: dict[str, Any],
     domain_model_hash: str,
+    world_ref: str,
     parent_event_ids: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Build one canonical v1 envelope (wire-compatible with SWE_SEED)."""
+    """Build one canonical v1 envelope (wire-compatible with SWE_SEED).
+
+    ``world_ref`` pins the semantic-world revision. It rides next to the legacy
+    ``domain_model_hash`` and is never derived from it.
+    """
     verify_domain_model_hash(domain_model_hash)
     full_payload: dict[str, Any] = {
         "domain_model_hash": verify_domain_model_hash(domain_model_hash),
+        "world_ref": verify_world_ref(world_ref),
         "namespace": NAMESPACE,
     }
     full_payload.update(payload)
-    chain = [f"domain_model_hash:{domain_model_hash}"]
+    chain = [f"domain_model_hash:{domain_model_hash}", f"world_ref:{world_ref}"]
     chain.extend(f"caused_by:{parent}" for parent in parent_event_ids or [])
     correlation = full_payload.get("work_request_id")
     return {
@@ -116,7 +123,7 @@ def _envelope(
 
 
 def project_desired_direction(
-    direction: dict[str, Any], domain_model_hash: str
+    direction: dict[str, Any], domain_model_hash: str, *, world_ref: str
 ) -> dict[str, Any]:
     """E0: project an operator direction into its canonical envelope.
 
@@ -143,6 +150,7 @@ def project_desired_direction(
             "desired_state": desired_state,
         },
         domain_model_hash=domain_model_hash,
+        world_ref=world_ref,
     )
 
 
@@ -153,13 +161,17 @@ def project_work_requested(
     direction: dict[str, Any] | None = None,
     parent_direction_event_id: str | None = None,
     settlement_criteria: list[str] | None = None,
+    *,
+    world_ref: str,
 ) -> dict[str, Any]:
     """E1: project a SELECTED EXECUTABLE affordance into WorkRequested.
 
     Fail-closed against the frozen falsifier: a bare destination with no
     validated pathway, payment estimate, or settlement criteria can never be
     emitted as a canonical WorkRequested event. ``godspeed_agent`` is the
-    exclusive authoritative producer of WorkRequested.
+    exclusive authoritative producer of WorkRequested. The event is a request
+    pinned to ``world_ref``; it carries no authority grant, which only
+    SEA-Forge issues.
     """
     if not work_request_id:
         raise DomainRuleError(
@@ -206,5 +218,6 @@ def project_work_requested(
             "settlement_criteria": criteria,
         },
         domain_model_hash=domain_model_hash,
+        world_ref=world_ref,
         parent_event_ids=parents,
     )

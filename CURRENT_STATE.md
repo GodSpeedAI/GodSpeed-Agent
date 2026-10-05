@@ -5,6 +5,10 @@ horizon, not the full developmental memory. Read `state/current_state.json`
 first when a machine-readable view is better, and query the JSONL ledgers only
 when the active desired direction requires deeper history.
 
+## Stage 9 (CEP-0008 world_ref migration, 2026-10-05)
+
+Branch `migration/cep-world-ref`: work requests and loop events pin `world_ref`; inbound evidence is checked against the deployment pin; agent-local settlement is labelled. 1,131 tests pass / 2 skipped (see `docs/subsystems/agentic-loop-adapters.md` section 9). Not merged.
+
 ## Last Settlement
 
 - Date: 2026-09-15

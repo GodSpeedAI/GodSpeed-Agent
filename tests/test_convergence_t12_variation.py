@@ -61,6 +61,7 @@ from godspeed_nav.runtime import NavigationRuntime
 # ---------------------------------------------------------------------------
 
 DOMAIN_HASH = hashlib.sha256(b"t12-canonical-model-v1").hexdigest()  # 9f7a7c2e...
+WORLD = "world:test@sha256:" + "b" * 64
 OTHER_HASH = "b" * 64
 STALE_HASH = hashlib.sha256(b"t12-stale-model-v0").hexdigest()
 FALLBACK_HASH = GSA_FALLBACK
@@ -138,7 +139,7 @@ def causality_has(env, expected):
 
 def build_e0(wr, did):
     direction = {"id": did, "kind": "improve", "statement": "deploy service via blue-green"}
-    env = project_desired_direction(direction, DOMAIN_HASH)
+    env = project_desired_direction(direction, DOMAIN_HASH, world_ref=WORLD)
     env["event_id"] = _eid(f"e0-{wr}")
     return env
 
@@ -150,6 +151,7 @@ def build_e1(wr, parent_e0_id, did=DIRECTION):
         domain_model_hash=DOMAIN_HASH,
         direction={"success_criteria": ["health check green", "zero-downtime observed"]},
         parent_direction_event_id=parent_e0_id,
+        world_ref=WORLD,
     )
     env["event_id"] = _eid(f"e1-{wr}")
     return env

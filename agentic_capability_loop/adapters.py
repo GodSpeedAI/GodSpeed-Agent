@@ -22,6 +22,9 @@ import warnings
 from pathlib import Path
 from typing import Any
 
+from godspeed_nav.schemas import DomainRuleError
+from godspeed_nav.world_ref import pinned_world_ref, verify_world_ref
+
 NAMESPACE = "agentic_capability_loop"
 
 _MANIFEST = (
@@ -80,15 +83,62 @@ def _provenance(
     *,
     domain_model_hash: str | None = None,
     correlation_id: str | None = None,
+    world_ref: str | None = None,
 ) -> dict[str, Any]:
     """CEP-0008 SS15 provenance record (F-06): producer (origin) + lineage
     refs (chain). The v1 schema's provenance allows only `origin` + `chain`."""
     chain: list[str] = []
     if domain_model_hash:
         chain.append(f"domain_model_hash:{domain_model_hash}")
+    if world_ref:
+        chain.append(f"world_ref:{world_ref}")
     if correlation_id:
         chain.append(f"correlation_id:{correlation_id}")
     return {"origin": "godspeed-agent", "chain": chain}
+
+
+#: Events that move or record a consequential outcome and so MUST be pinned to
+#: a semantic world. The remaining event types (RepetitionPlanned,
+#: CoherenceBreakDetected, LearningProposalCreated) are diagnostics: a missing
+#: world is itself a coherence break and must stay reportable.
+_CONSEQUENTIAL_EVENTS = frozenset(
+    {
+        "ExecutionEvidenceIngested",
+        "SettlementRecorded",
+        "CapabilityUpdated",
+        "TwinUpdated",
+    }
+)
+
+
+def _resolve_world_ref(
+    event_type: str, world_ref: str | None, source: dict[str, Any] | None = None
+) -> str | None:
+    """Pick the world_ref an outbound event is pinned to.
+
+    Precedence: explicit argument, then the world carried by the upstream event
+    this one derives from, then the deployment pin. An upstream world that
+    disagrees with the deployment pin is refused rather than silently rewritten.
+    Never invented: a consequential event with no world raises.
+    """
+    pinned = pinned_world_ref()
+    upstream = (source or {}).get("world_ref")
+    chosen = world_ref or upstream or pinned
+    if chosen is not None:
+        verify_world_ref(chosen)
+        if pinned is not None and chosen != pinned:
+            raise DomainRuleError(
+                "world_ref_drift",
+                f"{event_type} world_ref {chosen} differs from the deployment's "
+                f"pinned world {pinned}.",
+            )
+    if chosen is None and event_type in _CONSEQUENTIAL_EVENTS:
+        raise DomainRuleError(
+            "world_ref_required",
+            f"{event_type} is consequential and needs a pinned world_ref; set "
+            "GSA_WORLD_REF or pass one. Nothing is invented.",
+        )
+    return chosen
 
 
 def _event(
@@ -96,13 +146,23 @@ def _event(
     payload: dict[str, Any],
     *,
     correlation_id: str | None = None,
+    world_ref: str | None = None,
+    source: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a v1-conformant envelope (`sea.agent.event.v1.json`).
 
     `namespace` rides inside `payload` because v1's `additionalProperties:false`
     rejects a top-level `namespace`. Family-A callers see no difference.
+    `world_ref` is pinned for consequential events (see `_resolve_world_ref`);
+    diagnostics carry `world_ref: None` when no world is pinned.
     """
-    payload = {"domain_model_hash": DOMAIN_MODEL_HASH, "namespace": NAMESPACE, **payload}
+    resolved_world = _resolve_world_ref(event_type, world_ref, source)
+    payload = {
+        "domain_model_hash": DOMAIN_MODEL_HASH,
+        "world_ref": resolved_world,
+        "namespace": NAMESPACE,
+        **payload,
+    }
     event: dict[str, Any] = {
         "schema_version": "v1",
         "event_id": str(uuid.uuid4()),
@@ -114,7 +174,9 @@ def _event(
         ),
         "payload": payload,
         "provenance": _provenance(
-            domain_model_hash=DOMAIN_MODEL_HASH, correlation_id=correlation_id
+            domain_model_hash=DOMAIN_MODEL_HASH,
+            correlation_id=correlation_id,
+            world_ref=resolved_world,
         ),
     }
     if correlation_id:
@@ -147,6 +209,10 @@ def handle_evidence_recorded(
         raise ValueError(
             f"Expected EvidenceRecorded event, got '{event.get('event_type')}'"
         )
+    declared_world = (event.get("payload") or {}).get("world_ref")
+    if declared_world is not None:
+        # Syntax + equality with the deployment pin; raises on drift.
+        _resolve_world_ref("ExecutionEvidenceIngested", declared_world)
     ingested = runtime.ingest_execution_evidence(event)
     return emit_execution_evidence_ingested(ingested, event)
 
@@ -166,6 +232,11 @@ def emit_execution_evidence_ingested(
             "proof_result_id": ingested.get("proof_result_id", payload.get("proof_result_id", "")),
             "classification": ingested.get("classification", "provisional"),
             "proof_match": ingested.get("proof_match"),
+            # The ingestion act is pinned to this deployment's world; whether the
+            # evidence itself named a world is reported, never papered over.
+            "evidence_world_binding": (
+                "bound" if payload.get("world_ref") is not None else "unbound"
+            ),
             "ingested_at": _now_iso(),
         },
     )
@@ -179,8 +250,13 @@ def emit_settlement_recorded(
     outcome_reason: str,
     *,
     context_packet_id: str | None = None,
+    world_ref: str | None = None,
 ) -> dict[str, Any]:
     """Emit SettlementRecorded event.
+
+    This is GodSpeed-Agent's own ``agent_local`` settlement of a work cycle. It
+    is not SEA-Forge's settlement (which owns the governed transformation) and
+    carries no authority; ``settlement_scope`` says so on the wire.
     
     Args:
         work_request_id: ID of the originating work request.
@@ -201,8 +277,10 @@ def emit_settlement_recorded(
             "outcome": outcome,
             "outcome_reason": outcome_reason,
             "context_packet_id": context_packet_id,
+            "settlement_scope": "agent_local",
             "settled_at": _now_iso(),
         },
+        world_ref=world_ref,
     )
 
 
@@ -242,6 +320,7 @@ def emit_capability_updated(
             "outcome": payload.get("outcome"),
             "updated_at": _now_iso(),
         },
+        source=payload,
     )
 
 
@@ -324,6 +403,7 @@ def emit_twin_update(
             },
             "updated_at": _now_iso(),
         },
+        source=settlement_payload,
     )
 
 

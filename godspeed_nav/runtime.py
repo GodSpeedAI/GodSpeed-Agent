@@ -692,6 +692,7 @@ class NavigationRuntime:
         local_model_sha256: str,
         expected_work_request_id: str,
         known_parent_ids: list[str] | None = None,
+        local_world_ref: str | None = None,
     ) -> dict[str, Any]:
         """T08: gate ONE canonical EvidenceRecorded into provisional storage.
 
@@ -726,6 +727,7 @@ class NavigationRuntime:
             expected_work_request_id=expected_work_request_id,
             state=state,
             known_parent_ids=known_parent_ids,
+            local_world_ref=local_world_ref,
         )
         if admission.status == "duplicate" or admission.record is None:
             return {"status": "duplicate", "record": None}
