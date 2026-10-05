@@ -114,3 +114,16 @@ The publisher follows the edge spool pattern:
 - Learning Proposals: `agentic_capability_loop/learning_proposals.py` (lines 1–120)
 - NATS Publisher: `agentic_capability_loop/publisher.py` (lines 1–207)
 - Contract Tests: `agentic_capability_loop/tests/test_adapters.py`, `agentic_capability_loop/tests/test_publisher.py`
+
+## 9. World identity (CEP-0008 `world_ref`)
+
+Events carry `world_ref` (`world:<name>@sha256:<64 hex>`) in `payload`, next to the legacy `domain_model_hash`. The two are independent: a `world_ref` is never derived from the hash.
+
+- **Pin:** `GSA_WORLD_REF` pins the deployment's world (`godspeed_nav/world_ref.py`). It is validated, never invented.
+- **Consequential events** (`ExecutionEvidenceIngested`, `SettlementRecorded`, `CapabilityUpdated`, `TwinUpdated`) refuse to emit without a world (`world_ref_required`). `CapabilityUpdated` and `TwinUpdated` inherit the world of the settlement they derive from; a world that differs from the pin raises `world_ref_drift`.
+- **Diagnostics** (`RepetitionPlanned`, `CoherenceBreakDetected`, `LearningProposalCreated`) emit with `world_ref: null` when no world is pinned, so a missing world stays reportable.
+- **Work requests** (`DesiredDirection`, `WorkRequested`) require `world_ref` as a keyword argument and carry no authority fields; a request is not a grant.
+- **`SettlementRecorded`** carries `settlement_scope: "agent_local"`. It is GodSpeed-Agent's own cycle outcome, not SEA-Forge's governed settlement.
+- **Inbound `EvidenceRecorded`:** a declared `world_ref` must equal the pin (`world_ref_drift`, `world_ref_unpinned`, `malformed_world_ref`). Evidence with no `world_ref` stays provisional and is recorded `world_binding: "unbound"`; the legacy RealityTrace E8 emitter does not yet send one.
+
+GodSpeed-Agent checks syntax and equality only. SEA-Forge recomputes the digest.

@@ -26,6 +26,7 @@ from godspeed_nav.canonical_events import (
 from godspeed_nav.schemas import DomainRuleError
 
 GOOD_HASH = "a" * 64
+WORLD = "world:test@sha256:" + "b" * 64
 
 
 def executable_affordance() -> dict:
@@ -65,7 +66,7 @@ def test_all_zero_and_malformed_hashes_are_refused():
 # --- E0: desired direction ------------------------------------------------------
 
 def test_desired_direction_projects_with_external_producer():
-    event = project_desired_direction(direction(), GOOD_HASH)
+    event = project_desired_direction(direction(), GOOD_HASH, world_ref=WORLD)
     assert event["schema_version"] == "v1"
     assert event["event_type"] == "DesiredDirection"
     # E0 production authority is the external environment.
@@ -79,7 +80,7 @@ def test_desired_direction_projects_with_external_producer():
 
 def test_incomplete_direction_is_rejected():
     with pytest.raises(DomainRuleError):
-        project_desired_direction({"id": "dir-1"}, GOOD_HASH)
+        project_desired_direction({"id": "dir-1"}, GOOD_HASH, world_ref=WORLD)
 
 
 # --- E1: work requested ----------------------------------------------------------
@@ -91,6 +92,7 @@ def test_executable_affordance_projects_full_contract():
         domain_model_hash=GOOD_HASH,
         direction=direction(),
         parent_direction_event_id="e0-event-id-1",
+        world_ref=WORLD,
     )
     assert event["schema_version"] == "v1"
     assert event["event_type"] == "WorkRequested"
@@ -118,6 +120,7 @@ def test_destination_only_affordance_cannot_become_work_requested():
             work_request_id="wr-x",
             domain_model_hash=GOOD_HASH,
             direction=direction(),
+            world_ref=WORLD,
         )
     assert err.value.code == "destination_only_not_spendable"
 
@@ -130,6 +133,7 @@ def test_pathway_without_payment_is_still_destination_only():
             work_request_id="wr-x",
             domain_model_hash=GOOD_HASH,
             direction=direction(),
+            world_ref=WORLD,
         )
     assert err.value.code == "destination_only_not_spendable"
 
@@ -142,6 +146,7 @@ def test_missing_settlement_criteria_is_rejected():
             work_request_id="wr-y",
             domain_model_hash=GOOD_HASH,
             direction=criteria_free,
+            world_ref=WORLD,
         )
     assert err.value.code == "settlement_criteria_required"
 
@@ -153,6 +158,7 @@ def test_pseudo_hash_cannot_project_work_requested():
             work_request_id="wr-z",
             domain_model_hash=FALLBACK_PSEUDO_HASH,
             direction=direction(),
+            world_ref=WORLD,
         )
 
 
@@ -179,6 +185,7 @@ def test_writes_golden_fixture_for_swe_seed_ingress():
         domain_model_hash=GOOD_HASH,
         direction=direction(),
         parent_direction_event_id="33333333-3333-3333-4444-555555555555",
+        world_ref=WORLD,
     )
     fixture_dir = os.path.join(os.path.dirname(__file__), "fixtures")
     os.makedirs(fixture_dir, exist_ok=True)

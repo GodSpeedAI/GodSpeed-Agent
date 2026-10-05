@@ -79,6 +79,7 @@ AFFORDANCE_ID = "aff-t11-canonical-001"
 DIRECTION_ID = "dir-t11-001"
 OBSERVER = "observer-t11"
 DOMAIN_HASH = hashlib.sha256(b"t11-canonical-model-v1").hexdigest()  # 537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741
+WORLD = "world:test@sha256:" + "b" * 64
 OTHER_HASH = "c" * 64  # valid but different model — for wrong-domain tests
 FALLBACK_HASH = GSA_FALLBACK  # sha256("agentic_capability_loop")
 ZERO_HASH = "0" * 64
@@ -188,7 +189,7 @@ def assert_causality(envelope: dict, expected_parents: list[str]) -> None:
 
 def build_e0():
     direction = {"id": DIRECTION_ID, "kind": "improve", "statement": "deploy service via blue-green"}
-    env = project_desired_direction(direction, DOMAIN_HASH)
+    env = project_desired_direction(direction, DOMAIN_HASH, world_ref=WORLD)
     # Override event_id for determinism (keep stamp)
     env["event_id"] = E0_ID
     # Recompute idempotency with fixed id? Keep as is but ensure wr not needed for E0
@@ -203,6 +204,7 @@ def build_e1(parent_e0_id: str):
         domain_model_hash=DOMAIN_HASH,
         direction={"success_criteria": ["health check green", "zero-downtime observed"]},
         parent_direction_event_id=parent_e0_id,
+        world_ref=WORLD,
     )
     env["event_id"] = E1_ID
     # Ensure payload has affordance etc

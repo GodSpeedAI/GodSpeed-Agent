@@ -97,18 +97,20 @@
     "DesiredDirection": {
       "event_id": "c6ba3a3d-ec4f-5a52-a7a8-d6c738493aec",
       "event_type": "DesiredDirection",
-      "idempotency_key": "897e6f8005b4759ea3fea298c102e16bcb8a0be42e3316f6163fa14808c092e0",
-      "occurred_at": "2026-09-15T21:10:33.154295+00:00",
+      "idempotency_key": "26fcb0bbda2232e08f3589de9e5066ac99d93e8987f8af40f8c53c769a0d1c58",
+      "occurred_at": "2026-10-05T03:06:48.398817+00:00",
       "payload": {
         "desired_state": "deploy service via blue-green",
         "direction_id": "dir-t11-001",
         "direction_type": "improve",
         "domain_model_hash": "537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
-        "namespace": "agentic_capability_loop"
+        "namespace": "agentic_capability_loop",
+        "world_ref": "world:test@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       },
       "provenance": {
         "chain": [
-          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741"
+          "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "world_ref:world:test@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         ],
         "origin": "external-environment"
       },
@@ -400,8 +402,8 @@
     "WorkRequested": {
       "event_id": "56dabf9b-294d-5b99-bfed-c0ffac35dcd4",
       "event_type": "WorkRequested",
-      "idempotency_key": "dd2e8ec5b70faa731d9d4b20273f23ac4414df19cf98c946bf291a4543494be8",
-      "occurred_at": "2026-09-15T21:10:33.154347+00:00",
+      "idempotency_key": "d87c1195e8212d9a549ab5f15f329e807a111fedc04ce0bf0c00a9bc33f1cda3",
+      "occurred_at": "2026-10-05T03:06:48.398858+00:00",
       "payload": {
         "affordance_id": "aff-t11-canonical-001",
         "desired_outcome": "deploy service via blue-green rotation",
@@ -411,11 +413,13 @@
           "health check green",
           "zero-downtime observed"
         ],
-        "work_request_id": "wr-gsf-t11-001"
+        "work_request_id": "wr-gsf-t11-001",
+        "world_ref": "world:test@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       },
       "provenance": {
         "chain": [
           "domain_model_hash:537449202c9d06df08373366dc0e25c7bf32e51e64d3fbf837465f0a45098741",
+          "world_ref:world:test@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "caused_by:c6ba3a3d-ec4f-5a52-a7a8-d6c738493aec"
         ],
         "origin": "godspeed-agent"
