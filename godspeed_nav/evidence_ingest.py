@@ -331,9 +331,16 @@ def ingest_evidence_recorded(
     # 3b. Semantic world (CEP-0008 world_ref). Syntax and equality only; the
     # digest is verified by SEA-Forge, not here. A declared world must match
     # the deployment's pinned one; an absent world leaves the evidence
-    # "unbound" (unknown), which stays provisional and is flagged.
+    # "unbound" (unknown) only when this deployment pins no world; once a world
+    # is pinned, evidence that names none is refused (RealityTrace now stamps it).
     world_ref = payload.get("world_ref")
     world_binding = "unbound"
+    if world_ref is None and local_world_ref is not None:
+        raise DomainRuleError(
+            "world_ref_missing",
+            "EvidenceRecorded carries no world_ref but this deployment pins "
+            f"{local_world_ref}; evidence for an unknown world is refused.",
+        )
     if world_ref is not None:
         verify_world_ref(world_ref)
         if local_world_ref is None:
