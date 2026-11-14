@@ -18,6 +18,7 @@ from godspeed_nav.metrics import (
 from godspeed_nav.ml import run_predictive_extensions
 from godspeed_nav.reports import generate_developmental_report
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.schemas import DomainRuleError
 from godspeed_nav.storage import LedgerStore
 from godspeed_nav.trajectory import detect_circular_motion, update_trajectory
 from godspeed_nav.validation import validate_enterprise_readiness
@@ -200,7 +201,14 @@ def main() -> int:
     request = json.loads(raw)
     if not isinstance(request, dict):
         raise SystemExit("invalid_input: MCP request must be a JSON object")
-    result = call_tool(request["name"], request.get("arguments", {}))
+    try:
+        result = call_tool(request["name"], request.get("arguments", {}))
+    except DomainRuleError as error:
+        sys.stderr.write(
+            json.dumps({"code": error.code, "message": str(error)}, sort_keys=True)
+            + "\n"
+        )
+        return 2
     print(json.dumps(result, sort_keys=True))
     return 0
 

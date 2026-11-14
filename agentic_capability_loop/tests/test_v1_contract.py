@@ -14,20 +14,20 @@ from __future__ import annotations
 
 import copy
 import json
-import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
-from agentic_capability_loop.adapters import (  # noqa: E402
+from agentic_capability_loop.adapters import (
     detect_coherence_break,
+    emit_capability_updated,
+    emit_execution_evidence_ingested,
     emit_settlement_recorded,
     handle_evidence_recorded,
     schedule_repetition,
-    update_capability_ledger,
 )
+from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.schemas import DomainRuleError
 
 _SCHEMA = (
     Path(__file__).resolve().parent
@@ -67,23 +67,43 @@ def assert_v1(envelope: dict) -> None:
     assert isinstance(prov.get("chain"), list), "provenance.chain must be a list"
 
 
-def _evidence_event() -> dict:
+def _evidence_event(
+    event_id: str = "ev-1",
+    affordance_id: str = "ev-aff",
+    expected: str = "ok",
+    observed: str = "ok",
+) -> dict:
     return {
         "schema_version": "v1",
-        "event_id": "ev-1",
+        "event_id": event_id,
         "source_agent": "sea-forge",
         "event_type": "EvidenceRecorded",
         "occurred_at": "2026-07-01T00:00:00+00:00",
-        "idempotency_key": "ev-1",
+        "idempotency_key": event_id,
         "payload": {
             "domain_model_hash": "deadbeef",
             "namespace": "agentic_capability_loop",
+            "affordance_id": affordance_id,
             "work_request_id": "wr-1",
             "proof_result_id": "pr-1",
-            "observed_result": "ok",
-            "expected_result": "ok",
+            "observed_result": observed,
+            "expected_result": expected,
         },
     }
+
+
+def _seeded_runtime(tmp_path) -> NavigationRuntime:
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "affordances",
+        {
+            "id": "ev-aff",
+            "direction_id": "dir-1",
+            "current_status": "affordance",
+            "pathway": "seeded",
+        },
+    )
+    return runtime
 
 
 def test_settlement_envelope_is_v1_conformant() -> None:
@@ -97,16 +117,90 @@ def test_settlement_envelope_is_v1_conformant() -> None:
 
 def test_capability_repetition_twin_coherence_envelopes_are_v1() -> None:
     settlement = emit_settlement_recorded("wr-1", "pr-1", "ev-1", "usable", "match")
-    capability = update_capability_ledger(settlement, "cap", settlement_count=3)
+    capability = emit_capability_updated(
+        {"id": "cap-1", "label": "cap", "status": "active_evidence", "settlement_count": 3},
+        settlement,
+    )
     repetition = schedule_repetition(capability["payload"]["capability_id"])
     coherence, _proposal = detect_coherence_break("missing context", "wr-1")
     for env in (capability, repetition, coherence):
         assert_v1(env)
 
 
-def test_handle_evidence_recorded_emits_v1_settlement() -> None:
-    settlement = handle_evidence_recorded(_evidence_event())
-    assert_v1(settlement)
+def test_handle_evidence_recorded_emits_v1_execution_evidence_ingested(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    ingested = handle_evidence_recorded(_evidence_event(), runtime)
+    assert_v1(ingested)
+    assert ingested["event_type"] == "ExecutionEvidenceIngested"
+    assert ingested["payload"]["classification"] == "provisional"
+    assert ingested["payload"]["proof_match"] is True
+
+
+# ---------------------------------------------------------------------------
+# Task 2: evidence ingestion stays provisional and capability-neutral
+# ---------------------------------------------------------------------------
+
+
+def test_handle_evidence_matching_proof_is_provisional(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    ingested = handle_evidence_recorded(
+        _evidence_event(event_id="ev-match", observed="ok", expected="ok"), runtime
+    )
+    assert ingested["payload"]["classification"] == "provisional"
+    assert ingested["payload"]["proof_match"] is True
+
+
+def test_handle_evidence_differing_proof_is_provisional(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    ingested = handle_evidence_recorded(
+        _evidence_event(event_id="ev-differ", observed="nope", expected="ok"), runtime
+    )
+    assert ingested["payload"]["classification"] == "provisional"
+    assert ingested["payload"]["proof_match"] is False
+
+
+def test_handle_evidence_rejects_empty_expected(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    with pytest.raises(DomainRuleError) as exc_info:
+        handle_evidence_recorded(
+            _evidence_event(event_id="ev-empty-exp", expected=""), runtime
+        )
+    assert exc_info.value.code == "incomplete_execution_evidence"
+
+
+def test_handle_evidence_rejects_empty_observed(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    with pytest.raises(DomainRuleError) as exc_info:
+        handle_evidence_recorded(
+            _evidence_event(event_id="ev-empty-obs", observed=""), runtime
+        )
+    assert exc_info.value.code == "incomplete_execution_evidence"
+
+
+def test_handle_evidence_duplicate_delivery_is_idempotent(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    first = handle_evidence_recorded(_evidence_event(event_id="ev-dup"), runtime)
+    second = handle_evidence_recorded(_evidence_event(event_id="ev-dup"), runtime)
+    assert first["payload"]["proof_match"] == second["payload"]["proof_match"]
+    assert len(runtime.store.read("execution_evidence")) == 1
+
+
+def test_handle_evidence_rejects_unknown_affordance(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    with pytest.raises(DomainRuleError) as exc_info:
+        handle_evidence_recorded(
+            _evidence_event(event_id="ev-unknown", affordance_id="not-persisted"), runtime
+        )
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+
+
+def test_evidence_ingestion_writes_no_settlement_or_capability_events(tmp_path) -> None:
+    runtime = _seeded_runtime(tmp_path)
+    handle_evidence_recorded(_evidence_event(), runtime)
+    assert runtime.store.read("settlements") == []
+    assert runtime.store.read("capabilities") == []
+    assert runtime.store.read("trajectories") == []
+    assert runtime.store.read("repetition_schedules") == []
 
 
 def test_replay_shares_idempotency_key_not_event_id() -> None:

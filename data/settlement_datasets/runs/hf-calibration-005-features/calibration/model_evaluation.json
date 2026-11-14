@@ -1,0 +1,85 @@
+{
+  "calibration_rows": 6497,
+  "deterministic_baseline_success_rate": 0.1984,
+  "failure_class_count": 5208,
+  "leakage_audit": {
+    "feature_correlations": {
+      "action_observation_ratio": 0.1479,
+      "avg_actions_per_step": 0.111,
+      "dataset_id": 0.0977,
+      "debt_estimate": 0.156,
+      "error_recovery_ratio": 0.1281,
+      "horizon_delta": 0.1855,
+      "payment_actual_total": 0.1575,
+      "payment_error": 0.1491,
+      "payment_predicted_total": 0.1621,
+      "risk_estimate": 0.1824,
+      "tool_diversity_count": 0.115
+    },
+    "leakage_detected": false,
+    "leaked_features": []
+  },
+  "provider": "sklearn",
+  "sklearn_candidate_prediction": [
+    {
+      "candidate_id": "eval_candidate",
+      "predicted_horizon_delta": 0.0211,
+      "rationale": "sklearn_logistic_regression",
+      "success_probability": 0.0301
+    }
+  ],
+  "sklearn_held_out_evaluation": {
+    "baseline_metrics": {
+      "majority_class_balanced_accuracy": 0.5,
+      "majority_class_f1": 0.0,
+      "majority_class_raw_accuracy": 0.8015,
+      "success_rate_balanced_accuracy": 0.6024,
+      "success_rate_f1": 0.383,
+      "success_rate_raw_accuracy": 0.3954
+    },
+    "class_weight": "balanced",
+    "features_used": [
+      "payment_predicted_total",
+      "payment_actual_total",
+      "payment_error",
+      "horizon_delta",
+      "risk_estimate",
+      "debt_estimate",
+      "tool_diversity_count",
+      "error_recovery_ratio",
+      "action_observation_ratio",
+      "avg_actions_per_step",
+      "dataset_id"
+    ],
+    "held_out_metrics": {
+      "average_precision": 0.6291,
+      "balanced_accuracy": 0.7428,
+      "brier_score": 0.1771,
+      "confusion_matrix": [
+        [
+          712,
+          330
+        ],
+        [
+          51,
+          207
+        ]
+      ],
+      "f1_score": 0.5208,
+      "raw_accuracy": 0.7069,
+      "roc_auc": 0.8266
+    },
+    "sampling_strategy": "natural",
+    "sklearn_beats_majority_on_balanced_accuracy": true,
+    "sklearn_beats_majority_on_f1": true,
+    "sklearn_beats_majority_on_raw_accuracy": false,
+    "sklearn_beats_success_rate_on_balanced_accuracy": true,
+    "sklearn_beats_success_rate_on_f1": true,
+    "sklearn_metrics_valid": true,
+    "test_size": 1300,
+    "test_success_rate": 0.1985,
+    "train_size": 5197,
+    "train_success_rate": 0.1984
+  },
+  "success_class_count": 1289
+}

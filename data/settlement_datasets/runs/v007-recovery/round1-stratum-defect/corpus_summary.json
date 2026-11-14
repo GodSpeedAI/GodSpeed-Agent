@@ -1,0 +1,84 @@
+{
+  "config_path": "configs/settlement_datasets/v007_corpus.yaml",
+  "corpus_id": "v007-trajectories",
+  "corpus_manifest_path": "data/settlement_datasets/corpora/v007-trajectories/corpus_manifest.json",
+  "created_at": "2026-09-15T22:38:05Z",
+  "datasets": {
+    "nebius_swe_agent": {
+      "adapter_errors": 0,
+      "corpus_file": "data/settlement_datasets/corpora/v007-trajectories/nebius_swe_agent.jsonl",
+      "duplicates_dropped": 0,
+      "label_counts": {
+        "failure": 3556,
+        "success": 998
+      },
+      "license_status": "identified: cc-by-4.0",
+      "normalized": 5000,
+      "rejected": 446,
+      "revision_sha": "68195a1450865274106246d0d0296a1d6807b88e",
+      "scanned": 5000,
+      "sha256": "42b1a4771a4e9d2d5478e2ce237fad230434f1eec039d7304a6ed0bbc2b3547a",
+      "top_rejection_reasons": [
+        {
+          "count": 446,
+          "reason": "confidence_below_threshold"
+        }
+      ],
+      "usable": 4554
+    },
+    "swe_smith": {
+      "adapter_errors": 0,
+      "corpus_file": "data/settlement_datasets/corpora/v007-trajectories/swe_smith.jsonl",
+      "duplicates_dropped": 0,
+      "label_counts": {
+        "failure": 1340,
+        "success": 2368
+      },
+      "license_status": "identified: mit",
+      "normalized": 5000,
+      "rejected": 1292,
+      "revision_sha": "08e109b4a59eaeebf80e4675cd125d42e7ac99a4",
+      "scanned": 5000,
+      "sha256": "e83dd79df831a8e77e5b3b2cbc9721c9bfd7bdea8ff6f7c07767ba540ba659d7",
+      "top_rejection_reasons": [
+        {
+          "count": 1292,
+          "reason": "confidence_below_threshold"
+        }
+      ],
+      "usable": 3708
+    },
+    "swegym_openhands": {
+      "adapter_errors": 0,
+      "corpus_file": "data/settlement_datasets/corpora/v007-trajectories/swegym_openhands.jsonl",
+      "duplicates_dropped": 318,
+      "label_counts": {
+        "failure": 1334,
+        "success": 240
+      },
+      "license_status": "ambiguous (dataset card declares no license; companion repo SWE-Gym/SWE-Gym is Apache-2.0)",
+      "normalized": 3000,
+      "rejected": 1108,
+      "revision_sha": "baf3a4e4bff514d48ddc08a93a2ade5c126212c7",
+      "scanned": 3000,
+      "sha256": "b2bd19d636c3ff2b70ca04177f60235b1b1f79174376db4a5df3d95f94a21501",
+      "top_rejection_reasons": [
+        {
+          "count": 1108,
+          "reason": "confidence_below_threshold"
+        }
+      ],
+      "usable": 1574
+    }
+  },
+  "identity_model": {
+    "deduplication": "drop only true duplicates: same dataset and identical full-trajectory content hash (canonical events including label); counted as duplicates_dropped",
+    "group_key": "<dataset>:<instance_or_task_id> -- the shared task instance; same-instance trajectories never straddle partitions, so splits and prefix grouping MUST key on group_key",
+    "parent_id": "<dataset>:<instance_or_task_id>:<run_discriminator> -- one distinct parent run over the instance",
+    "run_discriminator": "<metadata.source_run_id>-<sha1[:10] of full canonical trajectory content hash (events incl. label)> when the source provides a per-run field, else the content hash alone; the content-hash component is mandatory because source run ids repeat across distinct runs of one instance"
+  },
+  "min_confidence": 0.65,
+  "settlement_classification": "external-proxy-settlement",
+  "total_usable_parents": 9836,
+  "usability_rule": "parent accepted iff terminal label defined (outcome.success is not None) AND outcome confidence >= 0.65"
+}

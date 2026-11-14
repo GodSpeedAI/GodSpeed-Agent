@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Settlement Dataset Adapter Framework converts settlement-bearing external datasets into reusable developmental memory for the Godspeed Agent Harness. Each dataset contains multi-step agent traces with runnable feedback. The adapters normalize these raw traces into canonical settlement records that the harness can mine for failure patterns, recovery behaviors, policy signals, and metabolization candidates.
+The Settlement Dataset Adapter Framework converts settlement-bearing external datasets into reusable developmental memory for the GodSpeed-Agent settlement and navigation runtime. Each dataset contains multi-step agent traces with runnable feedback. The adapters normalize these raw traces into canonical settlement records that the runtime can mine for failure patterns, recovery behaviors, policy signals, and metabolization candidates.
 
 The purpose is not to collect training examples. The purpose is to refine the harness by learning from settled and failed agent trajectories across diverse domains.
 

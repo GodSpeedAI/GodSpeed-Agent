@@ -1,0 +1,297 @@
+{
+  "plan": "godspeed-agent-v007-recovery-prediction",
+  "task": "T03",
+  "preregistration_id": "v007-recovery",
+  "created_at": "2026-09-16T00:03:10Z",
+  "runtime_seconds": 2770.8651506900787,
+  "python": "3.14.6",
+  "platform": "Linux-6.18.35.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "versions": {
+    "scikit-learn": "1.8.0",
+    "lightgbm": "4.7.0",
+    "pandas": "3.0.3",
+    "numpy": "2.4.6"
+  },
+  "seeds": {
+    "random_state": 42,
+    "test_size": 0.2,
+    "cv_splits": 5
+  },
+  "determinism_flags": {
+    "lgbm": [
+      "deterministic=True",
+      "force_col_wise=True",
+      "n_jobs=1"
+    ]
+  },
+  "preregistration": {
+    "path": "/home/sprime01/projects/godspeed_agent/.agents/reports/v007-experiment-preregistration.yaml",
+    "sha256": "3998241d046ef73fa387fe77a0a747436f9fd397906804e1dbc380f539814b16",
+    "frozen_at": "2026-09-15"
+  },
+  "episode_table": {
+    "path": "/home/sprime01/projects/godspeed_agent/data/settlement_datasets/corpora/v007-episodes/episodes.jsonl",
+    "sha256": "64deaca72a7807cb04ae49de5930a3982dd9ba02fe55898ee3989a2956ea0b92",
+    "build_manifest_path": "/home/sprime01/projects/godspeed_agent/data/settlement_datasets/corpora/v007-episodes/manifest.json",
+    "build_manifest_sha256": "d650c754aea4bb9b8ed3442b3f6a3e87b7a6bf2970566fc31dfe3cbf569ad5e5",
+    "episodes_id": "v007-episodes",
+    "rows": 74852,
+    "episodes": 37426,
+    "rows_by_point": {
+      "R0": 37426,
+      "R1": 37426
+    }
+  },
+  "corpus": {
+    "root": "/home/sprime01/projects/godspeed_agent/data/settlement_datasets/corpora/v007-trajectories",
+    "sha256_by_file": {
+      "nebius_swe_agent.jsonl": "42b1a4771a4e9d2d5478e2ce237fad230434f1eec039d7304a6ed0bbc2b3547a",
+      "swe_smith.jsonl": "e83dd79df831a8e77e5b3b2cbc9721c9bfd7bdea8ff6f7c07767ba540ba659d7",
+      "swegym_openhands.jsonl": "b2bd19d636c3ff2b70ca04177f60235b1b1f79174376db4a5df3d95f94a21501"
+    }
+  },
+  "group_label_definition": "split stratification ONLY: group_label = 1 iff ANY episode of the split_group has recovery_success == 1 (operationalization of the frozen 'max parent label in group'; parents hold multiple episodes with potentially different labels). Row labels are never changed.",
+  "weights_definition": "sample_weight = 1/(number of TRAINING episodes of that parent) per episode row (parent_balanced_training_weights; episodes counted as distinct episode_id per parent, per point); applied to fit only, never to metric computation",
+  "parent_aggregated_definition": "parents labeled 1 iff ANY of their evaluation episodes has recovery_success == 1; raw predicted probabilities averaged per parent before AUC",
+  "headline_probability": "headline episode-level metrics are computed on RAW model probabilities; calibration changes Brier/ECE only (isotonic is monotone)",
+  "loso_scope": "with-identity cells; train-without-source -> held-out-source inside the TRAIN partition; no re-tuning; test untouched",
+  "split": {
+    "strategy": "frozen stratum-grouped holdout over split_group",
+    "train_groups": 1710,
+    "test_groups": 428,
+    "train_rows": 62480,
+    "test_rows": 12372,
+    "test_positives": 3046,
+    "test_group_labels": [
+      0,
+      1
+    ]
+  },
+  "per_cell_sizes": {
+    "R0|R_LR|v007_r0|with_identity": {
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LR",
+      "identity_variant": "with_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R0|R_LR|v007_r0|without_identity": {
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LR",
+      "identity_variant": "without_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R0|R_LGBM|v007_r0|with_identity": {
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LGBM",
+      "identity_variant": "with_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R0|R_LGBM|v007_r0|without_identity": {
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LGBM",
+      "identity_variant": "without_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R1|R_LR|v007_r1|with_identity": {
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LR",
+      "identity_variant": "with_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R1|R_LR|v007_r1|without_identity": {
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LR",
+      "identity_variant": "without_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R1|R_LGBM|v007_r1|with_identity": {
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LGBM",
+      "identity_variant": "with_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R1|R_LGBM|v007_r1|without_identity": {
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LGBM",
+      "identity_variant": "without_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R0|R_LR|v005_minimal_recovery|with_identity": {
+      "point": "R0",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "identity_variant": "with_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R0|R_LR|v005_minimal_recovery|without_identity": {
+      "point": "R0",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "identity_variant": "without_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R1|R_LR|v005_minimal_recovery|with_identity": {
+      "point": "R1",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "identity_variant": "with_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    },
+    "R1|R_LR|v005_minimal_recovery|without_identity": {
+      "point": "R1",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "identity_variant": "without_identity",
+      "n_train_rows": 31240,
+      "n_train_groups": 1710,
+      "n_train_positives": 6505,
+      "n_test_rows": 6186,
+      "n_test_positives": 1523
+    }
+  },
+  "schema_versions": {
+    "v007_episodes": "v007_episodes@1",
+    "v007_r0": "v007_r0@1",
+    "v007_r1": "v007_r1@1",
+    "v005_minimal_recovery": "v005_minimal_recovery@1"
+  },
+  "matrix": [
+    {
+      "cell_id": "R0|R_LR|v007_r0|with_identity",
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LR",
+      "variant": "with_identity"
+    },
+    {
+      "cell_id": "R0|R_LR|v007_r0|without_identity",
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LR",
+      "variant": "without_identity"
+    },
+    {
+      "cell_id": "R0|R_LGBM|v007_r0|with_identity",
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LGBM",
+      "variant": "with_identity"
+    },
+    {
+      "cell_id": "R0|R_LGBM|v007_r0|without_identity",
+      "point": "R0",
+      "schema": "v007_r0",
+      "arm": "R_LGBM",
+      "variant": "without_identity"
+    },
+    {
+      "cell_id": "R1|R_LR|v007_r1|with_identity",
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LR",
+      "variant": "with_identity"
+    },
+    {
+      "cell_id": "R1|R_LR|v007_r1|without_identity",
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LR",
+      "variant": "without_identity"
+    },
+    {
+      "cell_id": "R1|R_LGBM|v007_r1|with_identity",
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LGBM",
+      "variant": "with_identity"
+    },
+    {
+      "cell_id": "R1|R_LGBM|v007_r1|without_identity",
+      "point": "R1",
+      "schema": "v007_r1",
+      "arm": "R_LGBM",
+      "variant": "without_identity"
+    },
+    {
+      "cell_id": "R0|R_LR|v005_minimal_recovery|with_identity",
+      "point": "R0",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "variant": "with_identity"
+    },
+    {
+      "cell_id": "R0|R_LR|v005_minimal_recovery|without_identity",
+      "point": "R0",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "variant": "without_identity"
+    },
+    {
+      "cell_id": "R1|R_LR|v005_minimal_recovery|with_identity",
+      "point": "R1",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "variant": "with_identity"
+    },
+    {
+      "cell_id": "R1|R_LR|v005_minimal_recovery|without_identity",
+      "point": "R1",
+      "schema": "v005_minimal_recovery",
+      "arm": "R_LR",
+      "variant": "without_identity"
+    }
+  ],
+  "artifacts_written_at": "2026-09-16T00:03:10Z"
+}

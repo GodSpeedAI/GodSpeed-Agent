@@ -204,7 +204,7 @@ class SklearnPredictiveModelAdapter(PredictiveModelPort):
                 for c in candidates
             ]
 
-        model = LogisticRegression(max_iter=200, solver="lbfgs")
+        model = LogisticRegression(max_iter=1000, solver="lbfgs")
         model.fit(X, y)
 
         predictions: list[dict[str, Any]] = []

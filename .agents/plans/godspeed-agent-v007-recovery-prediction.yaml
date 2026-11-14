@@ -1,0 +1,505 @@
+# =============================================================================
+# PLAN: godspeed-agent-v007-recovery-prediction
+# =============================================================================
+schema: agent.development_plan
+schema_version: "1.0"
+
+metadata:
+  id: "godspeed-agent-v007-recovery-prediction"
+  title: "v007 conditional recovery predictor: failure-episode construction, R0/R1 prediction points, LR-vs-LightGBM on the NeoHorse-derived representation"
+  status: "settled"
+  version: "1.0.0"
+  created: "2026-09-15"
+
+  purpose: >-
+    Build and evaluate a dedicated, advisory recovery predictor — given that a
+    meaningful execution failure just occurred, does the observable state
+    indicate the agent will recover and subsequently reach settlement — as a
+    new experiment (v007) built on v006's corpus infrastructure and
+    NeoHorse-derived representation, with v006 preserved untouched as
+    historical evidence.
+
+# -----------------------------------------------------------------------------
+# SOURCE AUTHORITY
+# -----------------------------------------------------------------------------
+source:
+  spec:
+    intended_repository_path: null
+    artifact_name: "operator-v007-mission-brief"
+    spec_id: "REQ-V007"
+    spec_version: "2026-09-15"
+    sha256: null
+    authority: normative
+  supporting_sources:
+    - path: ".agents/reports/godspeed-agent-v006-final.md"
+      role: "historical v006 evidence (immutable): estimator-gap at failure-adjacent cuts, nebius zero-error finding, leakage-safe calibration pattern"
+    - path: ".agents/plans/godspeed-agent-v006-dual-model.yaml"
+      role: "settled v006 plan (naming, amendment disciplines, preregistration rules)"
+    - path: "scripts/settlement_datasets/v006_features.py"
+      role: "reusable cut-point feature extractors (v006@1 representation)"
+    - path: "data/settlement_datasets/runs/hf-calibration-006-experiments/"
+      role: "v006 experiment artifacts (immutable)"
+
+# -----------------------------------------------------------------------------
+# NORMATIVE REQUIREMENTS
+# -----------------------------------------------------------------------------
+requirements:
+  REQ-V007-EPISODE: "Primary training unit is the failure episode (failure event + prediction-time state + subsequent behavior + recovery outcome + settlement outcome); not arbitrary prefixes."
+  REQ-V007-TARGET: "recovery_success is preregistered operationally from observable events (failure; escape of failed state; resumed execution; verified terminal settlement); actions, tool changes, or claims alone never count as recovery."
+  REQ-V007-POINTS: "R0 (immediately after failure) and R1 (after first genuine recovery attempt) evaluated separately; never pooled."
+  REQ-V007-FEATURES: "Features contain only information available at or immediately after the prediction point; future events (including escape and terminal outcome) determine labels only, never features."
+  REQ-V007-DATA: "Reuse admitted v006 sources where valid (nebius excluded for this problem — zero is_error events, v006-verified); search for at least one additional public dataset with genuine failures, post-failure behavior, defensible terminal outcomes, stable parent IDs, usable licensing; no lowered evidence standards; if none exists, proceed and mark cross-domain generalization unresolved."
+  REQ-V007-MODELS: "R-LR (LogisticRegression) vs R-LGBM (LGBMClassifier) on identical episodes/partitions/features; no ensemble."
+  REQ-V007-SPLITS: "Split by strongest available parent/task/repository grouping; all episodes of one group in one partition; parent-balanced training weights (1/training-episodes-per-parent)."
+  REQ-V007-PREREG: "Freeze recovery definition, datasets, R0/R1 schemas, grouping, weighting, hyperparameter bounds, primary/secondary metrics, calibration, acceptance criteria before final training; final test evaluates, never redesigns."
+  REQ-V007-EVALUATION: "Per-point metrics (ROC-AUC, AP, Brier, calibration/ECE, balanced accuracy, precision, recall, F1, confusion matrix); per-source + macro-source; LOSO where possible; identity-removed variants; feature importance/coefficients; representative correct/incorrect predictions."
+  REQ-V007-HYPOTHESES: "Primary: LightGBM exploits feature interactions to beat LogisticRegression on recoverability discrimination. Secondary: the NeoHorse-derived representation beats a minimal v005-compatible recovery feature set at the same estimator. Neither assumed true."
+  REQ-V007-RUNTIME: "No automatic deployment; establish a trustworthy signal first; advisory only; deterministic governance and verification stay authoritative; deployment model decided explicitly."
+  REQ-V007-EVIDENCE: "No future-event leakage, no group leakage, defensible labels with legitimate consequence, repeated-episode weighting correct, terminal outcome never encoded in features; independent fresh critic + main-agent verification."
+  REQ-V007-REPORT: "Final report .agents/reports/godspeed-agent-v007-recovery-final.md ending with exactly one of the four classifications and the smallest next move."
+
+# -----------------------------------------------------------------------------
+# CURRENT-STATE FINDINGS (main agent, 2026-09-15, from v006 evidence)
+# -----------------------------------------------------------------------------
+current_state_findings:
+  v006_foundation:
+    reusable_infrastructure:
+      - "Corpus: data/settlement_datasets/corpora/v006-trajectories/{swegym_openhands,nebius_swe_agent}.jsonl (local-only) + corpus_manifest.json; swegym 1574 parents (240 S/1334 F), nebius 225 (59 S/166 F)"
+      - "Cut-point extractors: v005_prefix_compatible_features(parent,k), v006_prefix_features(parent,k), extract_family_features, assert_grouped, assert_no_leaky_features (scripts/settlement_datasets/v006_features.py)"
+      - "Runner patterns: grouped splits, parent-balanced weights, OOF isotonic calibration, disagreement accounting (run_v006_experiments.py)"
+    v006_findings_relevant_here:
+      - "LightGBM beat LogisticRegression at after_first_failure (0.6899 vs 0.6145) and after_first_recovery (0.6782 vs 0.6148) cuts — the estimator-gap motivating v007"
+      - "nebius has ZERO is_error events (v006-verified): unusable for failure episodes; excluded from v007 with that evidence"
+      - "error/recovery/stuck-loop/verification features exist and are causally computed at any cut"
+  episode_feasibility_measured:
+    - "swegym corpus yields 6,987 failure episodes (maximal error-observation runs preceded by >=1 non-error observation), across 1,526 parents, mean 4.58 episodes/parent (parent balancing is load-bearing)"
+    - "upper-bound positives (episodes in terminal-success parents): 865 (~12.4%)"
+    - "swegym instance_ids parse into 1,382 distinct repositories — repository-level grouping feasible"
+  preserved:
+    - "All v006 artifacts, runs, reports, and reported results immutable; v007 writes under new paths only"
+
+# -----------------------------------------------------------------------------
+# COORDINATOR DECISIONS (frozen here; the preregistration embeds them verbatim)
+# -----------------------------------------------------------------------------
+coordinator_decisions:
+  failure_episode:
+    definition: >-
+      An episode opens at the first error observation of a MAXIMAL RUN of error
+      observations (intervening actions allowed — they belong to the failed
+      state) that is preceded by at least one non-error observation (so
+      leading context errors do not open episodes). The failure event = that
+      opening error observation. Later error observations of the same run are
+      part of the same failed state, not new episodes.
+    eligibility: >-
+      The opening error observation must not be the trajectory's final event
+      (an episode with no observable subsequent behavior is not a prediction
+      problem). Excluded episodes are counted with the reason.
+  escape_event_label_component:
+    definition: >-
+      Escape = the first non-error observation strictly after the opening
+      error observation. This is a future, label-side quantity only.
+  recovery_success_target:
+    definition: >-
+      recovery_success = 1 iff (parent terminal label = 1) AND (an escape
+      event exists after the episode's failure point). All other episodes are
+      0. An escape without eventual verified settlement is NOT recovery;
+      a changed tool or another action alone is NOT recovery; terminal success
+      with no observable escape (trailing-error edge case) is labeled 0 and
+      counted in a preregistered label-audit bucket.
+  prediction_points:
+    R0: "Feature window closes at the failure event (opening error observation, inclusive)."
+    R1: "Feature window closes at the first ACTION event strictly after the opening error observation (the recovery attempt, inclusive). Episodes with no post-failure action are R0-only; counted."
+  splits: "group_key = <dataset>:<repository> parsed from instance_id (strongest available task/repository grouping); GroupShuffleSplit test_size=0.20 random_state=42 over groups; model selection GroupKFold(5) on train groups only; test touched once."
+  weights: "Training weight = 1/(number of training episodes of that parent); source-balanced sensitivity arm only if preregistered trigger fires (source ratio > 3:1)."
+  estimators: "LogisticRegression(class_weight='balanced', max_iter=1000, solver='lbfgs', random_state=42, C∈{0.01,0.1,1.0}); LGBMClassifier(random_state=42, verbose=-1, n_estimators∈{150,400}, num_leaves∈{15,31}, learning_rate∈{0.05,0.1}, min_child_samples∈{20,50}, subsample=0.9, colsample_bytree=0.9, reg_lambda=1.0); selection by train-CV ROC-AUC, tiebreak AP."
+  metrics: "Primary: episode-level ROC-AUC, reported separately per point (R0, R1). Secondary: AP, Brier, ECE, balanced accuracy, precision/recall/F1 at fixed 0.5, confusion matrix, parent-aggregated AUC (episode-multiplicity inflation check), per-source, macro-source, LOSO (if ≥2 admitted sources), identity-removed variants, LR coefficients / LGBM importances, representative correct+incorrect examples."
+  calibration: "OOF (GroupKFold) isotonic on train only if selected model's OOF ECE > 0.05 (v006 leakage-safe pattern); never fit on test."
+  acceptance:
+    primary_hypothesis: "R-LGBM beats R-LR by ≥ +0.02 ROC-AUC at a prediction point AND direction holds in per-source cells AND is not reversed by identity removal."
+    secondary_hypothesis: "v006 representation beats a preregistered minimal v005-compatible recovery feature set by ≥ +0.02 ROC-AUC at the same estimator and point."
+    runtime_consequence: "Either hypothesis passing establishes the signal; runtime integration remains a separate, explicitly decided follow-up (no auto-deploy)."
+
+# -----------------------------------------------------------------------------
+# TARGET SETTLEMENT
+# -----------------------------------------------------------------------------
+target_settlement: >-
+  A preregistered, independently audited recovery predictor over failure
+  episodes: defensible episode construction with automated purity/grouping
+  tests, separate R0/R1 evaluation, LR-vs-LightGBM comparison, representation
+  ablation, per-source/calibration/importance reporting, fresh-critic verdict,
+  an explicit no-auto-deploy runtime posture, and a final report ending with
+  exactly one of the four classifications and the smallest justified next move.
+
+# -----------------------------------------------------------------------------
+# OPERATING CONTRACT
+# -----------------------------------------------------------------------------
+operating_contract:
+  core_principle: >-
+    Recovery is an outcome with observable downstream consequence, never an
+    action, a tool change, or a claim; features see only the past of the
+    prediction point; adoption language follows mechanically from frozen
+    criteria.
+  rules:
+    - "v006 artifacts/reports/results immutable; v007 writes only new paths."
+    - "Preregistration frozen before final training; final test evaluates."
+    - "R0 and R1 never pooled into one task."
+    - "Future events (escape, terminal outcome) live on the label side only."
+    - "All episodes of one group in one partition; parent-balanced training weights."
+    - "No invented datasets or labels; admissibility six conditions enforced for any new source."
+    - "Advisory only: no policy decisions implemented; deterministic governance authoritative."
+    - "Subagent summaries are never proof; main agent inspects diffs and reruns gates."
+  claim_states: [OBSERVED, INFERRED, DECIDED, ASSUMED, UNKNOWN]
+  correction_protocol:
+    - "Preserve failed evidence; classify; correct the smallest falsified layer; rerun gates; never weaken acceptance."
+  scope_control: "Discoveries that do not block a REQ-V007-* requirement go to .agents/OBSERVED_DEBT.md."
+
+# -----------------------------------------------------------------------------
+# ARTIFACTS
+# -----------------------------------------------------------------------------
+artifacts:
+  current_status: ".agents/current_status.yml"
+  evidence_root: "data/settlement_datasets/runs/v007-recovery/"
+  reports_root: ".agents/reports/"
+  corpus_rule: "Reuse the v006 corpus; any new admitted source extends configs/settlement_datasets/v007_episodes.yaml (new file), never edits v006 config/artifacts."
+  commit_rule: "Same licensing discipline as v006: no trajectory-content commits from ambiguous-license sources; episode tables carry derived markers only."
+
+# -----------------------------------------------------------------------------
+# VERIFICATION MODEL
+# -----------------------------------------------------------------------------
+verification:
+  global_gates:
+    - id: GATE_UNIT
+      command: "uv run pytest tests/test_v007_episodes.py tests/test_v007_features.py tests/test_v007_experiments.py tests/test_v006_features.py -q"
+    - id: GATE_FULL
+      command: "uv run pytest -q"
+    - id: GATE_VALIDATE
+      command: "uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .godspeed-harness/validation"
+    - id: GATE_DOCS
+      command: "uv run pytest tests/test_docs_alignment.py -q"
+  proof_levels:
+    P1: "behavioral + teeth"
+    P2: "invariant-sensitive (leakage, purity, balance) — adversarial teeth + evidence"
+    P3: "settlement-critical (preregistered experiments, adoption) — frozen preregistration + fresh independent confirmation"
+
+# -----------------------------------------------------------------------------
+# DEPENDENCY GRAPH
+# -----------------------------------------------------------------------------
+dependency_graph:
+  edges:
+    - ["T01", "T02"]
+    - ["T02", "T03"]
+    - ["T03", "T04"]
+    - ["T04", "T05"]
+    - ["T05", "T06"]
+  critical_path: ["T01", "T02", "T03", "T04", "T05"]
+  parallel_tracks:
+    - name: "research_alongside_corpus_work"
+      after: "none"
+      tasks: ["T01a", "T01b"]
+  settlement_sequence:
+    - "dataset research + episode/feature implementation (parallel)"
+    - "preregistration freeze"
+    - "experiments"
+    - "independent critique"
+    - "runtime posture + final report"
+
+initial_state:
+  current_task: "none — plan settled"
+  last_settled_task: "T05"
+  ready: []
+  blocked: {}
+
+# -----------------------------------------------------------------------------
+# EXECUTION RECORD (appended as tasks settle; contracts above unchanged)
+# -----------------------------------------------------------------------------
+execution_record:
+  T01a:
+    status: settled
+    evidence: ".agents/reports/v007-dataset-research.md"
+    note: >-
+      SWE-bench/SWE-smith-trajectories ADMITTED (rev 08e109b4, MIT,
+      execution-derived resolved label). SWE-Gym original + R2E-Gym sets
+      rejected with evidence. nebius REVIVABLE: v006's zero-error finding was
+      an adapter field bug (live events carry 'text'; adapter read 'content')
+      — verified first-hand by the main agent against the live schema
+      (92/93 sampled events non-empty text, 0 non-empty content).
+  T01b:
+    status: settled
+    evidence: "scripts/settlement_datasets/v007_recovery.py + tests (105 focused tests green)"
+    note: "Episode builder per frozen decisions; swegym-only first build gave 6,987 episodes; definitional nuances (CAUSAL_ESCAPE_FEATURE_EXCEPTION, fourth audit cell) documented in-module."
+  T01c:
+    status: settled
+    evidence: "nebius adapter text-first fix; new swe_smith adapter; configs/settlement_datasets/v007_corpus.yaml; corpus at corpora/v007-trajectories (swegym parity vs v006 verified)"
+    note: >-
+      Inserted task (emerged from T01a's revivable verdict). v007 corpus:
+      swegym 1574 parents (identical to v006), nebius 4554 usable (998 S/3556
+      F; 100% parents with is_error after fix — v006 nebius per-source numbers
+      hereby flagged as computed on degenerate events), swe_smith 3708 usable
+      (2368 S/1340 F). Episode table: 37,426 episodes / 74,852 R0+R1 rows,
+      21.4% positive; per-parent mean 4.56, max 68 (parent-balanced weights
+      load-bearing). Main agent independently recomputed counts + spot-checked
+      corpus contents.
+  T02:
+    status: settled
+    evidence: ".agents/reports/v007-experiment-preregistration.yaml (committed 033d578 before any training)"
+    note: "Frozen with T01c evidence; source-balanced sensitivity trigger evaluated: NOT fired (2.79 < 3)."
+  T03:
+    status: settled
+    evidence: "run_v007_experiments.py + runs/v007-recovery/ (round 2) + round1-stratum-defect/ (preserved) + tests/test_v007_experiments.py"
+    note: >-
+      Round 1 executed all frozen cells but its group_label-only strata put
+      all 11 swegym groups in train (zero swegym test rows), hollowing frozen
+      per-source cells and producing a spurious "secondary EARNED" verdict.
+      Amendment-1 recorded in the prereg (strata = (dataset, group_label); no
+      endpoint/model/metric change); round 2 re-ran everything and is the
+      reported run. Round-2 mechanical verdicts: PRIMARY NOT EARNED (LGBM <=
+      LR at both points, direction 1/3; falsifier #1 realized), SECONDARY NOT
+      EARNED (R1 +0.0129 direction 3/3 below the +0.02 bar; R0 +0.0058).
+      Main agent independently recomputed all headline + per-source numbers
+      from raw predictions (exact match). NOTE: the main agent's earlier
+      1,382-repository swegym estimate was a buggy greedy-regex artifact;
+      11 repositories is correct.
+  T04:
+    status: settled
+    evidence: ".agents/reports/v007-critique.md — VERDICT: CONFIRM, zero blockers"
+    note: >-
+      Critic reproduced all headlines/buckets/calibration/split composition;
+      30/30 mutation checks; one MAJOR finding verified first-hand by the
+      main agent: v005-prefix family uses FULL-trajectory context counts
+      (context-first assumption fails corpus-wide for swe_smith 1271/3708 and
+      swegym 918/1574; nebius clean 0/4554), leaking post-cut info into 5
+      features; quantified verdict-immaterial (+0.0003/+0.0009 AUC without
+      them); inherited by v006's prefix projection (v006 untouched, flagged).
+  T05:
+    status: settled
+    evidence: ".agents/reports/godspeed-agent-v007-recovery-final.md — classification: PARTIAL (recovery signal exists but evidence/generalization is insufficient)"
+    note: >-
+      Runtime posture: nothing deployed; deterministic governance sole
+      authority; control surface documented as future work. Smallest next
+      move: v005-prefix context-total correction slice + one clean re-run of
+      the frozen matrix.
+
+# =============================================================================
+# TASK CONTRACTS
+# =============================================================================
+
+tasks:
+
+  T01a:
+    title: "Dataset research: additional failure-bearing trajectory source"
+    initial_status: ready
+    depends_on: []
+    proof_level: P1
+    confirmation: builder_with_main_agent_review
+    settles: ["REQ-V007-DATA"]
+    changes: "No code. Produces .agents/reports/v007-dataset-research.md screening candidate public agent-trajectory datasets for failure-episode admissibility."
+    proves: "Each candidate carries (or lacks) genuine execution failures, observable post-failure behavior, defensible terminal outcomes, stable parent IDs, usable licensing — with cited evidence; an explicit ADMIT/REJECT verdict per candidate."
+    does_not_prove: "That an admitted source yields enough episodes (T02)."
+    hot_context:
+      - "Candidates to screen first: SWE-bench/SWE-smith-trajectories, R2E-Gym trajectory datasets (e.g. R2E-Gym/R2E-Gym-Traj*), SWE-Gym/SWE-Gym (original), nebius/SWE-agent-trajectories re-check (v006 found no is_error events — confirm at observation level whether error text exists in any observation-like field), plus any NeoHorse-referenced outcome-labeled set."
+      - "Six admissibility conditions from v006 (identifiable parents; causal order; actions/observations distinguishable; defensible terminal label; no label leak; license)."
+    steps:
+      - "Inspect HF API metadata + schema + sample rows (streaming, small limits) per candidate."
+      - "Determine whether tool/execution outputs with error content are observable (test error-keyword incidence on samples)."
+      - "Write the screening table + verdicts."
+    gate:
+      - "report exists with per-candidate evidence and verdicts"
+    teeth:
+      - attack: "A candidate whose 'success' field is a synthesis/LLM-judge artifact."
+        expected: "REJECT verdict, not admission."
+    redesign_trigger: "If every candidate fails admissibility, record it and proceed single-source (REQ-V007-DATA allows this) — do not lower standards."
+    evidence: ".agents/reports/v007-dataset-research.md"
+    done_when:
+      - "At least one candidate investigated to a cited ADMIT/REJECT verdict; licensing recorded."
+
+  T01b:
+    title: "Episode construction + recovery features + tests"
+    initial_status: ready
+    depends_on: []
+    proof_level: P2
+    confirmation: builder_with_main_agent_review
+    settles: ["REQ-V007-EPISODE", "REQ-V007-TARGET", "REQ-V007-POINTS", "REQ-V007-FEATURES", "REQ-V007-SPLITS"]
+    changes: "New scripts/settlement_datasets/v007_recovery.py + configs/settlement_datasets/v007_episodes.yaml + tests/test_v007_episodes.py + tests/test_v007_features.py. Implements failure-episode extraction over v006 corpus parents exactly per coordinator_decisions; R0/R1 windows; recovery_success labeling with label-audit buckets; R0 feature schema (v006 families recomputed at k_failure + episode-positional features: raw event index of failure, prior episode count, prior escape count — all causal); R1 additions (attempt repeats preceding action hash; attempt family vs pre-failure action family change; observations between failure and attempt; same-failure immediate repeat). Minimal v005-compatible recovery feature subset preregistered for the representation ablation."
+    proves: "Episodes match the frozen definition (test-proven on crafted synthetic parents + fixtures); labels derive only from escape + terminal outcome; feature windows at R0/R1 are causally closed (future-event mutation invariance); grouping keys carry dataset:repository; parent-balanced weights computed over training episodes."
+    does_not_prove: "That the features predict recovery (T03)."
+    hot_context:
+      - "scripts/settlement_datasets/v006_features.py (reuse extractors at arbitrary k; do NOT fork formulas)"
+      - "KNOWN: nebius parents have zero is_error events — episode builder must handle a source with no episodes gracefully and report it."
+      - "KNOWN: exclude final-event error observations (counted exclusion bucket)."
+    steps:
+      - "Implement build_failure_episodes(parent) -> list of episode records (ids, cut indices, label, audit buckets)."
+      - "Implement r0_features / r1_features reusing v006 extractors + episode additions; expose schema constants + assert helpers."
+      - "Tests: episode definition edge cases (opening context errors, consecutive-error runs, trailing-error exclusion, no-post-failure-action R1 absence, label audit buckets), causal purity (mutation after cut), grouping, weights, determinism, no-leak schema assertions."
+    gate:
+      - "uv run pytest tests/test_v007_episodes.py tests/test_v007_features.py -q"
+    teeth:
+      - attack: "Mutate events strictly after R0/R1 cuts."
+        expected: "Feature vectors bit-identical."
+      - attack: "Craft a parent where escape exists but terminal label = 0 (and its mirror)."
+        expected: "Labels 0 and 1 respectively; escape alone never suffices."
+      - attack: "Two parents of the same repository split across partitions in a helper."
+        expected: "Grouping guard refuses."
+    redesign_trigger: "If swegym episodes prove too few or too degenerate (e.g., all errors confined to context), stop and surface rather than redefining episodes silently."
+    evidence: "scripts/settlement_datasets/v007_recovery.py + tests"
+    done_when:
+      - "Episode builder + features + tests green; real-corpus episode counts + label balance + audit buckets reported."
+
+  T02:
+    title: "Preregistration freeze (embeds coordinator decisions + T01a verdicts)"
+    initial_status: blocked
+    depends_on: ["T01a", "T01b"]
+    proof_level: P3
+    confirmation: main_agent
+    settles: ["REQ-V007-PREREG"]
+    changes: "Writes .agents/reports/v007-experiment-preregistration.yaml embedding coordinator_decisions verbatim plus: admitted datasets (T01a verdicts + revisions + licenses), final R0/R1 feature schemas (from T01b real schemas), episode yield counts, weighting rules, hyperparameter bounds, primary/secondary metrics, calibration rule, acceptance criteria. Frozen (committed) before the final training run."
+    proves: "The executed system is fully determined by the frozen file; nothing endpoint-relevant is chosen after seeing test results."
+    does_not_prove: "Any performance claim."
+    steps:
+      - "Draft after T01a/T01b evidence; main agent reviews and freezes."
+    gate:
+      - "file exists; sha256 recorded in experiment manifest later; committed before results artifacts"
+    redesign_trigger: "If T01b evidence contradicts a coordinator decision (e.g., label audit buckets pathological), STOP and re-decide explicitly before freezing — never silently."
+    evidence: ".agents/reports/v007-experiment-preregistration.yaml"
+    done_when:
+      - "Frozen preregistration committed; covers every REQ-V007-PREREG item."
+
+  T03:
+    title: "Recovery experiment runner + execution"
+    initial_status: blocked
+    depends_on: ["T02"]
+    proof_level: P3
+    confirmation: independent_adversarial
+    settles: ["REQ-V007-MODELS", "REQ-V007-EVALUATION", "REQ-V007-HYPOTHESES"]
+    changes: "New scripts/settlement_datasets/run_v007_experiments.py + tests/test_v007_experiments.py + .agents/reports/v007-experiment-results.md + artifacts under data/settlement_datasets/runs/v007-recovery/. Executes R-LR and R-LGBM at R0 and R1 (plus the preregistered representation ablation), with grouping/weight/calibration discipline identical in kind to v006; reports every REQ-V007-EVALUATION item; mechanical acceptance verdicts."
+    proves: "Whether LightGBM's interaction exploitation beats LogisticRegression on recoverability; whether the NeoHorse-derived representation earns its keep over minimal recovery features; all secondary reporting present."
+    does_not_prove: "Runtime usefulness in the local harness; deployment readiness."
+    preregistration:
+      required: true
+      artifact: ".agents/reports/v007-experiment-preregistration.yaml"
+      claim: "As frozen (primary + secondary hypotheses with exact thresholds)."
+      falsifier: "R-LGBM ≤ R-LR at both points, or gains identity-dependent, or representation gain absent at same estimator."
+      known_confounds:
+        - "episode multiplicity within parents (parent-balanced weights + parent-aggregated secondary metric)"
+        - "escape-in-label vs features separation (mutation tests)"
+        - "single-source dominance (per-source/macro reporting; source-balanced sensitivity if trigger fires)"
+      confirmation_condition: "Fresh critic (T04) finds no leakage/label/weighting defect and reproduces the headline comparison from raw artifacts."
+    steps:
+      - "Runner + tests (grouping guard, label-column whitelist, calibration-on-OOF-only, determinism, acceptance-rule micro-fixture)."
+      - "Execute; persist predictions/metrics/manifest; write results report with representative examples."
+    gate:
+      - "uv run pytest tests/test_v007_experiments.py -q"
+      - "prereg sha256 precedes artifacts; all preregistered cells present"
+    teeth:
+      - attack: "Escape/terminal fields among features."
+        expected: "Whitelist refuses (tested)."
+      - attack: "Ungrouped split helper."
+        expected: "Runner refuses (tested)."
+    independent_confirmation:
+      verifier_receives: ["preregistration", "episode builder + feature code", "runner", "raw artifacts"]
+      verifier_should_not_receive: ["builder's narrative conclusions until primary checks done"]
+      required_verdict: "CONFIRM or REJECT with evidence"
+    redesign_trigger: "Blocked/underpowered preregistered endpoints → stop, document, re-preregister explicitly."
+    evidence: "data/settlement_datasets/runs/v007-recovery/"
+    done_when:
+      - "All preregistered cells executed and persisted; mechanical verdicts recorded; gates green."
+
+  T04:
+    title: "Independent critic audit"
+    initial_status: blocked
+    depends_on: ["T03"]
+    proof_level: P3
+    confirmation: independent_adversarial
+    settles: ["REQ-V007-EVIDENCE"]
+    changes: "No implementation. Fresh critic audits: failure-detection defensibility; recovery-label consequence legitimacy; future-event leakage; parent/task leakage; repeated-episode weighting; source dependence; calibration; terminal-outcome encoding in features; conclusion-vs-preregistration fidelity. Produces .agents/reports/v007-critique.md (BLOCKER/MAJOR/MINOR/NOTE + verdict)."
+    proves: "An unconfounded auditor cannot break the chain — or findings are fixed and re-verified."
+    does_not_prove: "Generalization beyond admitted sources."
+    steps:
+      - "Critic re-derives episodes/labels on samples, re-runs purity attacks, reproduces headline metrics, then cross-checks the builder narrative."
+    gate:
+      - ".agents/reports/v007-critique.md exists with verdict"
+    teeth:
+      - attack: "Critic attempts to forge a leak explanation that survives scrutiny."
+        expected: "Disproven by targeted test, or the finding stands."
+    redesign_trigger: "BLOCKER → back to owning task, failed evidence preserved."
+    evidence: ".agents/reports/v007-critique.md"
+    done_when:
+      - "Verdict recorded; main agent independently verified findings."
+
+  T05:
+    title: "Runtime posture + final report"
+    initial_status: blocked
+    depends_on: ["T04"]
+    proof_level: P2
+    confirmation: main_agent
+    settles: ["REQ-V007-RUNTIME", "REQ-V007-REPORT"]
+    changes: "Runtime posture decision recorded (no auto-deploy; advisory-signal-first; if earned, document the intended control surface as future work — no policy decisions implemented); final report .agents/reports/godspeed-agent-v007-recovery-final.md with every mandated section ending in exactly one classification + smallest next move; plan/current_status/CURRENT_STATE refreshed; gates run."
+    proves: "Repository green; docs match reality; conclusions follow from preregistered metrics."
+    does_not_prove: "Anything beyond admitted sources."
+    steps:
+      - "Run global gates; write report; refresh memory files; commit."
+    gate:
+      - "uv run pytest -q"
+      - "uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .godspeed-harness/validation"
+    teeth:
+      - attack: "git diff v006 run dirs against HEAD."
+        expected: "No modifications."
+    redesign_trigger: "Global-gate failure blocks settlement until corrected."
+    evidence: ".agents/reports/godspeed-agent-v007-recovery-final.md"
+    done_when:
+      - "All gates green; report complete with exactly one classification; memory refreshed."
+
+# -----------------------------------------------------------------------------
+# FINAL ACCEPTANCE
+# -----------------------------------------------------------------------------
+final_acceptance:
+  experiment_integrity:
+    - "Failure episodes match the frozen definition; labels carry observable consequence (escape + verified settlement), never actions/claims."
+    - "No future-event leakage (mutation-test-proven); no group across partitions; parent-balanced weights honored."
+    - "R0/R1 reported separately; per-source/macro/LOSO/identity-removed/calibration/importance/examples all present."
+  hypotheses:
+    - "Primary and secondary hypotheses decided mechanically from frozen criteria; negative results reported honestly."
+  runtime:
+    - "No auto-deployment; posture recorded; advisory-only boundary stated."
+  reporting:
+    - "Final report ends with exactly one classification + smallest next move; gates green; v006 untouched."
+
+# -----------------------------------------------------------------------------
+# GUARDRAILS
+# -----------------------------------------------------------------------------
+guardrails:
+  - "Do not modify v006 artifacts, configs, or reported results."
+  - "No external API dependencies beyond existing HF streaming; no global installs."
+  - "Recovery predictions advisory; no controller policy decisions implemented in v007."
+  - "No trajectory-content commits from ambiguous-license sources."
+  - "No invented labels/datasets; admissibility enforced; exclusions documented."
+  - "Preregistration frozen before final training; final test evaluates, never redesigns."
+
+# -----------------------------------------------------------------------------
+# ROLLBACK
+# -----------------------------------------------------------------------------
+rollback:
+  strategy: "All v007 work is additive (new modules, config, run dir, tests, reports). Rollback = git revert of v007 commits; v006 and the runtime are untouched throughout."
+
+# -----------------------------------------------------------------------------
+# TRACEABILITY
+# -----------------------------------------------------------------------------
+traceability:
+  spec_requirement_count: 13
+  mapped_requirement_count: 13
+  unmapped_requirements: []
+  unknown_plan_requirement_ids: []
+  requirement_to_tasks:
+    REQ-V007-EPISODE: ["T01b", "T04"]
+    REQ-V007-TARGET: ["T01b", "T02", "T04"]
+    REQ-V007-POINTS: ["T01b", "T03"]
+    REQ-V007-FEATURES: ["T01b", "T04"]
+    REQ-V007-DATA: ["T01a", "T02"]
+    REQ-V007-MODELS: ["T03"]
+    REQ-V007-SPLITS: ["T01b", "T03"]
+    REQ-V007-PREREG: ["T02"]
+    REQ-V007-EVALUATION: ["T03"]
+    REQ-V007-HYPOTHESES: ["T03"]
+    REQ-V007-RUNTIME: ["T05"]
+    REQ-V007-EVIDENCE: ["T04"]
+    REQ-V007-REPORT: ["T05"]
+  coverage_rule: "Every REQ-V007-* requirement maps to at least one task; P3 tasks carry independent confirmation."

@@ -1,0 +1,24 @@
+objective: "v008 R1 transfer plan — SETTLED (transferable R1 recovery representation earned: T macro +0.0357 over M, 3/3 environments; full F transfers best +0.0589; T>F refuted; no runtime deployment)."
+worktree_state: "clean; v008 committed on audit-corrections/neatcode-2026-07-29; normalized corpus/episodes local-only (v008-*)."
+changed_files:
+  - "scripts/settlement_datasets/build_trajectory_corpus.py (N2 kind-gating) + swegym_openhands/nebius_swe_agent/swe_smith adapters (N1/N3 + context_positions)"
+  - "scripts/settlement_datasets/run_v008_transfer.py (new) + tests/test_v008_transfer.py (new)"
+  - "configs/settlement_datasets/v008_corpus.yaml, v008_episodes.yaml (new)"
+  - "tests/test_v006_corpus.py, tests/test_v007_episodes.py (normalization tests)"
+  - ".agents/plans/godspeed-agent-v008-r1-transfer.yaml + .agents/reports/v008-*.md"
+completed_work:
+  - "V1a/V1b audits: stability gates (max-OVR 0.85 break); semantics 19 SHARED/21 NORMALIZABLE/14 SOURCE-SPECIFIC; SWE-rebench conditional-admit deferred."
+  - "V1c normalizations N1-N3 + v008 corpus rebuild (37,476 R1 rows / 8,028 positives)."
+  - "V3 LOSO experiment: macro M 0.6013 / F 0.6602 / T 0.6370; primary earned (all 5 frozen conditions); T common core 16/20 across cells; tool_diversity_count excluded at identifiability 1.000."
+  - "V4 critic CONFIRM (zero blockers/majors); independent byte-identical matrix rerun; T-gate re-derivation exact."
+verification:
+  - "uv run pytest -q -> 1099 passed, 2 skipped, 0 failed; validate pass; docs green."
+  - "Headlines independently reproduced from raw predictions by main agent AND critic; three byte-identical executions."
+  - "Isolation (selection/scaling/tuning/calibration on training pool only) test-proven and critic-verified."
+remaining_steps:
+  - "Smallest next move: N4 swe_smith dual-format ingestion fix (1,271 success-labeled parents yield no episodes), then swe_smith calibration re-check; SWE-rebench fourth source as follow-up."
+blockers: []
+decisions:
+  - "T derived per held-out cell from training sources only (only clean design with 3 sources); selection overlap reported as descriptive transfer evidence."
+  - "Primary weighting parent-balanced x source-balanced; StandardScaler training-pool-only."
+  - "No runtime deployment; advisory signal established for transfer only."

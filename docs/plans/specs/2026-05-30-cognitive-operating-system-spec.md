@@ -468,7 +468,7 @@ The runtime is the sole authority for developmental state transitions.
 5. `PaymentPriced`
 6. `TransformationAttempted`
 7. `SettlementRecorded`
-8. `RepetitionScheduled`
+8. `RepetitionPlanned`
 9. `CapabilityUpdated`
 10. `MetabolizationReviewed`
 11. `HorizonExpanded`

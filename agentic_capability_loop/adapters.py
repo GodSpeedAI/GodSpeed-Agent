@@ -22,6 +22,9 @@ import warnings
 from pathlib import Path
 from typing import Any
 
+from godspeed_nav.schemas import DomainRuleError
+from godspeed_nav.world_ref import pinned_world_ref, verify_world_ref
+
 NAMESPACE = "agentic_capability_loop"
 
 _MANIFEST = (
@@ -80,15 +83,62 @@ def _provenance(
     *,
     domain_model_hash: str | None = None,
     correlation_id: str | None = None,
+    world_ref: str | None = None,
 ) -> dict[str, Any]:
     """CEP-0008 SS15 provenance record (F-06): producer (origin) + lineage
     refs (chain). The v1 schema's provenance allows only `origin` + `chain`."""
     chain: list[str] = []
     if domain_model_hash:
         chain.append(f"domain_model_hash:{domain_model_hash}")
+    if world_ref:
+        chain.append(f"world_ref:{world_ref}")
     if correlation_id:
         chain.append(f"correlation_id:{correlation_id}")
     return {"origin": "godspeed-agent", "chain": chain}
+
+
+#: Events that move or record a consequential outcome and so MUST be pinned to
+#: a semantic world. The remaining event types (RepetitionPlanned,
+#: CoherenceBreakDetected, LearningProposalCreated) are diagnostics: a missing
+#: world is itself a coherence break and must stay reportable.
+_CONSEQUENTIAL_EVENTS = frozenset(
+    {
+        "ExecutionEvidenceIngested",
+        "SettlementRecorded",
+        "CapabilityUpdated",
+        "TwinUpdated",
+    }
+)
+
+
+def _resolve_world_ref(
+    event_type: str, world_ref: str | None, source: dict[str, Any] | None = None
+) -> str | None:
+    """Pick the world_ref an outbound event is pinned to.
+
+    Precedence: explicit argument, then the world carried by the upstream event
+    this one derives from, then the deployment pin. An upstream world that
+    disagrees with the deployment pin is refused rather than silently rewritten.
+    Never invented: a consequential event with no world raises.
+    """
+    pinned = pinned_world_ref()
+    upstream = (source or {}).get("world_ref")
+    chosen = world_ref or upstream or pinned
+    if chosen is not None:
+        verify_world_ref(chosen)
+        if pinned is not None and chosen != pinned:
+            raise DomainRuleError(
+                "world_ref_drift",
+                f"{event_type} world_ref {chosen} differs from the deployment's "
+                f"pinned world {pinned}.",
+            )
+    if chosen is None and event_type in _CONSEQUENTIAL_EVENTS:
+        raise DomainRuleError(
+            "world_ref_required",
+            f"{event_type} is consequential and needs a pinned world_ref; set "
+            "GSA_WORLD_REF or pass one. Nothing is invented.",
+        )
+    return chosen
 
 
 def _event(
@@ -96,13 +146,23 @@ def _event(
     payload: dict[str, Any],
     *,
     correlation_id: str | None = None,
+    world_ref: str | None = None,
+    source: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a v1-conformant envelope (`sea.agent.event.v1.json`).
 
     `namespace` rides inside `payload` because v1's `additionalProperties:false`
     rejects a top-level `namespace`. Family-A callers see no difference.
+    `world_ref` is pinned for consequential events (see `_resolve_world_ref`);
+    diagnostics carry `world_ref: None` when no world is pinned.
     """
-    payload = {"domain_model_hash": DOMAIN_MODEL_HASH, "namespace": NAMESPACE, **payload}
+    resolved_world = _resolve_world_ref(event_type, world_ref, source)
+    payload = {
+        "domain_model_hash": DOMAIN_MODEL_HASH,
+        "world_ref": resolved_world,
+        "namespace": NAMESPACE,
+        **payload,
+    }
     event: dict[str, Any] = {
         "schema_version": "v1",
         "event_id": str(uuid.uuid4()),
@@ -114,7 +174,9 @@ def _event(
         ),
         "payload": payload,
         "provenance": _provenance(
-            domain_model_hash=DOMAIN_MODEL_HASH, correlation_id=correlation_id
+            domain_model_hash=DOMAIN_MODEL_HASH,
+            correlation_id=correlation_id,
+            world_ref=resolved_world,
         ),
     }
     if correlation_id:
@@ -124,55 +186,59 @@ def _event(
 
 def handle_evidence_recorded(
     event: dict[str, Any],
+    runtime: Any,
 ) -> dict[str, Any]:
-    """Consume EvidenceRecorded event and emit SettlementRecorded.
-    
-    Validates that the event references a known work request, compares
-    observed_result vs expected_result, and classifies the settlement
-    outcome as 'usable' | 'partial' | 'unusable'.
-    
+    """Consume an EvidenceRecorded event as provisional execution evidence.
+
+    Translates the event into the runtime's canonical
+    ``ingest_execution_evidence()`` boundary. Software proof alone is never
+    settlement: a complete event yields a provisional ``ExecutionEvidenceIngested``
+    envelope that preserves the match/mismatch fact; missing required evidence
+    or an unknown affordance raises a typed error and emits nothing. A later
+    canonical ``record_settlement()`` is the only promotion path.
+
     Args:
         event: EvidenceRecorded canonical event envelope.
-    
-    Returns:
-        SettlementRecorded canonical event envelope.
-    
+        runtime: NavigationRuntime owning evidence ingestion and persistence.
+
     Raises:
-        ValueError: If event type does not match or required fields missing.
+        ValueError: If the event type does not match.
+        DomainRuleError: If evidence is incomplete or the affordance is unknown.
     """
     if event.get("event_type") != "EvidenceRecorded":
         raise ValueError(
             f"Expected EvidenceRecorded event, got '{event.get('event_type')}'"
         )
-    payload = event.get("payload", {})
-    observed = payload.get("observed_result", "")
-    expected = payload.get("expected_result", "")
-    work_request_id = payload.get("work_request_id", "")
-    proof_result_id = payload.get("proof_result_id", "")
-    context_packet_id = payload.get("context_packet_id")
-    
-    if not work_request_id:
-        raise ValueError("EvidenceRecorded payload missing 'work_request_id'")
-    
-    # Classify settlement outcome from evidence comparison
-    if observed == expected:
-        outcome = "usable"
-        outcome_reason = "Observed result matches expected result"
-    elif observed and expected and observed.strip() and expected.strip():
-        # Partial match — some output but not exactly what was expected
-        outcome = "partial"
-        outcome_reason = f"Observed result differs from expected: got '{observed[:100]}'"
-    else:
-        outcome = "unusable"
-        outcome_reason = "Observed result is empty or expected result not specified"
-    
-    return emit_settlement_recorded(
-        work_request_id=work_request_id,
-        proof_result_id=proof_result_id,
-        evidence_event_id=event.get("event_id", ""),
-        outcome=outcome,
-        outcome_reason=outcome_reason,
-        context_packet_id=context_packet_id,
+    declared_world = (event.get("payload") or {}).get("world_ref")
+    if declared_world is not None:
+        # Syntax + equality with the deployment pin; raises on drift.
+        _resolve_world_ref("ExecutionEvidenceIngested", declared_world)
+    ingested = runtime.ingest_execution_evidence(event)
+    return emit_execution_evidence_ingested(ingested, event)
+
+
+def emit_execution_evidence_ingested(
+    ingested: dict[str, Any],
+    source_event: dict[str, Any],
+) -> dict[str, Any]:
+    """Emit an ExecutionEvidenceIngested envelope from a provisional record."""
+    payload = source_event.get("payload", {})
+    return _event(
+        "ExecutionEvidenceIngested",
+        {
+            "evidence_event_id": ingested.get("evidence_event_id", source_event.get("event_id", "")),
+            "affordance_id": ingested.get("affordance_id", payload.get("affordance_id", "")),
+            "work_request_id": ingested.get("work_request_id", payload.get("work_request_id", "")),
+            "proof_result_id": ingested.get("proof_result_id", payload.get("proof_result_id", "")),
+            "classification": ingested.get("classification", "provisional"),
+            "proof_match": ingested.get("proof_match"),
+            # The ingestion act is pinned to this deployment's world; whether the
+            # evidence itself named a world is reported, never papered over.
+            "evidence_world_binding": (
+                "bound" if payload.get("world_ref") is not None else "unbound"
+            ),
+            "ingested_at": _now_iso(),
+        },
     )
 
 
@@ -184,8 +250,13 @@ def emit_settlement_recorded(
     outcome_reason: str,
     *,
     context_packet_id: str | None = None,
+    world_ref: str | None = None,
 ) -> dict[str, Any]:
     """Emit SettlementRecorded event.
+
+    This is GodSpeed-Agent's own ``agent_local`` settlement of a work cycle. It
+    is not SEA-Forge's settlement (which owns the governed transformation) and
+    carries no authority; ``settlement_scope`` says so on the wire.
     
     Args:
         work_request_id: ID of the originating work request.
@@ -206,55 +277,50 @@ def emit_settlement_recorded(
             "outcome": outcome,
             "outcome_reason": outcome_reason,
             "context_packet_id": context_packet_id,
+            "settlement_scope": "agent_local",
             "settled_at": _now_iso(),
         },
+        world_ref=world_ref,
     )
 
 
-def update_capability_ledger(
+def emit_capability_updated(
+    capability_record: dict[str, Any],
     settlement_event: dict[str, Any],
-    capability_name: str,
     *,
-    capability_id: str | None = None,
-    settlement_count: int = 1,
+    capability_name: str | None = None,
 ) -> dict[str, Any]:
-    """Emit CapabilityUpdated event after recording a settlement.
-    
-    Links the settlement to a named capability and advances its lifecycle.
-    Capabilities remain active_evidence until at least three usable settlements.
-    
+    """Emit a CapabilityUpdated envelope translating a canonical capability record.
+
+    Pure translation: status and settlement_count come from the persisted
+    canonical capability record, never from caller-supplied counts or from
+    classifying a string match as settlement. ``settlement_event`` is the
+    canonical SettlementRecorded envelope (or payload dict) being annotated.
+
     Args:
-        settlement_event: SettlementRecorded event envelope (or payload dict).
-        capability_name: Human-readable name for the capability being tracked.
-        capability_id: Optional stable ID; auto-generated if not provided.
-    
+        capability_record: Canonical capability record from the runtime.
+        settlement_event: Canonical SettlementRecorded envelope.
+        capability_name: Optional human-readable name override.
+
     Returns:
         Canonical CapabilityUpdated event envelope.
     """
     payload = settlement_event.get("payload", settlement_event)
-    outcome = payload.get("outcome", "unusable")
-    capability_id = capability_id or str(uuid.uuid4())
-    
-    if outcome not in ("usable", "partial"):
-        status = "latent"
-    elif settlement_count >= 3:
-        status = "metabolized"
-    else:
-        status = "active_evidence"
-    
+    capability_id = capability_record.get("id") or str(uuid.uuid4())
     return _event(
         "CapabilityUpdated",
         {
             "capability_id": capability_id,
-            "capability_name": capability_name,
+            "capability_name": capability_name or capability_record.get("label", capability_id),
             "work_request_id": payload.get("work_request_id", ""),
             "settlement_event_id": settlement_event.get("event_id", ""),
             "context_packet_id": payload.get("context_packet_id"),
-            "status": status,
-            "outcome": outcome,
-            "settlement_count": settlement_count,
+            "status": capability_record.get("status", ""),
+            "settlement_count": capability_record.get("settlement_count", 0),
+            "outcome": payload.get("outcome"),
             "updated_at": _now_iso(),
         },
+        source=payload,
     )
 
 
@@ -337,6 +403,7 @@ def emit_twin_update(
             },
             "updated_at": _now_iso(),
         },
+        source=settlement_payload,
     )
 
 
@@ -348,35 +415,38 @@ def persist_to_ledger(
     *,
     learning_proposal_event: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Persist agentic loop events to real GodSpeed JSONL ledgers."""
-    from agentic_capability_loop.learning_proposals import LearningProposalLedger  # noqa: PLC0415
+    """Persist agentic loop outbound envelopes to the transport outbox.
 
-    settlement_envelope = ledger_store.append_event("agentic_settlements", settlement_event)
-    capability_envelope = ledger_store.append_event("agentic_capabilities", capability_event)
-    repetition_envelope = ledger_store.append_event("agentic_repetitions", repetition_event)
+    Outbound envelopes are written to one ``agentic_outbound_events`` outbox
+    ledger; ``settlements``, ``capabilities``, and ``repetition_schedules``
+    remain the canonical runtime authority. Learning proposals route through
+    the canonical ``append_learning_proposal`` helper.
+    """
+    from agentic_capability_loop.learning_proposals import append_learning_proposal  # noqa: PLC0415
+
+    outbox: list[dict[str, Any]] = []
+    for envelope in (settlement_event, capability_event, repetition_event):
+        if envelope is not None:
+            outbox.append(ledger_store.append_event("agentic_outbound_events", envelope))
 
     result: dict[str, Any] = {
-        "settlement": settlement_envelope,
-        "capability": capability_envelope,
-        "repetition": repetition_envelope,
+        "outbox": outbox,
         "learning_proposal": None,
     }
 
     if learning_proposal_event is not None:
-        proposal_ledger = LearningProposalLedger(ledger_store.root)
-        proposal_ledger.append(learning_proposal_event)
+        append_learning_proposal(ledger_store, learning_proposal_event)
         result["learning_proposal"] = {"event_id": learning_proposal_event["event_id"]}
 
-    # WP-3 (F-02): best-effort one-way drain of the buffered settlements/
-    # capabilities/repetitions to NATS when configured. The JSONL buffer is the
-    # source of truth; this never raises — a transport failure leaves events
-    # buffered for the next drain.
+    # WP-3 (F-02): best-effort one-way drain of the outbox to NATS when
+    # configured. The JSONL outbox is the source of truth; this never raises —
+    # a transport failure leaves events buffered for the next drain.
     try:
         from agentic_capability_loop.publisher import drain_persisted_to_nats  # noqa: PLC0415
 
         result["nats_drain"] = drain_persisted_to_nats(
             ledger_store,
-            ("agentic_settlements", "agentic_capabilities", "agentic_repetitions"),
+            ("agentic_outbound_events",),
         )
     except Exception:  # noqa: BLE001 — transport must not break persistence
         result["nats_drain"] = {}

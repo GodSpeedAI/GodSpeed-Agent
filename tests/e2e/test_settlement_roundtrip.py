@@ -30,7 +30,10 @@ import time
 import uuid
 from pathlib import Path
 
-import psycopg
+try:
+    import psycopg
+except ImportError:
+    psycopg = None
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -53,8 +56,8 @@ def _reachable(host: str, port: int) -> bool:
 
 
 pytestmark = pytest.mark.skipif(
-    not (_reachable("127.0.0.1", 4222) and _reachable("127.0.0.1", 5432)),
-    reason="e2e services not up (run: docker compose -f tests/e2e/docker-compose.yml up -d)",
+    psycopg is None or not (_reachable("127.0.0.1", 4222) and _reachable("127.0.0.1", 5432)),
+    reason="psycopg not installed or e2e services not up (run: docker compose -f tests/e2e/docker-compose.yml up -d)",
 )
 
 

@@ -101,6 +101,18 @@ class SettlementDatasetAdapter(ABC):
     @abstractmethod
     def extract_payment(self, raw: dict[str, Any]) -> dict[str, Any]: ...
 
+    def context_positions(self, raw: dict[str, Any]) -> list[int]:
+        """Indices of context (non-event) messages in the raw message
+        sequence; enables prefix-scoped elapsed counts.
+
+        Default: no context (empty list).  Adapters whose raw rows carry
+        messages outside their own action/observation role sets override
+        this to return the sorted indices of those context messages, in
+        raw-sequence order.  The corpus builder turns them into per-event
+        ``ctx`` counts (v007 correction MAJOR-1).
+        """
+        return []
+
     @abstractmethod
     def infer_settlement_quality(
         self, raw: dict[str, Any], extracted: dict[str, Any]

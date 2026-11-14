@@ -34,7 +34,6 @@ from scripts.settlement_datasets.adapter_base import (
     make_empty_representational_state,
 )
 
-_DEFAULT_INPUT_PATH = "data/agenttrove/raw_samples/sample.jsonl"
 _RULES_PATH = "configs/agenttrove/settlement_label_rules.yaml"
 
 
@@ -46,18 +45,31 @@ class AgentTroveAdapter(SettlementDatasetAdapter):
     def stream(
         self, limit: int | None = None, **kwargs: Any
     ) -> Iterator[dict[str, Any]]:
-        input_path = Path(kwargs.get("input_path", _DEFAULT_INPUT_PATH))
-        if not input_path.exists():
-            return
-        count = 0
-        with input_path.open("r", encoding="utf-8") as f:
+        input_path = kwargs.get("input_path")
+        if input_path:
+            yield from self._stream_local(input_path, limit)
+        else:
+            yield from self._stream_hf(limit, **kwargs)
+
+    def _stream_local(
+        self, input_path: str, limit: int | None
+    ) -> Iterator[dict[str, Any]]:
+        yielded = 0
+        with Path(input_path).open("r", encoding="utf-8") as f:
             for line in f:
-                if not line.strip():
-                    continue
-                yield json.loads(line)
-                count += 1
-                if limit is not None and count >= limit:
-                    return
+                if line.strip():
+                    yield json.loads(line)
+                    yielded += 1
+                    if limit is not None and yielded >= limit:
+                        break
+
+    def _stream_hf(self, limit: int | None, **kwargs: Any) -> Iterator[dict[str, Any]]:
+        from scripts.settlement_datasets.hf_stream import iter_limited, load_hf_stream
+
+        source_uri = kwargs.get("source_uri", self.source_uri)
+        split = kwargs.get("split", "train")
+        stream = load_hf_stream(source_uri, split=split)
+        yield from iter_limited(stream, limit)
 
     def normalize_task(self, raw: dict[str, Any]) -> dict[str, Any]:
         messages = raw.get("messages", [])

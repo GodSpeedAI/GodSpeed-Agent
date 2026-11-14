@@ -4,6 +4,7 @@ import json
 import sqlite3
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -806,3 +807,303 @@ class TestAgentTroveBackwardCompatibility:
                 "failure_without_signal",
                 "unknown",
             }
+
+
+class TestAgentTroveHFStreaming:
+    """Without input_path, agenttrove must stream from Hugging Face
+    instead of silently returning when the retired default file is absent."""
+
+    def _fake_rows(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "trace_id": "hf-row-0",
+                "messages": [{"role": "user", "content": "task zero"}],
+            },
+            {
+                "trace_id": "hf-row-1",
+                "messages": [{"role": "user", "content": "task one"}],
+            },
+        ]
+
+    def test_stream_without_input_path_streams_from_hf(self, monkeypatch):
+        from scripts.settlement_datasets import hf_stream
+
+        calls: list[tuple[str, str]] = []
+
+        def fake_load_hf_stream(source_uri, split):
+            calls.append((source_uri, split))
+            return iter(self._fake_rows())
+
+        monkeypatch.setattr(hf_stream, "load_hf_stream", fake_load_hf_stream)
+
+        adapter = AgentTroveAdapter()
+        rows = list(adapter.stream())
+
+        assert rows == self._fake_rows()
+        assert calls == [("open-thoughts/AgentTrove", "train")]
+
+    def test_stream_without_input_path_honors_limit(self, monkeypatch):
+        from scripts.settlement_datasets import hf_stream
+
+        monkeypatch.setattr(
+            hf_stream,
+            "load_hf_stream",
+            lambda source_uri, split: iter(self._fake_rows()),
+        )
+
+        adapter = AgentTroveAdapter()
+        rows = list(adapter.stream(limit=1))
+
+        assert len(rows) == 1
+        assert rows[0]["trace_id"] == "hf-row-0"
+
+    def test_stream_hf_kwargs_override_source_uri_and_split(self, monkeypatch):
+        from scripts.settlement_datasets import hf_stream
+
+        calls: list[tuple[str, str]] = []
+
+        def fake_load_hf_stream(source_uri, split):
+            calls.append((source_uri, split))
+            return iter(self._fake_rows())
+
+        monkeypatch.setattr(hf_stream, "load_hf_stream", fake_load_hf_stream)
+
+        adapter = AgentTroveAdapter()
+        rows = list(
+            adapter.stream(source_uri="mirror/AgentTrove", split="validation")
+        )
+
+        assert len(rows) == 2
+        assert calls == [("mirror/AgentTrove", "validation")]
+
+
+class TestNebiusSWEAgentNullSafety:
+    """Explicit HF null string fields must normalize, not crash.
+    v005 observed 441 adapter errors from len(None) / .lower() on nulls."""
+
+    @pytest.fixture
+    def adapter(self):
+        from scripts.settlement_datasets.nebius_swe_agent_adapter import (
+            NebiusSWEAgentAdapter,
+        )
+
+        return NebiusSWEAgentAdapter()
+
+    def _null_row(self) -> dict[str, Any]:
+        return {
+            "instance_id": "repo__null-fields",
+            "model_name": None,
+            "target": False,
+            "trajectory": json.dumps(
+                [
+                    {"role": "system", "content": "agent"},
+                    {"role": "ai", "content": "edit file"},
+                    {"role": "user", "content": "tests failed"},
+                ]
+            ),
+            "exit_status": None,
+            "generated_patch": None,
+            "eval_logs": None,
+        }
+
+    def test_extract_payment_with_null_patch_and_eval_logs(self, adapter):
+        payment = adapter.extract_payment(self._null_row())
+        assert payment["elapsed_steps"] == 3
+        assert "patch_size=0" in payment["evidence"]
+        assert "error_like_in_logs=0" in payment["evidence"]
+
+    def test_to_settlement_record_with_null_string_fields(self, adapter):
+        record = adapter.to_settlement_record(self._null_row())
+        assert record["dataset"] == "nebius_swe_agent"
+        assert record["outcome"]["success"] is False
+        assert record["metadata"]["model_name"] == ""
+        assert record["metadata"]["exit_status"] == ""
+        assert adapter.validate_record(record) == []
+
+    def test_null_instance_id_and_trajectory_normalize(self, adapter):
+        raw = self._null_row()
+        raw["instance_id"] = None
+        raw["trajectory"] = None
+        record = adapter.to_settlement_record(raw)
+        assert record["task_id"] == ""
+        assert record["payment"]["elapsed_steps"] == 0
+
+
+class TestNebiusSWEAgentTextField:
+    """Live HF rows carry the message in ``text`` (v006 finding: the
+    adapter read only ``content``, so every extracted event was empty
+    and no is_error marker could ever fire)."""
+
+    @pytest.fixture
+    def adapter(self):
+        from scripts.settlement_datasets.nebius_swe_agent_adapter import (
+            NebiusSWEAgentAdapter,
+        )
+
+        return NebiusSWEAgentAdapter()
+
+    def _text_row(self) -> dict[str, Any]:
+        return {
+            "instance_id": "repo__text-field",
+            "model_name": "swe-agent-test",
+            "target": False,
+            "trajectory": json.dumps(
+                [
+                    {"role": "system", "text": "agent", "mask": True},
+                    {"role": "ai", "text": "run the tests", "mask": True},
+                    {
+                        "role": "user",
+                        "text": (
+                            "Traceback (most recent call last): "
+                            "AssertionError: synthetic failure"
+                        ),
+                        "mask": False,
+                    },
+                    {"role": "ai", "text": "edit the file", "mask": True},
+                ]
+            ),
+            "exit_status": "submitted",
+            "generated_patch": None,
+            "eval_logs": "FAIL",
+        }
+
+    def test_extract_actions_reads_text_field(self, adapter):
+        actions = adapter.extract_actions(self._text_row())
+        assert [a["content"] for a in actions] == ["run the tests", "edit the file"]
+
+    def test_extract_observations_reads_text_field(self, adapter):
+        observations = adapter.extract_observations(self._text_row())
+        assert len(observations) == 1
+        assert "Traceback" in observations[0]["content"]
+        assert observations[0]["content"].startswith("Traceback")
+
+    def test_text_content_yields_is_error_event(self, adapter):
+        from scripts.settlement_datasets.build_trajectory_corpus import build_parent
+
+        record = adapter.to_settlement_record(self._text_row())
+        parent, reason = build_parent(record, revision_sha="t", license_status="t", min_confidence=0.65)
+        assert parent is not None, reason
+        error_events = [ev for ev in parent["events"] if ev["is_error"]]
+        assert len(error_events) == 1
+        assert error_events[0]["content_len"] > 0
+
+    def test_legacy_content_fixture_rows_keep_passing(self, adapter):
+        fixture = FIXTURES_DIR / "nebius_swe_agent" / "sample.jsonl"
+        for raw in adapter.stream(input_path=str(fixture)):
+            record = adapter.to_settlement_record(raw)
+            assert record["affordance_path"]["actions"]
+            assert all(
+                obs["content"] for obs in record["affordance_path"]["observations"]
+            )
+
+
+class TestSWESmithAdapter:
+    @pytest.fixture
+    def adapter(self):
+        from scripts.settlement_datasets.swe_smith_adapter import SWESmithAdapter
+
+        return SWESmithAdapter()
+
+    @pytest.fixture
+    def sample_records(self, adapter):
+        fixture = FIXTURES_DIR / "swe_smith" / "sample.jsonl"
+        return [
+            adapter.to_settlement_record(raw)
+            for raw in adapter.stream(input_path=str(fixture))
+        ]
+
+    def test_adapter_metadata(self, adapter):
+        assert adapter.name == "swe_smith"
+        assert adapter.domain == "code"
+        assert adapter.source_uri == "SWE-bench/SWE-smith-trajectories"
+
+    def test_registered_in_registry(self):
+        from scripts.settlement_datasets.registry import available_datasets
+
+        assert "swe_smith" in available_datasets()
+
+    def test_stream_from_fixture(self, adapter):
+        fixture = FIXTURES_DIR / "swe_smith" / "sample.jsonl"
+        records = list(adapter.stream(input_path=str(fixture)))
+        assert len(records) == 3
+
+    def test_all_records_valid(self, adapter, sample_records):
+        for rec in sample_records:
+            assert adapter.validate_record(rec) == []
+
+    def test_outcome_mapping_both_classes(self, adapter, sample_records):
+        # Record confidence comes from infer_settlement_quality.
+        assert sample_records[0]["outcome"]["success"] is True
+        assert sample_records[0]["outcome"]["confidence"] == 0.8
+        assert sample_records[1]["outcome"]["success"] is False
+        assert sample_records[1]["outcome"]["confidence"] == 0.8
+        # extract_outcome: explicit execution-derived bool on both sides.
+        fixture = FIXTURES_DIR / "swe_smith" / "sample.jsonl"
+        rows = list(adapter.stream(input_path=str(fixture)))
+        assert adapter.extract_outcome(rows[0])["confidence"] == 0.9
+        assert adapter.extract_outcome(rows[1])["confidence"] == 0.8
+
+    def test_settlement_qualities(self, sample_records):
+        qualities = [r["outcome"]["settlement_quality"] for r in sample_records]
+        assert qualities == [
+            "recovered_success",  # resolved=true with a mid-trajectory error
+            "failure_with_signal",  # resolved=false with an error
+            "failure_without_signal",  # resolved=false without any error
+        ]
+
+    def test_actions_carry_tool_call_signature(self, adapter):
+        fixture = FIXTURES_DIR / "swe_smith" / "sample.jsonl"
+        raw = list(adapter.stream(input_path=str(fixture)))[0]
+        actions = adapter.extract_actions(raw)
+        assert actions[0]["action_type"] == "tool_call"
+        assert "bash" in actions[0]["content"]
+        assert "pytest" in actions[0]["content"]
+
+    def test_observations_flatten_typed_content(self, adapter):
+        fixture = FIXTURES_DIR / "swe_smith" / "sample.jsonl"
+        raw = list(adapter.stream(input_path=str(fixture)))[0]
+        observations = adapter.extract_observations(raw)
+        assert len(observations) == 3
+        assert observations[0]["content"].startswith("OBSERVATION:")
+        assert "AssertionError" in observations[0]["content"]
+
+    def test_payment_counters_follow_swegym_pattern(self, sample_records):
+        payment = sample_records[0]["payment"]
+        assert payment["turns"] == 3  # assistant messages
+        assert payment["tool_calls"] == 3  # tool observations
+        assert payment["commands"] == 3  # bash tool-call signatures
+        assert payment["error_count"] == 1  # one AssertionError observation
+        assert payment["elapsed_steps"] == 8  # all messages
+
+    def test_identity_model_instance_plus_traj(self, adapter):
+        from scripts.settlement_datasets.build_trajectory_corpus import build_parent
+
+        fixture = FIXTURES_DIR / "swe_smith" / "sample.jsonl"
+        raw = list(adapter.stream(input_path=str(fixture)))[0]
+        record = adapter.to_settlement_record(raw)
+        assert record["task_id"] == raw["instance_id"]
+        assert record["metadata"]["source_run_id"] == raw["traj_id"]
+        parent, reason = build_parent(
+            record, revision_sha="t", license_status="t", min_confidence=0.65
+        )
+        assert parent is not None, reason
+        assert parent["group_key"] == f"swe_smith:{raw['instance_id']}"
+        assert raw["traj_id"] in parent["parent_id"]
+
+    def test_null_resolved_yields_undefined_label(self, adapter):
+        from scripts.settlement_datasets.build_trajectory_corpus import build_parent
+
+        fixture = FIXTURES_DIR / "swe_smith" / "sample.jsonl"
+        raw = dict(list(adapter.stream(input_path=str(fixture)))[0], resolved=None)
+        record = adapter.to_settlement_record(raw)
+        assert record["outcome"]["success"] is None
+        assert record["outcome"]["confidence"] == 0.0
+        parent, reason = build_parent(
+            record, revision_sha="t", license_status="t", min_confidence=0.65
+        )
+        assert parent is None
+        assert reason == "outcome_success_undefined"
+
+    def test_tool_names_omitted_when_schema_has_no_tools(self, sample_records):
+        for rec in sample_records:
+            assert "tool_names" not in rec["metadata"]

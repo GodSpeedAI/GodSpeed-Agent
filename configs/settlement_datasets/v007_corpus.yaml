@@ -1,0 +1,58 @@
+# v007 shared trajectory corpus configuration.
+#
+# Contemporary parent-trajectory corpus feeding the v007
+# recovery-prediction experiments.  NEW paths only: the v006 corpus
+# (configs/settlement_datasets/v006_corpus.yaml and
+# data/settlement_datasets/corpora/v006-trajectories/) is untouched.
+# Sources, limits, and splits mirror
+# configs/settlement_datasets/calibration_sources.yaml; revision_sha
+# pins the exact Hugging Face revision ingested; license_status records
+# the license evidence for each source.
+#
+# Usability rule (identical to v006/v005): a parent is accepted iff its
+# terminal label is defined (outcome.success is not None) AND outcome
+# confidence >= min_confidence.
+#
+# Source changes vs v006 (T01c):
+# - swegym_openhands and nebius_swe_agent are carried over unchanged
+#   (same revisions); swegym parents must remain byte-identical to the
+#   v006 corpus build (same revision + deterministic builder).
+# - nebius_swe_agent is rebuilt after the adapter fix for the live
+#   ``text`` field (v006's empty-content finding was an adapter bug, see
+#   .agents/reports/v007-dataset-research.md); its events now carry
+#   content, so dedup counts and is_error incidence differ from v006.
+# - swe_smith is newly admitted per the T01a research verdict
+#   (.agents/reports/v007-dataset-research.md): execution-derived
+#   ``resolved`` label, stable instance_id + traj_id identity, MIT.
+
+corpus_id: v007-trajectories
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+usability_rule: >-
+  parent accepted iff terminal label defined (outcome.success is not None)
+  AND outcome confidence >= 0.65
+
+datasets:
+  - name: swegym_openhands
+    source_uri: SWE-Gym/OpenHands-Sampled-Trajectories
+    adapter: swegym_openhands
+    split: train.raw
+    max_rows: 3000
+    revision_sha: baf3a4e4bff514d48ddc08a93a2ade5c126212c7
+    license_status: "ambiguous (dataset card declares no license; companion repo SWE-Gym/SWE-Gym is Apache-2.0)"
+
+  - name: nebius_swe_agent
+    source_uri: nebius/SWE-agent-trajectories
+    adapter: nebius_swe_agent
+    split: train
+    max_rows: 5000
+    revision_sha: 68195a1450865274106246d0d0296a1d6807b88e
+    license_status: "identified: cc-by-4.0"
+
+  - name: swe_smith
+    source_uri: SWE-bench/SWE-smith-trajectories
+    adapter: swe_smith
+    split: tool
+    max_rows: 5000
+    revision_sha: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
+    license_status: "identified: mit"

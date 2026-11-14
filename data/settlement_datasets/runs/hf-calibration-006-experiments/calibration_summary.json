@@ -1,0 +1,46 @@
+{
+  "v005_full_semantics": {
+    "n_models": 2,
+    "n_triggered": 2,
+    "mean_oof_ece": 0.1769265379792202,
+    "mean_test_brier_before": 0.18658245488767475,
+    "mean_test_brier_after": 0.1281461746220478,
+    "mean_test_ece_before": 0.204523405977674,
+    "mean_test_ece_after": 0.037092661235154555,
+    "isotonic_improved_mean_test_brier": true,
+    "calibration_required": true
+  },
+  "v005_prefix_compatible": {
+    "n_models": 12,
+    "n_triggered": 8,
+    "mean_oof_ece": 0.17963297236703782,
+    "mean_test_brier_before": 0.18282806087183667,
+    "mean_test_brier_after": 0.12744362930324288,
+    "mean_test_ece_before": 0.19030506416207882,
+    "mean_test_ece_after": 0.03922790149448188,
+    "isotonic_improved_mean_test_brier": true,
+    "calibration_required": true
+  },
+  "v006": {
+    "n_models": 12,
+    "n_triggered": 9,
+    "mean_oof_ece": 0.16903032956108818,
+    "mean_test_brier_before": 0.18112921750565403,
+    "mean_test_brier_after": 0.12712015405728483,
+    "mean_test_ece_before": 0.18279867529548324,
+    "mean_test_ece_after": 0.03503199613261689,
+    "isotonic_improved_mean_test_brier": true,
+    "calibration_required": true
+  },
+  "v006-full (diagnostic)": {
+    "n_models": 1,
+    "n_triggered": 1,
+    "mean_oof_ece": 0.25778930554810087,
+    "mean_test_brier_before": 0.21331924581886533,
+    "mean_test_brier_after": 0.12138406363709488,
+    "mean_test_ece_before": 0.28048125843431254,
+    "mean_test_ece_after": 0.031593351555355954,
+    "isotonic_improved_mean_test_brier": true,
+    "calibration_required": true
+  }
+}

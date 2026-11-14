@@ -2,6 +2,19 @@
 
 Normalises rows from ``nebius/SWE-agent-trajectories`` into canonical
 settlement records classified as ``external-proxy-settlement``.
+
+Leading context (v008 normalization N3): user-role trajectory entries
+BEFORE the first ai/assistant action entry are the task issue statement
+(and any pre-execution harness scaffolding), not environment
+observations.  ``extract_observations`` therefore skips user entries
+whose index is below the first action index, and ``context_positions``
+counts them as context (context = system role + pre-first-action user
+entries).  Post-first-action user entries remain observations (they are
+environment outputs in SWE-agent harnesses); trajectories without any
+action entry keep the legacy behaviour (all user entries are
+observations).  Reclassifying the issue statement removes the
+100%-leading-error-run artifact at its root (the issue text commonly
+names the bug, e.g. "TypeError").
 """
 
 from __future__ import annotations
@@ -17,6 +30,9 @@ from scripts.settlement_datasets.adapter_base import (
     make_empty_representational_state,
 )
 
+_ACTION_ROLES = ("ai", "assistant")
+_OBSERVATION_ROLES = ("user", "tool")
+
 
 def _parse_trajectory(raw: dict[str, Any]) -> list[dict[str, Any]]:
     """Parse the trajectory field, tolerating JSON-string or list forms."""
@@ -29,6 +45,29 @@ def _parse_trajectory(raw: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(trajectory, list):
         trajectory = []
     return trajectory
+
+
+def _first_action_index(trajectory: list[dict[str, Any]]) -> int | None:
+    """Index of the first ai/assistant entry, or None when the trajectory
+    carries no action entry at all."""
+    for idx, entry in enumerate(trajectory):
+        if entry.get("role", "") in _ACTION_ROLES:
+            return idx
+    return None
+
+
+def _is_leading_issue_entry(
+    role: str, idx: int, first_action_index: int | None
+) -> bool:
+    """N3 predicate: a user entry strictly before the first action entry
+    is the task issue statement (or pre-execution scaffolding), never an
+    environment observation.  Trajectories without any action entry keep
+    the legacy behaviour."""
+    return (
+        role == "user"
+        and first_action_index is not None
+        and idx < first_action_index
+    )
 
 
 class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
@@ -85,7 +124,7 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
     def normalize_task(self, raw: dict[str, Any]) -> dict[str, Any]:
         return {
             "type": "implementation",
-            "description": raw.get("instance_id", ""),
+            "description": raw.get("instance_id") or "",
             "settlement_target": "pass_all_tests",
         }
 
@@ -94,31 +133,63 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
         actions: list[dict[str, Any]] = []
         for idx, entry in enumerate(trajectory):
             role = entry.get("role", "")
-            if role in ("ai", "assistant"):
+            if role in _ACTION_ROLES:
                 actions.append(
                     {
                         "turn_index": idx,
                         "role": role,
                         "action_type": "message",
-                        "content": entry.get("content", ""),
+                        # Live HF rows (v006 finding) carry the message in
+                        # ``text``; fixtures carry legacy ``content``.
+                        "content": entry.get("text") or entry.get("content") or "",
                     }
                 )
         return actions
 
     def extract_observations(self, raw: dict[str, Any]) -> list[dict[str, Any]]:
         trajectory = _parse_trajectory(raw)
+        first_action_index = _first_action_index(trajectory)
         observations: list[dict[str, Any]] = []
         for idx, entry in enumerate(trajectory):
             role = entry.get("role", "")
-            if role in ("user", "tool"):
-                observations.append(
-                    {
-                        "turn_index": idx,
-                        "role": role,
-                        "content": entry.get("content", ""),
-                    }
-                )
+            if role not in _OBSERVATION_ROLES:
+                continue
+            # N3: user entries before the first action are the task issue
+            # statement (plus pre-execution scaffolding), not observations.
+            if _is_leading_issue_entry(role, idx, first_action_index):
+                continue
+            observations.append(
+                {
+                    "turn_index": idx,
+                    "role": role,
+                    # Live HF rows (v006 finding) carry the message in
+                    # ``text``; fixtures carry legacy ``content``.
+                    "content": entry.get("text") or entry.get("content") or "",
+                }
+            )
         return observations
+
+    def context_positions(self, raw: dict[str, Any]) -> list[int]:
+        """Indices of context (non-event) messages in the raw message
+        sequence; enables prefix-scoped elapsed counts.
+
+        Actions are ``ai``/``assistant`` entries; observations are
+        ``user``/``tool`` entries AFTER the first action (matching
+        ``extract_actions``/``extract_observations``).  Context is
+        therefore the system role plus the pre-first-action user entries
+        (the task issue statement -- N3); every other role stays context
+        as before.
+        """
+        trajectory = _parse_trajectory(raw)
+        first_action_index = _first_action_index(trajectory)
+        return [
+            idx
+            for idx, entry in enumerate(trajectory)
+            if entry.get("role", "") not in _ACTION_ROLES + _OBSERVATION_ROLES
+            or _is_leading_issue_entry(
+                entry.get("role", ""), idx, first_action_index
+            )
+        ]
 
     def extract_outcome(self, raw: dict[str, Any]) -> dict[str, Any]:
         target = raw.get("target", False)
@@ -155,10 +226,12 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
         ai_turns = sum(1 for e in trajectory if e.get("role") in ("ai", "assistant"))
         user_turns = sum(1 for e in trajectory if e.get("role") in ("user", "tool"))
 
-        patch = raw.get("generated_patch", "")
+        # Null-safe: HF rows can carry explicit nulls for these string
+        # fields (v005 observed 441 adapter errors from len(None)/.lower()).
+        patch = raw.get("generated_patch") or ""
         patch_size = len(patch)
 
-        eval_logs = raw.get("eval_logs", "")
+        eval_logs = raw.get("eval_logs") or ""
         error_like_count = sum(
             1
             for kw in ("error", "fail", "assertion", "traceback", "exception")
@@ -226,7 +299,7 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
         return {
             "dataset": self.name,
             "domain": self.domain,
-            "task_id": raw.get("instance_id", ""),
+            "task_id": raw.get("instance_id") or "",
             "source_uri": self.source_uri,
             "desired_direction": task,
             "environment": {
@@ -262,8 +335,8 @@ class NebiusSWEAgentAdapter(SettlementDatasetAdapter):
             },
             "metadata": {
                 "settlement_classification": "external-proxy-settlement",
-                "model_name": raw.get("model_name", ""),
-                "exit_status": raw.get("exit_status", ""),
+                "model_name": raw.get("model_name") or "",
+                "exit_status": raw.get("exit_status") or "",
                 "raw_source_uri": self.source_uri,
             },
         }

@@ -1,0 +1,260 @@
+# =============================================================================
+# PREREGISTRATION: v006 two-family experiment matrix (plan task T05)
+# =============================================================================
+schema: godspeed.experiment_preregistration
+schema_version: "1.0"
+id: v006-experiment-preregistration
+plan: godspeed-agent-v006-dual-model
+task: T05
+frozen: true
+frozen_at: "2026-09-15T20:05:00Z"
+preregistration_rule: >-
+  The final test partition EVALUATES the preregistered system, never
+  redesigns it (plan amendment 11). Decisions below are coordinator-set and
+  embedded verbatim; the EXPERIMENT agent may not alter them. Fields marked
+  `mechanical_realization` document implementation-defined behavior only
+  (how the frozen decision is realized mechanically); they do not change any
+  frozen quantity. If a frozen decision proves impossible, the protocol is
+  STOP-and-report, never silent deviation.
+
+# -----------------------------------------------------------------------------
+# FROZEN DECISIONS
+# -----------------------------------------------------------------------------
+
+datasets_admitted: |-
+  swegym_openhands (rev baf3a4e4bff514d48ddc08a93a2ade5c126212c7, license
+  ambiguous-recorded, 1574 parents) + nebius_swe_agent (rev
+  68195a1450865274106246d0d0296a1d6807b88e, cc-by-4.0, 225 parents).
+  agenttrove: rejected (label columns null at live revision; agent
+  self-report only). Inclusion/exclusion reasons for all three:
+  - swegym_openhands INCLUDED: terminal labels present from source outcome
+    fields (outcome.success) at the recorded revision with confidence >=
+    0.65; largest parent population (1574 parents; 240 S / 1334 F). License
+    status AMBIGUOUS (dataset card declares no license; companion repo
+    SWE-Gym/SWE-Gym is Apache-2.0; formally undetermined) -- recorded per
+    amendment 9; corpus is LOCAL ONLY (gitignored); no trajectory content is
+    committed. Licensing status is kept separate from statistical merits.
+  - nebius_swe_agent INCLUDED: cc-by-4.0 (identified); terminal labels
+    present (59 S / 166 F); 4329 exact duplicates dropped at ingestion.
+  - agenttrove EXCLUDED: at live revision b395a4307a2bc9950a90dc899438f149e115fc60
+    every label column (task_binary, judgment, verifier_output, result,
+    ground_truth) is null; README-documented reward/task_id columns absent
+    at this revision; the only remaining label path is agent self-report
+    (confidence 0.6 < 0.65 gate) -- agent self-report only, not a defensible
+    terminal label. This amends T01's conditional-admit finding (revision
+    drift is material; T03 settlement).
+  - Toucan-1.5M REJECTED (T01, cited per REQ-V006-PREREG): no verified
+    terminal outcome label in any of 4 configurations; LLM-judge annotations
+    do not gate success. Also rejected elsewhere: nvidia/Nemotron-SWE-SWE-v3
+    and AgentBank (no outcome labels).
+  KNOWN STRUCTURAL CONFOUND (recorded at freeze, before any test
+  examination): nebius_swe_agent has ZERO is_error events in this corpus
+  (the nebius adapter records errors only from terminal eval_logs, which are
+  not event-level). Error/recovery features (v006 family and the error terms
+  of the v005 prefix projection) are therefore swegym-supported only, and
+  the cuts after_first_failure / after_first_recovery contain swegym parents
+  only. Per-cut and per-source reporting makes this visible; LODO quantifies
+  its consequence.
+
+parent_identity: |-
+  parent_id = trajectory run; group_key = dataset:instance; split grouping
+  and prefix grouping key on group_key (same instance never straddles
+  partitions). (Corpus identity model per T03: parent_id =
+  <dataset>:<instance>:<run_discriminator> with a mandatory content-hash
+  component; group_key = <dataset>:<instance>.)
+
+dedup: true content duplicates only (already applied in corpus).
+
+split_strategy: |-
+  group-level holdout -- GroupShuffleSplit(test_size=0.20, random_state=42)
+  over group_keys, stratified by group_label where group_label = max(parent
+  label in group); train groups = remaining 80%. The TEST groups are touched
+  EXACTLY ONCE, after every frozen choice, by the final evaluation run.
+  Model/hyperparameter selection uses GroupKFold(5) over TRAIN groups only
+  (shuffle=False, groups=group_key).
+  mechanical_realization: >-
+    scikit-learn's GroupShuffleSplit has no stratification parameter, so the
+    frozen "stratified by group_label" quantity is realized as: partition
+    group_keys into strata by group_label; within each stratum, permute the
+    (sorted) group keys with numpy RandomState(42) and hold out
+    int(round(0.20 * stratum_size)) groups as test. Every frozen quantity is
+    honored exactly: group-level, test_size 0.20, random_state 42,
+    stratification by group_label. The test partition is materialized once
+    and every model/selection/calibration choice below uses the train
+    partition only.
+
+prefix_generation: |-
+  the six canonical cuts from v006_features.generate_prefixes (early,
+  pct25, pct50, after_first_failure, after_first_recovery, pre_terminal);
+  undefined cuts absent; per-cut yields reported.
+
+parent_weighting: |-
+  within any single cut each parent contributes exactly one row, so
+  within-cut balance is structural; parent-balancing weights (weight_base)
+  apply to (a) the source-balanced sensitivity arm and (b) any pooled
+  training, per the frozen rules below.
+  mechanical_realization: >-
+    v006_features prefixes are deduplicated by k per parent
+    (plan_prefix_cuts), so every (parent, cut) pair yields at most one row;
+    per-cut training therefore uses uniform row weights in PRIMARY arms
+    (weight_base is carried on the frame but does not multiply within a
+    cut). No pooled (across-cut) training exists in the frozen matrix.
+
+source_weighting: |-
+  PRIMARY arms use the natural mixture (no source weights) -- preregistered
+  despite swegym=87.8% of parents because per-source and macro-averaged
+  metrics are mandatory co-reporting. SENSITIVITY ARM (preregistered trigger
+  met: 1574/225 > 3): repeat the PRIMARY endpoint comparison (P-A vs P-B,
+  and P-A vs P-D) with per-parent source weight w_s = 0.5 /
+  n_train_parents_of_source (each source equal total parent weight),
+  multiplied with row weight 1 within cut; report as sensitivity only.
+  mechanical_realization: >-
+    n_train_parents_of_source is computed within the cut's train partition
+    (so "each source equal total parent weight" holds per cut). The
+    sensitivity arm runs the PRIMARY identity variant (with dataset_id) at
+    all six cuts; cuts where only one source is present (swegym-only) get a
+    constant weight, i.e. no reweighting effect -- reported as-is.
+
+feature_schemas: |-
+  the three families with their version tags: v005_full_semantics@1,
+  v005_prefix_compatible@1, v006@1 (SCHEMA_VERSIONS in
+  scripts/settlement_datasets/v006_features.py). Identity variants: each arm
+  run twice -- with dataset_id (PRIMARY, mirrors the frozen v005 family) and
+  without dataset_id (ROBUSTNESS; direction of gains must not reverse).
+
+target: |-
+  label = terminal settlement_success of the parent trajectory (source
+  outcome fields only; back-propagated to prefixes).
+
+arms: |-
+  FULL-TRAJECTORY family (secondary, terminal-point questions):
+    A-full (v005_full_semantics + LogisticRegression),
+    C-full (v005_full_semantics + LGBMClassifier),
+    B-full (v006 + LogisticRegression; DIAGNOSTIC ONLY -- does the
+    representation gain persist at the terminal point).
+    Historical H metrics are co-reported as context, explicitly NOT compared
+    as improvement evidence.
+  PREFIX family (PRIMARY):
+    P-A (v005_prefix_compatible + LogisticRegression),
+    P-B (v006 + LogisticRegression),
+    P-C (v005_prefix_compatible + LGBM),
+    P-D (v006 + LGBM).
+    ONE MODEL PER (arm, cut) -- comparisons at a cut share the exact same
+    parent population and prediction point.
+
+estimators: |-
+  LogisticRegression(class_weight="balanced", max_iter=1000, solver="lbfgs",
+  random_state=42), C in {0.01, 0.1, 1.0}; LGBMClassifier(random_state=42,
+  verbose=-1, n_estimators in {150,400}, num_leaves in {15,31},
+  learning_rate in {0.05,0.1}, min_child_samples in {20,50}, subsample=0.9,
+  colsample_bytree=0.9, reg_lambda=1.0). Selection: mean GroupKFold(5)
+  ROC-AUC over train groups at that cut; tiebreak mean AP. No early
+  stopping; no test-derived choices. class_weight/scale: pass sample_weight
+  where the arm uses it; LGBM gets sample_weight; LR gets sample_weight.
+  mechanical_realization: >-
+    (a) Ties beyond mean AP resolve to the FIRST candidate in the
+    deterministic grid order (itertools.product over the frozen grid in the
+    order written above). (b) Global determinism rule adds
+    deterministic=True, force_col_wise=True, n_jobs=1 to LGBMClassifier;
+    these flags do not alter the frozen hyperparameter space or its
+    semantics. (c) sample_weight is always passed: uniform ones in PRIMARY
+    arms (no-op by construction), preregistered w_s in the sensitivity arm.
+
+per_cut_reporting_rule: |-
+  for each (arm, cut): n_test_parents, class balance, ROC-AUC, AP, Brier,
+  balanced accuracy, precision/recall/F1 at a FIXED 0.5 threshold (no
+  threshold tuning on test); cuts with <30 test parents or one test class
+  absent are reported as underpowered (metrics marked unreliable, not
+  hidden).
+
+model_selection_metric: ROC-AUC (secondary: AP).
+secondary_metrics: balanced accuracy, F1, precision, recall, Brier, ECE.
+
+calibration_procedure: |-
+  compute out-of-fold (GroupKFold) train predictions for each SELECTED
+  model; ECE (10 bins) + reliability data from OOF; if OOF ECE > 0.05, fit
+  isotonic regression on OOF train predictions and apply to test -- report
+  test Brier/ECE before vs after; calibration is never fit on test.
+  Verdict: calibration required yes/no per family.
+  mechanical_realization: >-
+    Family verdicts are computed over the PRIMARY identity variant per
+    feature family: v005_full_semantics (A-full), v006-full (B-full
+    diagnostic), v005_prefix_compatible (P-A, P-C), v006 (P-B, P-D).
+    calibration_required = true for a family iff any of its selected models
+    triggered the OOF ECE > 0.05 rule; before/after test Brier/ECE are
+    co-reported per family (isotonic is applied to that model's test
+    predictions whenever its own OOF ECE exceeded 0.05).
+
+disagreement_analysis: |-
+  for the P-D feature set at each cut: |p_logit - p_lgbm| on test -- mean,
+  median, P90, fraction > 0.2, and per-cut correlation between disagreement
+  and error (|p - y|). Both predictions exposed independently; NO fusion or
+  averaging anywhere.
+  mechanical_realization: >-
+    p_logit = P-B test probabilities, p_lgbm = P-D test probabilities at the
+    same cut (same rows). "Error (|p - y|)" is exposed for both estimators:
+    the correlation of disagreement with |p_logit - y| and with
+    |p_lgbm - y| are both reported (Pearson and Spearman); neither is
+    privileged.
+
+lodo: |-
+  leave-one-dataset-out (train on one source, test on the other) for P-A vs
+  P-B at each cut -- reported as WEAK evidence (two folds, unequal sizes),
+  marked as such.
+  mechanical_realization: >-
+    dataset_id is omitted from LODO feature matrices: within a LODO train
+    partition dataset_id is constant, so no coefficient/split can learn it
+    and the held-out source's identity value would be an unseen constant
+    shift for every test row (rank-invariant for ROC-AUC; structurally
+    inert). LODO hyperparameters are selected by the same frozen rule
+    (mean GroupKFold(5) ROC-AUC) within the LODO train source only. Folds
+    where the train source has no rows at a cut (nebius at
+    after_first_failure / after_first_recovery: zero error events) are
+    reported as not-defined, not silently dropped.
+
+acceptance_criteria: |-
+  FROZEN. representation gain = P-B vs P-A: macro-averaged ROC-AUC across
+  the six cuts (mean of per-cut AUCs, cuts with reliable metrics only)
+  improves by >= +0.02 AND per-cut direction P-B >= P-A holds in >= 4 of 6
+  cuts. Estimator gain = P-C vs P-A under the same rule. Combined = P-D vs
+  P-A under the same rule. Identity-robustness: the same comparisons without
+  dataset_id must not reverse sign (if reversed -> verdict
+  'identity-dependent', adoption blocked). Adoption language for the final
+  report derives mechanically from these.
+  mechanical_reading: >-
+    (a) "cuts with reliable metrics only": a cut is reliable when it is not
+    underpowered (>= 30 test parents and both test classes present) and its
+    ROC-AUC is defined; the macro average and the per-cut direction count
+    are taken over exactly those cuts (an underpowered cut cannot express
+    direction; the count is over reliable cuts with the >= 4 threshold
+    unchanged). (b) "must not reverse sign": strict sign reversal of the
+    macro ROC-AUC delta -- (delta_primary > 0 and delta_robustness < 0) or
+    (delta_primary < 0 and delta_robustness > 0). A zero robustness delta is
+    not a reversal. (c) Verdicts derive mechanically: gain AND no reversal =
+    "EARNED (identity-robust)"; gain AND reversal = "NOT EARNED --
+    identity-dependent (adoption blocked)"; no gain = "NOT EARNED" with the
+    delta and direction count recorded. Reliability identities are identical
+    across identity variants at a cut because the test parent population is
+    identical (only the feature matrix drops dataset_id).
+
+reproducibility: |-
+  random_state 42 everywhere; record library versions, preregistration file
+  sha256, corpus file sha256s in the experiment manifest.
+
+# -----------------------------------------------------------------------------
+# EXECUTION NOTES (non-normative)
+# -----------------------------------------------------------------------------
+execution_notes:
+  test_touch_contract: >-
+    The runner materializes the holdout once; selection, OOF calibration,
+    and every frozen choice consume the train partition only. The final
+    evaluation pass writes test metrics/predictions; no code path reads test
+    rows for any choice.
+  corpus_integrity: >-
+    The runner recomputes corpus file sha256s at run time and aborts on
+    mismatch with data/settlement_datasets/runs/hf-calibration-006-experiments/corpus_summary.json
+    (the corpus is frozen at the recorded revisions).
+  artifact_order: >-
+    This file is written before any results artifact; its sha256 and mtime
+    are recorded inside experiment_manifest.json together with the artifact
+    timestamps.

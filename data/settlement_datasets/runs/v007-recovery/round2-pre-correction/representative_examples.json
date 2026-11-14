@@ -1,0 +1,240 @@
+{
+  "R0": {
+    "point": "R0",
+    "arm": "R_LR",
+    "schema": "v007_r0",
+    "identity_variant": "with_identity",
+    "top_features": [
+      "payment_actual_total",
+      "n_events",
+      "fail_event_index",
+      "n_actions",
+      "error_count"
+    ],
+    "highest_confidence_correct": [
+      {
+        "episode_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4:ep5",
+        "parent_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4",
+        "split_group": "nebius_swe_agent:serge-sans-paille__gast",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 8.457408398313105e-06,
+        "correct": true,
+        "confidence": 0.9999915425916017,
+        "feature_values": {
+          "payment_actual_total": 264.0,
+          "n_events": 257.0,
+          "fail_event_index": 256.0,
+          "n_actions": 128.0,
+          "error_count": 7.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4:ep4",
+        "parent_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4",
+        "split_group": "nebius_swe_agent:serge-sans-paille__gast",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.00017738184617526747,
+        "correct": true,
+        "confidence": 0.9998226181538248,
+        "feature_values": {
+          "payment_actual_total": 241.0,
+          "n_events": 235.0,
+          "fail_event_index": 234.0,
+          "n_actions": 117.0,
+          "error_count": 6.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:amplify-education__python-hcl2-73:1501c58726:ep16",
+        "parent_id": "nebius_swe_agent:amplify-education__python-hcl2-73:1501c58726",
+        "split_group": "nebius_swe_agent:amplify-education__python-hcl2",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.0007622194653666452,
+        "correct": true,
+        "confidence": 0.9992377805346333,
+        "feature_values": {
+          "payment_actual_total": 206.0,
+          "n_events": 187.0,
+          "fail_event_index": 186.0,
+          "n_actions": 93.0,
+          "error_count": 19.0
+        }
+      }
+    ],
+    "highest_confidence_incorrect": [
+      {
+        "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a:ep12",
+        "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a",
+        "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_5502",
+        "dataset": "swe_smith",
+        "y": 1,
+        "p_raw": 0.02835483186799634,
+        "correct": false,
+        "confidence": 0.9716451681320036,
+        "feature_values": {
+          "payment_actual_total": 163.0,
+          "n_events": 130.0,
+          "fail_event_index": 129.0,
+          "n_actions": 65.0,
+          "error_count": 33.0
+        }
+      },
+      {
+        "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a:ep11",
+        "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a",
+        "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_5502",
+        "dataset": "swe_smith",
+        "y": 1,
+        "p_raw": 0.03243017546708745,
+        "correct": false,
+        "confidence": 0.9675698245329125,
+        "feature_values": {
+          "payment_actual_total": 152.0,
+          "n_events": 122.0,
+          "fail_event_index": 121.0,
+          "n_actions": 61.0,
+          "error_count": 30.0
+        }
+      },
+      {
+        "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a:ep10",
+        "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a",
+        "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_5502",
+        "dataset": "swe_smith",
+        "y": 1,
+        "p_raw": 0.04985707206450017,
+        "correct": false,
+        "confidence": 0.9501429279354998,
+        "feature_values": {
+          "payment_actual_total": 136.0,
+          "n_events": 110.0,
+          "fail_event_index": 109.0,
+          "n_actions": 55.0,
+          "error_count": 26.0
+        }
+      }
+    ]
+  },
+  "R1": {
+    "point": "R1",
+    "arm": "R_LR",
+    "schema": "v007_r1",
+    "identity_variant": "with_identity",
+    "top_features": [
+      "payment_actual_total",
+      "fail_event_index",
+      "n_events",
+      "recovery_attempt_count",
+      "error_count"
+    ],
+    "highest_confidence_correct": [
+      {
+        "episode_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4:ep5",
+        "parent_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4",
+        "split_group": "nebius_swe_agent:serge-sans-paille__gast",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 1.528451215411422e-05,
+        "correct": true,
+        "confidence": 0.9999847154878458,
+        "feature_values": {
+          "payment_actual_total": 267.0,
+          "fail_event_index": 256.0,
+          "n_events": 259.0,
+          "recovery_attempt_count": 7.0,
+          "error_count": 8.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4:ep4",
+        "parent_id": "nebius_swe_agent:serge-sans-paille__gast-59:133c90f9c4",
+        "split_group": "nebius_swe_agent:serge-sans-paille__gast",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.00010997227445337201,
+        "correct": true,
+        "confidence": 0.9998900277255466,
+        "feature_values": {
+          "payment_actual_total": 243.0,
+          "fail_event_index": 234.0,
+          "n_events": 237.0,
+          "recovery_attempt_count": 6.0,
+          "error_count": 6.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:amplify-education__python-hcl2-73:1501c58726:ep16",
+        "parent_id": "nebius_swe_agent:amplify-education__python-hcl2-73:1501c58726",
+        "split_group": "nebius_swe_agent:amplify-education__python-hcl2",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.0007171958508499928,
+        "correct": true,
+        "confidence": 0.99928280414915,
+        "feature_values": {
+          "payment_actual_total": 208.0,
+          "fail_event_index": 186.0,
+          "n_events": 189.0,
+          "recovery_attempt_count": 19.0,
+          "error_count": 19.0
+        }
+      }
+    ],
+    "highest_confidence_incorrect": [
+      {
+        "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a:ep11",
+        "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a",
+        "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_5502",
+        "dataset": "swe_smith",
+        "y": 1,
+        "p_raw": 0.03378779717910001,
+        "correct": false,
+        "confidence": 0.9662122028209,
+        "feature_values": {
+          "payment_actual_total": 155.0,
+          "fail_event_index": 121.0,
+          "n_events": 124.0,
+          "recovery_attempt_count": 30.0,
+          "error_count": 31.0
+        }
+      },
+      {
+        "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a:ep12",
+        "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a",
+        "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_5502",
+        "dataset": "swe_smith",
+        "y": 1,
+        "p_raw": 0.035809119110659975,
+        "correct": false,
+        "confidence": 0.96419088088934,
+        "feature_values": {
+          "payment_actual_total": 167.0,
+          "fail_event_index": 129.0,
+          "n_events": 132.0,
+          "recovery_attempt_count": 33.0,
+          "error_count": 34.0
+        }
+      },
+      {
+        "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a:ep10",
+        "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_5502:getmoto__moto.694ce1f4.pr_5502.97oq2dtm-6f1c58113a",
+        "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_5502",
+        "dataset": "swe_smith",
+        "y": 1,
+        "p_raw": 0.05104826919167711,
+        "correct": false,
+        "confidence": 0.9489517308083228,
+        "feature_values": {
+          "payment_actual_total": 139.0,
+          "fail_event_index": 109.0,
+          "n_events": 112.0,
+          "recovery_attempt_count": 26.0,
+          "error_count": 27.0
+        }
+      }
+    ]
+  }
+}
