@@ -1,0 +1,2150 @@
+{
+  "cells": {
+    "nebius_swe_agent": {
+      "arm": "T",
+      "cause_rule": "tentative heuristic, priority: feature_scaling (>= half of top-feature readings with |z_pool - z_source| >= 1) > representation_mismatch (>= half of top-feature readings outside the pool's raw range) > label_semantics (|held-out positive rate - pool positive rate| >= 0.15) > genuinely_different_recovery_dynamics; annotations are evidence-cited heuristics, never settlement claims",
+      "heldout_positive_rate": 0.14085704568643012,
+      "per_quadrant": 3,
+      "pool_positive_rate": 0.2794695976605828,
+      "quadrants": {
+        "FN": {
+          "cause_rationale": "80% of top-feature readings diverge >= 1.0 between pool-scaled and source-scaled z",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.2,
+            "share_top_feature_z_divergence_ge_1": 0.8
+          },
+          "exemplars": [
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:simonsobs__ocs-332:a1a42efe25:ep2",
+              "p_raw": 0.22230068537723122,
+              "parent_id": "nebius_swe_agent:simonsobs__ocs-332:a1a42efe25",
+              "split_group": "nebius_swe_agent:simonsobs__ocs",
+              "top_features": [
+                {
+                  "abs_contribution": 1.2621628034850858,
+                  "coef": -0.05119728513617741,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.0379208706495862,
+                  "raw_value": 13.0,
+                  "z_pool": 24.652924469098593,
+                  "z_source": 28.799475928605197
+                },
+                {
+                  "abs_contribution": 0.12849742085156055,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 32.0,
+                  "z_pool": 7.092870414595659,
+                  "z_source": 8.633019392268993
+                },
+                {
+                  "abs_contribution": 0.05400993210391877,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 21.0,
+                  "z_pool": 2.4964912674346733,
+                  "z_source": 1.075314421604201
+                },
+                {
+                  "abs_contribution": 0.039061901139666594,
+                  "coef": -0.016002332840870607,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 6.1478857272418095,
+                  "raw_value": 19.0,
+                  "z_pool": 2.441012915310755,
+                  "z_source": 2.0727586227961785
+                },
+                {
+                  "abs_contribution": 0.024679142338466086,
+                  "coef": -0.050044172534671846,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.01416953860106564,
+                  "raw_value": 0.08,
+                  "z_pool": 0.4931471755551111,
+                  "z_source": 1.5415328403069328
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:simonsobs__ocs-332:a1a42efe25:ep1",
+              "p_raw": 0.224333803194131,
+              "parent_id": "nebius_swe_agent:simonsobs__ocs-332:a1a42efe25",
+              "split_group": "nebius_swe_agent:simonsobs__ocs",
+              "top_features": [
+                {
+                  "abs_contribution": 1.2621628034850858,
+                  "coef": -0.05119728513617741,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.0379208706495862,
+                  "raw_value": 13.0,
+                  "z_pool": 24.652924469098593,
+                  "z_source": 28.799475928605197
+                },
+                {
+                  "abs_contribution": 0.12849742085156055,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 32.0,
+                  "z_pool": 7.092870414595659,
+                  "z_source": 8.633019392268993
+                },
+                {
+                  "abs_contribution": 0.04300097766101425,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 18.0,
+                  "z_pool": 1.98762636870796,
+                  "z_source": 0.8030950322322583
+                },
+                {
+                  "abs_contribution": 0.03278498122907816,
+                  "coef": -0.050044172534671846,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.01416953860106564,
+                  "raw_value": 0.0952,
+                  "z_pool": 0.6551208576056264,
+                  "z_source": 1.89746683613101
+                },
+                {
+                  "abs_contribution": 0.030107222668062532,
+                  "coef": -0.016002332840870607,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 6.1478857272418095,
+                  "raw_value": 16.0,
+                  "z_pool": 1.8814270998768046,
+                  "z_source": 1.5889257112285449
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:ameily__cincoconfig-26:34c900f2c8:ep42",
+              "p_raw": 0.26912848354936,
+              "parent_id": "nebius_swe_agent:ameily__cincoconfig-26:34c900f2c8",
+              "split_group": "nebius_swe_agent:ameily__cincoconfig",
+              "top_features": [
+                {
+                  "abs_contribution": 0.4967538569391233,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 0.17270000000000002,
+                  "z_pool": -5.46525065601941,
+                  "z_source": -3.2401638214538693
+                },
+                {
+                  "abs_contribution": 0.1384119161661868,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 44.0,
+                  "z_pool": 6.397788824339477,
+                  "z_source": 3.162329740122428
+                },
+                {
+                  "abs_contribution": 0.08999868393985874,
+                  "coef": 0.04735694285729855,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.7497449268790387,
+                  "raw_value": 0.0,
+                  "z_pool": -1.9004327245331956,
+                  "z_source": -1.7308734759674016
+                },
+                {
+                  "abs_contribution": 0.08438897180467504,
+                  "coef": -0.009900429958686017,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 21.226731663076748,
+                  "raw_value": 110.0,
+                  "z_pool": 8.523768377416523,
+                  "z_source": 3.853540663656447
+                },
+                {
+                  "abs_contribution": 0.08215976693039301,
+                  "coef": -0.009622344620224117,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 39.49314136719193,
+                  "raw_value": 217.0,
+                  "z_pool": 8.538435295459143,
+                  "z_source": 3.8509945925682874
+                }
+              ],
+              "y": 1
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "feature_scaling"
+        },
+        "FP": {
+          "cause_rationale": "no scaling/range/label-prior flag; residual hypothesis (adapter-semantics and environment-policy causes are not mechanically separable from this evidence surface)",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.0,
+            "share_top_feature_z_divergence_ge_1": 0.13333333333333333
+          },
+          "exemplars": [
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:palantir__python-language-server-275:986c3fc3ec:ep0",
+              "p_raw": 0.5375986476391338,
+              "parent_id": "nebius_swe_agent:palantir__python-language-server-275:986c3fc3ec",
+              "split_group": "nebius_swe_agent:palantir__python-language-server",
+              "top_features": [
+                {
+                  "abs_contribution": 0.1104110017364125,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 28.0,
+                  "z_pool": 6.0945264307424365,
+                  "z_source": 7.438236706243532
+                },
+                {
+                  "abs_contribution": 0.05540058958685291,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 1.0,
+                  "z_pool": 0.609513352244621,
+                  "z_source": 0.5876103037914898
+                },
+                {
+                  "abs_contribution": 0.035661674699077904,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 16.0,
+                  "z_pool": 1.648383102890151,
+                  "z_source": 0.6216154393176297
+                },
+                {
+                  "abs_contribution": 0.030107222668062532,
+                  "coef": -0.016002332840870607,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 6.1478857272418095,
+                  "raw_value": 16.0,
+                  "z_pool": 1.8814270998768046,
+                  "z_source": 1.5889257112285449
+                },
+                {
+                  "abs_contribution": 0.01812878848982821,
+                  "coef": 0.022447207660315813,
+                  "feature": "avg_actions_per_step",
+                  "heldout_source_mean": 0.45423872009976196,
+                  "raw_value": 0.4722,
+                  "z_pool": 0.8076188702026359,
+                  "z_source": 0.5129937827352032
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:devopshq__artifactory-439:e55939730e:ep1",
+              "p_raw": 0.5375793717157592,
+              "parent_id": "nebius_swe_agent:devopshq__artifactory-439:e55939730e",
+              "split_group": "nebius_swe_agent:devopshq__artifactory",
+              "top_features": [
+                {
+                  "abs_contribution": 0.06519495394854231,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 18.0,
+                  "z_pool": 3.5986664711093796,
+                  "z_source": 4.45127999117988
+                },
+                {
+                  "abs_contribution": 0.05540058958685291,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 1.0,
+                  "z_pool": 0.609513352244621,
+                  "z_source": 0.5876103037914898
+                },
+                {
+                  "abs_contribution": 0.01798316761212372,
+                  "coef": -0.050044172534671846,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.01416953860106564,
+                  "raw_value": 0.0,
+                  "z_pool": -0.3593458878686531,
+                  "z_source": -0.3318039798197894
+                },
+                {
+                  "abs_contribution": 0.015740495323860258,
+                  "coef": -0.05119728513617741,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.0379208706495862,
+                  "raw_value": 1.0,
+                  "z_pool": -0.307447851619335,
+                  "z_source": -0.09129693840470465
+                },
+                {
+                  "abs_contribution": 0.013643765813268852,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 10.0,
+                  "z_pool": 0.6306533054367242,
+                  "z_source": 0.07717666057374444
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:fatiando__pooch-171:0cfd7a28c7:ep1",
+              "p_raw": 0.5375793717157592,
+              "parent_id": "nebius_swe_agent:fatiando__pooch-171:0cfd7a28c7",
+              "split_group": "nebius_swe_agent:fatiando__pooch",
+              "top_features": [
+                {
+                  "abs_contribution": 0.06519495394854231,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 18.0,
+                  "z_pool": 3.5986664711093796,
+                  "z_source": 4.45127999117988
+                },
+                {
+                  "abs_contribution": 0.05540058958685291,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 1.0,
+                  "z_pool": 0.609513352244621,
+                  "z_source": 0.5876103037914898
+                },
+                {
+                  "abs_contribution": 0.01798316761212372,
+                  "coef": -0.050044172534671846,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.01416953860106564,
+                  "raw_value": 0.0,
+                  "z_pool": -0.3593458878686531,
+                  "z_source": -0.3318039798197894
+                },
+                {
+                  "abs_contribution": 0.015740495323860258,
+                  "coef": -0.05119728513617741,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.0379208706495862,
+                  "raw_value": 1.0,
+                  "z_pool": -0.307447851619335,
+                  "z_source": -0.09129693840470465
+                },
+                {
+                  "abs_contribution": 0.013643765813268852,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 10.0,
+                  "z_pool": 0.6306533054367242,
+                  "z_source": 0.07717666057374444
+                }
+              ],
+              "y": 0
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "genuinely_different_recovery_dynamics"
+        },
+        "TN": {
+          "cause_rationale": "93% of top-feature readings diverge >= 1.0 between pool-scaled and source-scaled z",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.4,
+            "share_top_feature_z_divergence_ge_1": 0.9333333333333333
+          },
+          "exemplars": [
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:devopshq__artifactory-439:35919ba8e7:ep5",
+              "p_raw": 0.07916529821677601,
+              "parent_id": "nebius_swe_agent:devopshq__artifactory-439:35919ba8e7",
+              "split_group": "nebius_swe_agent:devopshq__artifactory",
+              "top_features": [
+                {
+                  "abs_contribution": 1.5816386281873225,
+                  "coef": -0.05119728513617741,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.0379208706495862,
+                  "raw_value": 16.0,
+                  "z_pool": 30.893017549278078,
+                  "z_source": 36.02216914535767
+                },
+                {
+                  "abs_contribution": 0.21394935705396564,
+                  "coef": 0.04474361820875314,
+                  "feature": "has_attempt_result",
+                  "heldout_source_mean": 0.9801609794807845,
+                  "raw_value": 0.0,
+                  "z_pool": -4.781673132820336,
+                  "z_source": -7.028919851991079
+                },
+                {
+                  "abs_contribution": 0.21394935705396556,
+                  "coef": -0.044743618208753146,
+                  "feature": "actions_since_last_observation",
+                  "heldout_source_mean": 0.01983902051921551,
+                  "raw_value": 1.0,
+                  "z_pool": 4.781673132820333,
+                  "z_source": 7.028919851991079
+                },
+                {
+                  "abs_contribution": 0.2116596786412738,
+                  "coef": -0.011483644793377388,
+                  "feature": "attempt_repeats_prior_action",
+                  "heldout_source_mean": 0.002040584967690738,
+                  "raw_value": 1.0,
+                  "z_pool": 18.431402437955747,
+                  "z_source": 22.11460050635225
+                },
+                {
+                  "abs_contribution": 0.08999868393985874,
+                  "coef": 0.04735694285729855,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.7497449268790387,
+                  "raw_value": 0.0,
+                  "z_pool": -1.9004327245331956,
+                  "z_source": -1.7308734759674016
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:robotpy__robotpy-cppheaderparser-28:a359f64216:ep40",
+              "p_raw": 0.15371458305777227,
+              "parent_id": "nebius_swe_agent:robotpy__robotpy-cppheaderparser-28:a359f64216",
+              "split_group": "nebius_swe_agent:robotpy__robotpy-cppheaderparser",
+              "top_features": [
+                {
+                  "abs_contribution": 0.5559537836970758,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 0.084,
+                  "z_pool": -6.1165640460025115,
+                  "z_source": -3.650563392237459
+                },
+                {
+                  "abs_contribution": 0.2815283239239456,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 83.0,
+                  "z_pool": 13.01303250778675,
+                  "z_source": 6.7011818019576825
+                },
+                {
+                  "abs_contribution": 0.21394935705396564,
+                  "coef": 0.04474361820875314,
+                  "feature": "has_attempt_result",
+                  "heldout_source_mean": 0.9801609794807845,
+                  "raw_value": 0.0,
+                  "z_pool": -4.781673132820336,
+                  "z_source": -7.028919851991079
+                },
+                {
+                  "abs_contribution": 0.21394935705396556,
+                  "coef": -0.044743618208753146,
+                  "feature": "actions_since_last_observation",
+                  "heldout_source_mean": 0.01983902051921551,
+                  "raw_value": 1.0,
+                  "z_pool": 4.781673132820333,
+                  "z_source": 7.028919851991079
+                },
+                {
+                  "abs_contribution": 0.1026935971106017,
+                  "coef": -0.009900429958686017,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 21.226731663076748,
+                  "raw_value": 131.0,
+                  "z_pool": 10.372640131705067,
+                  "z_source": 4.7651253721257945
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:tobymao__sqlglot-1841:83adff2196:ep67",
+              "p_raw": 0.15452699065024633,
+              "parent_id": "nebius_swe_agent:tobymao__sqlglot-1841:83adff2196",
+              "split_group": "nebius_swe_agent:tobymao__sqlglot",
+              "top_features": [
+                {
+                  "abs_contribution": 0.5526166965066613,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 0.089,
+                  "z_pool": -6.07984964972387,
+                  "z_source": -3.6274292563421047
+                },
+                {
+                  "abs_contribution": 0.22648355170942303,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 68.0,
+                  "z_pool": 10.468708014153185,
+                  "z_source": 5.340084855097969
+                },
+                {
+                  "abs_contribution": 0.21394935705396564,
+                  "coef": 0.04474361820875314,
+                  "feature": "has_attempt_result",
+                  "heldout_source_mean": 0.9801609794807845,
+                  "raw_value": 0.0,
+                  "z_pool": -4.781673132820336,
+                  "z_source": -7.028919851991079
+                },
+                {
+                  "abs_contribution": 0.21394935705396556,
+                  "coef": -0.044743618208753146,
+                  "feature": "actions_since_last_observation",
+                  "heldout_source_mean": 0.01983902051921551,
+                  "raw_value": 1.0,
+                  "z_pool": 4.781673132820333,
+                  "z_source": 7.028919851991079
+                },
+                {
+                  "abs_contribution": 0.1157683294719779,
+                  "coef": -0.009900429958686017,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 21.226731663076748,
+                  "raw_value": 146.0,
+                  "z_pool": 11.693262813339741,
+                  "z_source": 5.416257306746758
+                }
+              ],
+              "y": 0
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "feature_scaling"
+        },
+        "TP": {
+          "cause_rationale": "no scaling/range/label-prior flag; residual hypothesis (adapter-semantics and environment-policy causes are not mechanically separable from this evidence surface)",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.0,
+            "share_top_feature_z_divergence_ge_1": 0.13333333333333333
+          },
+          "exemplars": [
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:ppizarror__pygame-menu-357:9e0714e21d:ep1",
+              "p_raw": 0.5372398280928856,
+              "parent_id": "nebius_swe_agent:ppizarror__pygame-menu-357:9e0714e21d",
+              "split_group": "nebius_swe_agent:ppizarror__pygame-menu",
+              "top_features": [
+                {
+                  "abs_contribution": 0.07423816350611635,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 20.0,
+                  "z_pool": 4.097838463035991,
+                  "z_source": 5.048671334192611
+                },
+                {
+                  "abs_contribution": 0.05540058958685291,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 1.0,
+                  "z_pool": 0.609513352244621,
+                  "z_source": 0.5876103037914898
+                },
+                {
+                  "abs_contribution": 0.01798316761212372,
+                  "coef": -0.050044172534671846,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.01416953860106564,
+                  "raw_value": 0.0,
+                  "z_pool": -0.3593458878686531,
+                  "z_source": -0.3318039798197894
+                },
+                {
+                  "abs_contribution": 0.017313417294237028,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 11.0,
+                  "z_pool": 0.8002749383456287,
+                  "z_source": 0.16791645703105867
+                },
+                {
+                  "abs_contribution": 0.016128261275576452,
+                  "coef": 0.022447207660315813,
+                  "feature": "avg_actions_per_step",
+                  "heldout_source_mean": 0.45423872009976196,
+                  "raw_value": 0.46880000000000005,
+                  "z_pool": 0.7184974416256432,
+                  "z_source": 0.4158860670831269
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:joke2k__django-environ-358:a649a8ff73:ep1",
+              "p_raw": 0.5356999896204417,
+              "parent_id": "nebius_swe_agent:joke2k__django-environ-358:a649a8ff73",
+              "split_group": "nebius_swe_agent:joke2k__django-environ",
+              "top_features": [
+                {
+                  "abs_contribution": 0.05540058958685291,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 1.0,
+                  "z_pool": 0.609513352244621,
+                  "z_source": 0.5876103037914898
+                },
+                {
+                  "abs_contribution": 0.029022115718246186,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 10.0,
+                  "z_pool": 1.6019785034029346,
+                  "z_source": 2.061714619128959
+                },
+                {
+                  "abs_contribution": 0.01798316761212372,
+                  "coef": -0.050044172534671846,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.01416953860106564,
+                  "raw_value": 0.0,
+                  "z_pool": -0.3593458878686531,
+                  "z_source": -0.3318039798197894
+                },
+                {
+                  "abs_contribution": 0.015740495323860258,
+                  "coef": -0.05119728513617741,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.0379208706495862,
+                  "raw_value": 1.0,
+                  "z_pool": -0.307447851619335,
+                  "z_source": -0.09129693840470465
+                },
+                {
+                  "abs_contribution": 0.013526652030935267,
+                  "coef": 0.04735694285729855,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.7497449268790387,
+                  "raw_value": 1.0,
+                  "z_pool": 0.28563186757420866,
+                  "z_source": 0.5777429799951671
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "nebius_swe_agent",
+              "episode_id": "nebius_swe_agent:ppizarror__pygame-menu-357:3516c420e1:ep1",
+              "p_raw": 0.5355528746583068,
+              "parent_id": "nebius_swe_agent:ppizarror__pygame-menu-357:3516c420e1",
+              "split_group": "nebius_swe_agent:ppizarror__pygame-menu",
+              "top_features": [
+                {
+                  "abs_contribution": 0.12849742085156055,
+                  "coef": 0.018116420199520276,
+                  "feature": "first_recovery_latency",
+                  "heldout_source_mean": 3.0976079809545403,
+                  "raw_value": 32.0,
+                  "z_pool": 7.092870414595659,
+                  "z_source": 8.633019392268993
+                },
+                {
+                  "abs_contribution": 0.05540058958685291,
+                  "coef": 0.0908931516968943,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8729992971318445,
+                  "raw_value": 1.0,
+                  "z_pool": 0.609513352244621,
+                  "z_source": 0.5876103037914898
+                },
+                {
+                  "abs_contribution": 0.03933132618004608,
+                  "coef": -0.021634336481944884,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.149472848883347,
+                  "raw_value": 17.0,
+                  "z_pool": 1.8180047357990556,
+                  "z_source": 0.7123552357749441
+                },
+                {
+                  "abs_contribution": 0.03309211549193055,
+                  "coef": -0.016002332840870607,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 6.1478857272418095,
+                  "raw_value": 17.0,
+                  "z_pool": 2.0679557050214545,
+                  "z_source": 1.7502033484177562
+                },
+                {
+                  "abs_contribution": 0.022718233275464638,
+                  "coef": 0.022447207660315813,
+                  "feature": "avg_actions_per_step",
+                  "heldout_source_mean": 0.45423872009976196,
+                  "raw_value": 0.48,
+                  "z_pool": 1.012073912232209,
+                  "z_source": 0.7357703068782038
+                }
+              ],
+              "y": 1
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "genuinely_different_recovery_dynamics"
+        }
+      },
+      "top_k": 5,
+      "weighting": "parent_x_source_balanced"
+    },
+    "swe_smith": {
+      "arm": "T",
+      "cause_rule": "tentative heuristic, priority: feature_scaling (>= half of top-feature readings with |z_pool - z_source| >= 1) > representation_mismatch (>= half of top-feature readings outside the pool's raw range) > label_semantics (|held-out positive rate - pool positive rate| >= 0.15) > genuinely_different_recovery_dynamics; annotations are evidence-cited heuristics, never settlement claims",
+      "heldout_positive_rate": 0.37797921387825273,
+      "per_quadrant": 3,
+      "pool_positive_rate": 0.12930021475748613,
+      "quadrants": {
+        "FN": {
+          "cause_rationale": "100% of top-feature readings diverge >= 1.0 between pool-scaled and source-scaled z",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.0,
+            "share_top_feature_z_divergence_ge_1": 1.0
+          },
+          "exemplars": [
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:facebookresearch__hydra.0f03eb60.pr_1560:facebookresearch__hydra.0f03eb60.pr_1560.97oq2dtm-55b187681d:ep12",
+              "p_raw": 0.10487092794626143,
+              "parent_id": "swe_smith:facebookresearch__hydra.0f03eb60.pr_1560:facebookresearch__hydra.0f03eb60.pr_1560.97oq2dtm-55b187681d",
+              "split_group": "swe_smith:facebookresearch__hydra.0f03eb60.pr_1560",
+              "top_features": [
+                {
+                  "abs_contribution": 0.35245898704051826,
+                  "coef": -0.030396975042237075,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.26334297100883,
+                  "raw_value": 70.0,
+                  "z_pool": 11.595199408848115,
+                  "z_source": 7.5196114892640376
+                },
+                {
+                  "abs_contribution": 0.27067464675173647,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 262.0,
+                  "z_pool": 8.541205033045731,
+                  "z_source": 4.314153747865511
+                },
+                {
+                  "abs_contribution": 0.22925188077332437,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 171.0,
+                  "z_pool": 7.270762833584858,
+                  "z_source": 3.9045823774976656
+                },
+                {
+                  "abs_contribution": 0.22795521004444644,
+                  "coef": -0.03131387626317079,
+                  "feature": "n_events",
+                  "heldout_source_mean": 41.62358365241854,
+                  "raw_value": 174.0,
+                  "z_pool": 7.279686747454884,
+                  "z_source": 3.9052769145086352
+                },
+                {
+                  "abs_contribution": 0.22744741154482362,
+                  "coef": -0.03120980914354833,
+                  "feature": "n_actions",
+                  "heldout_source_mean": 20.817847933109324,
+                  "raw_value": 87.0,
+                  "z_pool": 7.287689921418227,
+                  "z_source": 3.9045823774976656
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:bottlepy__bottle.a8dfef30.func_pm_ctrl_invert_if__rsfvwrzq:bottlepy__bottle.a8dfef30.func_pm_ctrl_invert_if__rsfvwrzq.8qa84d2e-491d23b4c6:ep16",
+              "p_raw": 0.10595711908695685,
+              "parent_id": "swe_smith:bottlepy__bottle.a8dfef30.func_pm_ctrl_invert_if__rsfvwrzq:bottlepy__bottle.a8dfef30.func_pm_ctrl_invert_if__rsfvwrzq.8qa84d2e-491d23b4c6",
+              "split_group": "swe_smith:bottlepy__bottle.a8dfef30.func_pm_ctrl_invert_if__rsfvwrzq",
+              "top_features": [
+                {
+                  "abs_contribution": 0.3646004960633376,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 343.0,
+                  "z_pool": 11.505058303016595,
+                  "z_source": 6.031054812485898
+                },
+                {
+                  "abs_contribution": 0.32581066643720974,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 235.0,
+                  "z_pool": 10.333141330515188,
+                  "z_source": 5.792502793770032
+                },
+                {
+                  "abs_contribution": 0.3239569726818381,
+                  "coef": -0.03131387626317079,
+                  "feature": "n_events",
+                  "heldout_source_mean": 41.62358365241854,
+                  "raw_value": 238.0,
+                  "z_pool": 10.345476553564014,
+                  "z_source": 5.79336037699103
+                },
+                {
+                  "abs_contribution": 0.32321076884891525,
+                  "coef": -0.03120980914354833,
+                  "feature": "n_actions",
+                  "heldout_source_mean": 20.817847933109324,
+                  "raw_value": 119.0,
+                  "z_pool": 10.35606361328003,
+                  "z_source": 5.792502793770032
+                },
+                {
+                  "abs_contribution": 0.3231361295825825,
+                  "coef": -0.03134203075537891,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 20.80573571930921,
+                  "raw_value": 119.0,
+                  "z_pool": 10.309993379325809,
+                  "z_source": 5.794157801661667
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:agronholm__exceptiongroup.0b4f4937.func_pm_op_change__i3gfg862:agronholm__exceptiongroup.0b4f4937.func_pm_op_change__i3gfg862.8qa84d2e-6430226252:ep14",
+              "p_raw": 0.10693104265026841,
+              "parent_id": "swe_smith:agronholm__exceptiongroup.0b4f4937.func_pm_op_change__i3gfg862:agronholm__exceptiongroup.0b4f4937.func_pm_op_change__i3gfg862.8qa84d2e-6430226252",
+              "split_group": "swe_smith:agronholm__exceptiongroup.0b4f4937.func_pm_op_change__i3gfg862",
+              "top_features": [
+                {
+                  "abs_contribution": 0.3601166754758171,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 56.0,
+                  "z_pool": 11.776462282313478,
+                  "z_source": 6.393866942465087
+                },
+                {
+                  "abs_contribution": 0.31987595214966635,
+                  "coef": -0.030396975042237075,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.26334297100883,
+                  "raw_value": 64.0,
+                  "z_pool": 10.523282389290173,
+                  "z_source": 6.776770655695467
+                },
+                {
+                  "abs_contribution": 0.28690874416361817,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 276.0,
+                  "z_pool": 9.053475968596251,
+                  "z_source": 4.610902080022121
+                },
+                {
+                  "abs_contribution": 0.22623441872132796,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 169.0,
+                  "z_pool": 7.175063505555785,
+                  "z_source": 3.845584864489154
+                },
+                {
+                  "abs_contribution": 0.22495515496202798,
+                  "coef": -0.03131387626317079,
+                  "feature": "n_events",
+                  "heldout_source_mean": 41.62358365241854,
+                  "raw_value": 172.0,
+                  "z_pool": 7.183880816013974,
+                  "z_source": 3.8462743063060607
+                }
+              ],
+              "y": 1
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "feature_scaling"
+        },
+        "FP": {
+          "cause_rationale": "held-out positive rate 0.378 vs pool 0.129 (>= 0.15 divergence)",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.0,
+            "share_top_feature_z_divergence_ge_1": 0.0
+          },
+          "exemplars": [
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:iterative__dvc.1d6ea681.pr_9298:iterative__dvc.1d6ea681.pr_9298.1cm1w3ln-03ffd945d7:ep0",
+              "p_raw": 0.5701379760999825,
+              "parent_id": "swe_smith:iterative__dvc.1d6ea681.pr_9298:iterative__dvc.1d6ea681.pr_9298.1cm1w3ln-03ffd945d7",
+              "split_group": "swe_smith:iterative__dvc.1d6ea681.pr_9298",
+              "top_features": [
+                {
+                  "abs_contribution": 0.055612579770636744,
+                  "coef": 0.06455002869429087,
+                  "feature": "attempt_family_change",
+                  "heldout_source_mean": 0.6010783777447839,
+                  "raw_value": 1.0,
+                  "z_pool": 0.8615422935599005,
+                  "z_source": 0.8146634563191617
+                },
+                {
+                  "abs_contribution": 0.0447907732854815,
+                  "coef": 0.07229313245485021,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.9625920997108699,
+                  "raw_value": 1.0,
+                  "z_pool": 0.6195716213217767,
+                  "z_source": 0.4959116783982344
+                },
+                {
+                  "abs_contribution": 0.025017841821822626,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 7.0,
+                  "z_pool": -0.7894441501958755,
+                  "z_source": -1.0909051592727457
+                },
+                {
+                  "abs_contribution": 0.024432247586576226,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 1.0,
+                  "z_pool": -0.7989783916429081,
+                  "z_source": -1.0573463674614385
+                },
+                {
+                  "abs_contribution": 0.02421493159437472,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7679807208572564,
+                  "z_source": -1.0512087152172962
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:mozilla__bleach.73871d76.pr_720:mozilla__bleach.73871d76.pr_720.1cm1w3ln-225ef4783a:ep0",
+              "p_raw": 0.5701379760999825,
+              "parent_id": "swe_smith:mozilla__bleach.73871d76.pr_720:mozilla__bleach.73871d76.pr_720.1cm1w3ln-225ef4783a",
+              "split_group": "swe_smith:mozilla__bleach.73871d76.pr_720",
+              "top_features": [
+                {
+                  "abs_contribution": 0.055612579770636744,
+                  "coef": 0.06455002869429087,
+                  "feature": "attempt_family_change",
+                  "heldout_source_mean": 0.6010783777447839,
+                  "raw_value": 1.0,
+                  "z_pool": 0.8615422935599005,
+                  "z_source": 0.8146634563191617
+                },
+                {
+                  "abs_contribution": 0.0447907732854815,
+                  "coef": 0.07229313245485021,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.9625920997108699,
+                  "raw_value": 1.0,
+                  "z_pool": 0.6195716213217767,
+                  "z_source": 0.4959116783982344
+                },
+                {
+                  "abs_contribution": 0.025017841821822626,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 7.0,
+                  "z_pool": -0.7894441501958755,
+                  "z_source": -1.0909051592727457
+                },
+                {
+                  "abs_contribution": 0.024432247586576226,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 1.0,
+                  "z_pool": -0.7989783916429081,
+                  "z_source": -1.0573463674614385
+                },
+                {
+                  "abs_contribution": 0.02421493159437472,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7679807208572564,
+                  "z_source": -1.0512087152172962
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:pandas-dev__pandas.95280573.pr_48022:pandas-dev__pandas.95280573.pr_48022.1cm1w3ln-639c2e1d20:ep0",
+              "p_raw": 0.5701379760999825,
+              "parent_id": "swe_smith:pandas-dev__pandas.95280573.pr_48022:pandas-dev__pandas.95280573.pr_48022.1cm1w3ln-639c2e1d20",
+              "split_group": "swe_smith:pandas-dev__pandas.95280573.pr_48022",
+              "top_features": [
+                {
+                  "abs_contribution": 0.055612579770636744,
+                  "coef": 0.06455002869429087,
+                  "feature": "attempt_family_change",
+                  "heldout_source_mean": 0.6010783777447839,
+                  "raw_value": 1.0,
+                  "z_pool": 0.8615422935599005,
+                  "z_source": 0.8146634563191617
+                },
+                {
+                  "abs_contribution": 0.0447907732854815,
+                  "coef": 0.07229313245485021,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.9625920997108699,
+                  "raw_value": 1.0,
+                  "z_pool": 0.6195716213217767,
+                  "z_source": 0.4959116783982344
+                },
+                {
+                  "abs_contribution": 0.025017841821822626,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 7.0,
+                  "z_pool": -0.7894441501958755,
+                  "z_source": -1.0909051592727457
+                },
+                {
+                  "abs_contribution": 0.024432247586576226,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 1.0,
+                  "z_pool": -0.7989783916429081,
+                  "z_source": -1.0573463674614385
+                },
+                {
+                  "abs_contribution": 0.02421493159437472,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7679807208572564,
+                  "z_source": -1.0512087152172962
+                }
+              ],
+              "y": 0
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "label_semantics"
+        },
+        "TN": {
+          "cause_rationale": "100% of top-feature readings diverge >= 1.0 between pool-scaled and source-scaled z",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.0,
+            "share_top_feature_z_divergence_ge_1": 1.0
+          },
+          "exemplars": [
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_7211:getmoto__moto.694ce1f4.pr_7211.1cm1w3ln-c504a886f4:ep21",
+              "p_raw": 0.06991717307317204,
+              "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_7211:getmoto__moto.694ce1f4.pr_7211.1cm1w3ln-c504a886f4",
+              "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_7211",
+              "top_features": [
+                {
+                  "abs_contribution": 0.3854729070214712,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 361.0,
+                  "z_pool": 12.163692363010119,
+                  "z_source": 6.41258838240154
+                },
+                {
+                  "abs_contribution": 0.34089797669719185,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 245.0,
+                  "z_pool": 10.811637970660552,
+                  "z_source": 6.087490358812589
+                },
+                {
+                  "abs_contribution": 0.3389572480939306,
+                  "coef": -0.03131387626317079,
+                  "feature": "n_events",
+                  "heldout_source_mean": 41.62358365241854,
+                  "raw_value": 248.0,
+                  "z_pool": 10.824506210768567,
+                  "z_source": 6.088373418003904
+                },
+                {
+                  "abs_contribution": 0.3381737934276795,
+                  "coef": -0.03120980914354833,
+                  "feature": "n_actions",
+                  "heldout_source_mean": 20.817847933109324,
+                  "raw_value": 124.0,
+                  "z_pool": 10.835497002633435,
+                  "z_source": 6.087490358812589
+                },
+                {
+                  "abs_contribution": 0.33810109674136896,
+                  "coef": -0.03134203075537891,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 20.80573571930921,
+                  "raw_value": 124.0,
+                  "z_pool": 10.78746617857058,
+                  "z_source": 6.089193252260845
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_7211:getmoto__moto.694ce1f4.pr_7211.1cm1w3ln-c504a886f4:ep20",
+              "p_raw": 0.0816784620068182,
+              "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_7211:getmoto__moto.694ce1f4.pr_7211.1cm1w3ln-c504a886f4",
+              "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_7211",
+              "top_features": [
+                {
+                  "abs_contribution": 0.35648344735739673,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 336.0,
+                  "z_pool": 11.248922835241334,
+                  "z_source": 5.882680646407593
+                },
+                {
+                  "abs_contribution": 0.3167582802812205,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 229.0,
+                  "z_pool": 10.04604334642797,
+                  "z_source": 5.615510254744498
+                },
+                {
+                  "abs_contribution": 0.31495680743458265,
+                  "coef": -0.03131387626317079,
+                  "feature": "n_events",
+                  "heldout_source_mean": 41.62358365241854,
+                  "raw_value": 232.0,
+                  "z_pool": 10.058058759241284,
+                  "z_source": 5.616352552383305
+                },
+                {
+                  "abs_contribution": 0.31423295410165664,
+                  "coef": -0.03120980914354833,
+                  "feature": "n_actions",
+                  "heldout_source_mean": 20.817847933109324,
+                  "raw_value": 116.0,
+                  "z_pool": 10.068403579667985,
+                  "z_source": 5.615510254744498
+                },
+                {
+                  "abs_contribution": 0.3141571492873105,
+                  "coef": -0.03134203075537891,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 20.80573571930921,
+                  "raw_value": 116.0,
+                  "z_pool": 10.023509699778943,
+                  "z_source": 5.617136531302161
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:getmoto__moto.694ce1f4.pr_6780:getmoto__moto.694ce1f4.pr_6780.1cm1w3ln-77cff8010e:ep24",
+              "p_raw": 0.08841413817863036,
+              "parent_id": "swe_smith:getmoto__moto.694ce1f4.pr_6780:getmoto__moto.694ce1f4.pr_6780.1cm1w3ln-77cff8010e",
+              "split_group": "swe_smith:getmoto__moto.694ce1f4.pr_6780",
+              "top_features": [
+                {
+                  "abs_contribution": 0.3671084740769515,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 57.0,
+                  "z_pool": 12.005106658203594,
+                  "z_source": 6.5293435481001145
+                },
+                {
+                  "abs_contribution": 0.3240152525336334,
+                  "coef": -0.03169045183958263,
+                  "feature": "payment_actual_total",
+                  "heldout_source_mean": 58.46675001953583,
+                  "raw_value": 308.0,
+                  "z_pool": 10.224380964140295,
+                  "z_source": 5.2891839820943725
+                },
+                {
+                  "abs_contribution": 0.3090149405193824,
+                  "coef": -0.030396975042237075,
+                  "feature": "error_count",
+                  "heldout_source_mean": 9.26334297100883,
+                  "raw_value": 62.0,
+                  "z_pool": 10.165976716104193,
+                  "z_source": 6.529157044505943
+                },
+                {
+                  "abs_contribution": 0.2835661977092599,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 207.0,
+                  "z_pool": 8.993350738108168,
+                  "z_source": 4.966537611650872
+                },
+                {
+                  "abs_contribution": 0.2819562015279793,
+                  "coef": -0.03131387626317079,
+                  "feature": "n_events",
+                  "heldout_source_mean": 41.62358365241854,
+                  "raw_value": 210.0,
+                  "z_pool": 9.00419351339127,
+                  "z_source": 4.9673238621549825
+                }
+              ],
+              "y": 0
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "feature_scaling"
+        },
+        "TP": {
+          "cause_rationale": "held-out positive rate 0.378 vs pool 0.129 (>= 0.15 divergence)",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.0,
+            "share_top_feature_z_divergence_ge_1": 0.0
+          },
+          "exemplars": [
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:Cog-Creators__Red-DiscordBot.33e0eac7.pr_6176:Cog-Creators__Red-DiscordBot.33e0eac7.pr_6176.1cm1w3ln-5c43b78ae8:ep0",
+              "p_raw": 0.5698537627753258,
+              "parent_id": "swe_smith:Cog-Creators__Red-DiscordBot.33e0eac7.pr_6176:Cog-Creators__Red-DiscordBot.33e0eac7.pr_6176.1cm1w3ln-5c43b78ae8",
+              "split_group": "swe_smith:Cog-Creators__Red-DiscordBot.33e0eac7.pr_6176",
+              "top_features": [
+                {
+                  "abs_contribution": 0.055612579770636744,
+                  "coef": 0.06455002869429087,
+                  "feature": "attempt_family_change",
+                  "heldout_source_mean": 0.6010783777447839,
+                  "raw_value": 1.0,
+                  "z_pool": 0.8615422935599005,
+                  "z_source": 0.8146634563191617
+                },
+                {
+                  "abs_contribution": 0.0447907732854815,
+                  "coef": 0.07229313245485021,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.9625920997108699,
+                  "raw_value": 1.0,
+                  "z_pool": 0.6195716213217767,
+                  "z_source": 0.4959116783982344
+                },
+                {
+                  "abs_contribution": 0.024432247586576226,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 1.0,
+                  "z_pool": -0.7989783916429081,
+                  "z_source": -1.0573463674614385
+                },
+                {
+                  "abs_contribution": 0.02421493159437472,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7679807208572564,
+                  "z_source": -1.0512087152172962
+                },
+                {
+                  "abs_contribution": 0.02405110850126579,
+                  "coef": -0.03134203075537891,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 20.80573571930921,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7673755631529442,
+                  "z_source": -1.050664652239253
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:dask__dask.5f61e423.pr_8185:dask__dask.5f61e423.pr_8185.97oq2dtm-7a8a6a3a82:ep0",
+              "p_raw": 0.5698537627753258,
+              "parent_id": "swe_smith:dask__dask.5f61e423.pr_8185:dask__dask.5f61e423.pr_8185.97oq2dtm-7a8a6a3a82",
+              "split_group": "swe_smith:dask__dask.5f61e423.pr_8185",
+              "top_features": [
+                {
+                  "abs_contribution": 0.055612579770636744,
+                  "coef": 0.06455002869429087,
+                  "feature": "attempt_family_change",
+                  "heldout_source_mean": 0.6010783777447839,
+                  "raw_value": 1.0,
+                  "z_pool": 0.8615422935599005,
+                  "z_source": 0.8146634563191617
+                },
+                {
+                  "abs_contribution": 0.0447907732854815,
+                  "coef": 0.07229313245485021,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.9625920997108699,
+                  "raw_value": 1.0,
+                  "z_pool": 0.6195716213217767,
+                  "z_source": 0.4959116783982344
+                },
+                {
+                  "abs_contribution": 0.024432247586576226,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 1.0,
+                  "z_pool": -0.7989783916429081,
+                  "z_source": -1.0573463674614385
+                },
+                {
+                  "abs_contribution": 0.02421493159437472,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7679807208572564,
+                  "z_source": -1.0512087152172962
+                },
+                {
+                  "abs_contribution": 0.02405110850126579,
+                  "coef": -0.03134203075537891,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 20.80573571930921,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7673755631529442,
+                  "z_source": -1.050664652239253
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swe_smith",
+              "episode_id": "swe_smith:dask__dask.5f61e423.pr_8925:dask__dask.5f61e423.pr_8925.oosvj10h-5bb9417856:ep0",
+              "p_raw": 0.5698537627753258,
+              "parent_id": "swe_smith:dask__dask.5f61e423.pr_8925:dask__dask.5f61e423.pr_8925.oosvj10h-5bb9417856",
+              "split_group": "swe_smith:dask__dask.5f61e423.pr_8925",
+              "top_features": [
+                {
+                  "abs_contribution": 0.055612579770636744,
+                  "coef": 0.06455002869429087,
+                  "feature": "attempt_family_change",
+                  "heldout_source_mean": 0.6010783777447839,
+                  "raw_value": 1.0,
+                  "z_pool": 0.8615422935599005,
+                  "z_source": 0.8146634563191617
+                },
+                {
+                  "abs_contribution": 0.0447907732854815,
+                  "coef": 0.07229313245485021,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.9625920997108699,
+                  "raw_value": 1.0,
+                  "z_pool": 0.6195716213217767,
+                  "z_source": 0.4959116783982344
+                },
+                {
+                  "abs_contribution": 0.024432247586576226,
+                  "coef": -0.030579359644930006,
+                  "feature": "distinct_error_count",
+                  "heldout_source_mean": 8.80464171290146,
+                  "raw_value": 1.0,
+                  "z_pool": -0.7989783916429081,
+                  "z_source": -1.0573463674614385
+                },
+                {
+                  "abs_contribution": 0.02421493159437472,
+                  "coef": -0.03153065036234877,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 38.63569586621865,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7679807208572564,
+                  "z_source": -1.0512087152172962
+                },
+                {
+                  "abs_contribution": 0.02405110850126579,
+                  "coef": -0.03134203075537891,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 20.80573571930921,
+                  "raw_value": 3.0,
+                  "z_pool": -0.7673755631529442,
+                  "z_source": -1.050664652239253
+                }
+              ],
+              "y": 1
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "label_semantics"
+        }
+      },
+      "top_k": 5,
+      "weighting": "parent_x_source_balanced"
+    },
+    "swegym_openhands": {
+      "arm": "T",
+      "cause_rule": "tentative heuristic, priority: feature_scaling (>= half of top-feature readings with |z_pool - z_source| >= 1) > representation_mismatch (>= half of top-feature readings outside the pool's raw range) > label_semantics (|held-out positive rate - pool positive rate| >= 0.15) > genuinely_different_recovery_dynamics; annotations are evidence-cited heuristics, never settlement claims",
+      "heldout_positive_rate": 0.10032684382549382,
+      "per_quadrant": 3,
+      "pool_positive_rate": 0.2405466671047012,
+      "quadrants": {
+        "FN": {
+          "cause_rationale": "87% of top-feature readings diverge >= 1.0 between pool-scaled and source-scaled z",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.0,
+            "share_top_feature_z_divergence_ge_1": 0.8666666666666667
+          },
+          "exemplars": [
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:getmoto__moto-5502:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t05-run_1-87c7357b5a:ep0",
+              "p_raw": 0.31569067762871617,
+              "parent_id": "swegym_openhands:getmoto__moto-5502:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t05-run_1-87c7357b5a",
+              "split_group": "swegym_openhands:getmoto__moto",
+              "top_features": [
+                {
+                  "abs_contribution": 0.4833827879957656,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.5714,
+                  "z_pool": 14.529149248175724,
+                  "z_source": 4.924833956385703
+                },
+                {
+                  "abs_contribution": 0.22855451372573,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 0.42860000000000004,
+                  "z_pool": -5.793803429737106,
+                  "z_source": -2.814205727759036
+                },
+                {
+                  "abs_contribution": 0.04775424675422794,
+                  "coef": -0.006592044530791111,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.2955805030552792,
+                  "raw_value": 3.0,
+                  "z_pool": 7.244223932525067,
+                  "z_source": 2.6064252829921544
+                },
+                {
+                  "abs_contribution": 0.03345600241059565,
+                  "coef": 0.014962597238147574,
+                  "feature": "has_recovery",
+                  "heldout_source_mean": 0.9296575245132869,
+                  "raw_value": 0.0,
+                  "z_pool": -2.235975604910263,
+                  "z_source": -3.635403913757262
+                },
+                {
+                  "abs_contribution": 0.0326562101924664,
+                  "coef": 0.017466082995591912,
+                  "feature": "error_recovery_ratio",
+                  "heldout_source_mean": 0.7962028421202216,
+                  "raw_value": 0.0,
+                  "z_pool": -1.869692832715164,
+                  "z_source": -2.6864843087633
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:getmoto__moto-6913:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t04-run_1-a40e706251:ep9",
+              "p_raw": 0.31689516345410795,
+              "parent_id": "swegym_openhands:getmoto__moto-6913:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t04-run_1-a40e706251",
+              "split_group": "swegym_openhands:getmoto__moto",
+              "top_features": [
+                {
+                  "abs_contribution": 0.2082789505785377,
+                  "coef": -0.029317716496764974,
+                  "feature": "actions_since_last_observation",
+                  "heldout_source_mean": 0.06323717493249964,
+                  "raw_value": 1.0,
+                  "z_pool": 7.10420099060307,
+                  "z_source": 3.8488288018652392
+                },
+                {
+                  "abs_contribution": 0.20827895057853738,
+                  "coef": 0.029317716496764967,
+                  "feature": "has_attempt_result",
+                  "heldout_source_mean": 0.9367628250675003,
+                  "raw_value": 0.0,
+                  "z_pool": -7.1042009906030605,
+                  "z_source": -3.848828801865239
+                },
+                {
+                  "abs_contribution": 0.12163652519501938,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 0.0,
+                  "z_pool": -3.1817139945302495,
+                  "z_source": -1.4526398295641376
+                },
+                {
+                  "abs_contribution": 0.05387503095846097,
+                  "coef": 0.02314114784924356,
+                  "feature": "action_observation_closure_ratio",
+                  "heldout_source_mean": 0.9962735824925395,
+                  "raw_value": 0.963,
+                  "z_pool": -2.328105386536478,
+                  "z_source": -1.9857250459690023
+                },
+                {
+                  "abs_contribution": 0.04254385144142413,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 1.0385,
+                  "z_pool": 1.9726363684525205,
+                  "z_source": 0.5675611300874683
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:bokeh__bokeh-13289:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t08-run_1-e64f0e936f:ep0",
+              "p_raw": 0.3261811050820976,
+              "parent_id": "swegym_openhands:bokeh__bokeh-13289:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t08-run_1-e64f0e936f",
+              "split_group": "swegym_openhands:bokeh__bokeh",
+              "top_features": [
+                {
+                  "abs_contribution": 0.27850994099105614,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.33330000000000004,
+                  "z_pool": 8.371238282061288,
+                  "z_source": 2.6748702037916257
+                },
+                {
+                  "abs_contribution": 0.1636952058441624,
+                  "coef": -0.018348657269640786,
+                  "feature": "attempt_result_same_hash_as_failure",
+                  "heldout_source_mean": 0.009805314764814551,
+                  "raw_value": 1.0,
+                  "z_pool": 8.92137247094414,
+                  "z_source": 10.049154553810826
+                },
+                {
+                  "abs_contribution": 0.12705885679182344,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 0.6667000000000001,
+                  "z_pool": -3.22091228153272,
+                  "z_source": -1.289550684126328
+                },
+                {
+                  "abs_contribution": 0.12163652519501938,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 0.0,
+                  "z_pool": -3.1817139945302495,
+                  "z_source": -1.4526398295641376
+                },
+                {
+                  "abs_contribution": 0.03345600241059565,
+                  "coef": 0.014962597238147574,
+                  "feature": "has_recovery",
+                  "heldout_source_mean": 0.9296575245132869,
+                  "raw_value": 0.0,
+                  "z_pool": -2.235975604910263,
+                  "z_source": -3.635403913757262
+                }
+              ],
+              "y": 1
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "feature_scaling"
+        },
+        "FP": {
+          "cause_rationale": "73% of top-feature readings diverge >= 1.0 between pool-scaled and source-scaled z",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.4666666666666667,
+            "share_top_feature_z_divergence_ge_1": 0.7333333333333333
+          },
+          "exemplars": [
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:Project-MONAI__MONAI-2214:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-ed703cf38f:ep0",
+              "p_raw": 0.8805987846481027,
+              "parent_id": "swegym_openhands:Project-MONAI__MONAI-2214:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-ed703cf38f",
+              "split_group": "swegym_openhands:Project-MONAI__MONAI",
+              "top_features": [
+                {
+                  "abs_contribution": 1.4821877376340356,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 12.0,
+                  "z_pool": 38.7704060091355,
+                  "z_source": 19.34537945963797
+                },
+                {
+                  "abs_contribution": 0.781217065505265,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 0.33330000000000004,
+                  "z_pool": -36.22279466618632,
+                  "z_source": -7.978344779049702
+                },
+                {
+                  "abs_contribution": 0.13515917950015055,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.16670000000000001,
+                  "z_pool": 4.0625109953974246,
+                  "z_source": 1.1005570530895121
+                },
+                {
+                  "abs_contribution": 0.03916339879405735,
+                  "coef": 0.013039198612357606,
+                  "feature": "horizon_delta",
+                  "heldout_source_mean": 0.8429746909194259,
+                  "raw_value": 0.6846,
+                  "z_pool": -3.00351271257891,
+                  "z_source": -3.5240821018889
+                },
+                {
+                  "abs_contribution": 0.03345600241059565,
+                  "coef": 0.014962597238147574,
+                  "feature": "has_recovery",
+                  "heldout_source_mean": 0.9296575245132869,
+                  "raw_value": 0.0,
+                  "z_pool": -2.235975604910263,
+                  "z_source": -3.635403913757262
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:Project-MONAI__MONAI-4729:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-c4c3d83a08:ep0",
+              "p_raw": 0.834259902143224,
+              "parent_id": "swegym_openhands:Project-MONAI__MONAI-4729:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-c4c3d83a08",
+              "split_group": "swegym_openhands:Project-MONAI__MONAI",
+              "top_features": [
+                {
+                  "abs_contribution": 0.8139276281219294,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 7.0,
+                  "z_pool": 21.290356007608104,
+                  "z_source": 10.679538089137091
+                },
+                {
+                  "abs_contribution": 0.7033032067980272,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 0.4,
+                  "z_pool": -32.61015250791858,
+                  "z_source": -7.1700465315462285
+                },
+                {
+                  "abs_contribution": 0.01622567568293634,
+                  "coef": -0.02214870854244795,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 27.854341338638623,
+                  "raw_value": 5.0,
+                  "z_pool": -0.7325788612839376,
+                  "z_source": -1.0352299862438634
+                },
+                {
+                  "abs_contribution": 0.016225675682936282,
+                  "coef": -0.022148708542447937,
+                  "feature": "n_actions",
+                  "heldout_source_mean": 15.323859599261048,
+                  "raw_value": 4.0,
+                  "z_pool": -0.7325788612839355,
+                  "z_source": -1.0303631175505807
+                },
+                {
+                  "abs_contribution": 0.015018011986299451,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 1.0,
+                  "z_pool": 0.38070308888526333,
+                  "z_source": 0.8447102400348708
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:pandas-dev__pandas-56038:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-f9d4891501:ep4",
+              "p_raw": 0.817501565014475,
+              "parent_id": "swegym_openhands:pandas-dev__pandas-56038:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-f9d4891501",
+              "split_group": "swegym_openhands:pandas-dev__pandas",
+              "top_features": [
+                {
+                  "abs_contribution": 1.3485357157316145,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 11.0,
+                  "z_pool": 35.274396008830024,
+                  "z_source": 17.612211185537795
+                },
+                {
+                  "abs_contribution": 0.41687924645297864,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 0.6452,
+                  "z_pool": -19.3294949785745,
+                  "z_source": -4.198611294846804
+                },
+                {
+                  "abs_contribution": 0.1207896854011222,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.15,
+                  "z_pool": 3.630603758378898,
+                  "z_source": 0.9427477516685918
+                },
+                {
+                  "abs_contribution": 0.04775424675422794,
+                  "coef": -0.006592044530791111,
+                  "feature": "max_repeated_action_run",
+                  "heldout_source_mean": 1.2955805030552792,
+                  "raw_value": 3.0,
+                  "z_pool": 7.244223932525067,
+                  "z_source": 2.6064252829921544
+                },
+                {
+                  "abs_contribution": 0.039971235155548304,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 0.871,
+                  "z_pool": -1.0132614559209772,
+                  "z_source": 0.01866865822630583
+                }
+              ],
+              "y": 0
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "feature_scaling"
+        },
+        "TN": {
+          "cause_rationale": "93% of top-feature readings diverge >= 1.0 between pool-scaled and source-scaled z",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.2,
+            "share_top_feature_z_divergence_ge_1": 0.9333333333333333
+          },
+          "exemplars": [
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:iterative__dvc-5188:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t04-run_1-0503d2cdfb:ep0",
+              "p_raw": 0.05417554409602099,
+              "parent_id": "swegym_openhands:iterative__dvc-5188:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t04-run_1-0503d2cdfb",
+              "split_group": "swegym_openhands:iterative__dvc",
+              "top_features": [
+                {
+                  "abs_contribution": 1.4577258577955277,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 2.25,
+                  "z_pool": 67.59056702424513,
+                  "z_source": 15.24902030325775
+                },
+                {
+                  "abs_contribution": 0.4697876977703375,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.5556,
+                  "z_pool": 14.12051844908035,
+                  "z_source": 4.77552934785573
+                },
+                {
+                  "abs_contribution": 0.2082789505785377,
+                  "coef": -0.029317716496764974,
+                  "feature": "actions_since_last_observation",
+                  "heldout_source_mean": 0.06323717493249964,
+                  "raw_value": 1.0,
+                  "z_pool": 7.10420099060307,
+                  "z_source": 3.8488288018652392
+                },
+                {
+                  "abs_contribution": 0.20827895057853738,
+                  "coef": 0.029317716496764967,
+                  "feature": "has_attempt_result",
+                  "heldout_source_mean": 0.9367628250675003,
+                  "raw_value": 0.0,
+                  "z_pool": -7.1042009906030605,
+                  "z_source": -3.848828801865239
+                },
+                {
+                  "abs_contribution": 0.1981186048425678,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 0.5,
+                  "z_pool": -5.022260263076909,
+                  "z_source": -2.3570013173626676
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:conan-io__conan-13610:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t02-run_1-de8a703219:ep0",
+              "p_raw": 0.06449903923583546,
+              "parent_id": "swegym_openhands:conan-io__conan-13610:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t02-run_1-de8a703219",
+              "split_group": "swegym_openhands:conan-io__conan",
+              "top_features": [
+                {
+                  "abs_contribution": 1.165694903120723,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 2.0,
+                  "z_pool": 54.04992924962842,
+                  "z_source": 12.219416676932887
+                },
+                {
+                  "abs_contribution": 0.5079916222012872,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.6000000000000001,
+                  "z_pool": 15.268822719955956,
+                  "z_source": 5.195094197142488
+                },
+                {
+                  "abs_contribution": 0.24074592820834123,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 0.4,
+                  "z_pool": -6.102852933469343,
+                  "z_source": -2.9973436288421755
+                },
+                {
+                  "abs_contribution": 0.2082789505785377,
+                  "coef": -0.029317716496764974,
+                  "feature": "actions_since_last_observation",
+                  "heldout_source_mean": 0.06323717493249964,
+                  "raw_value": 1.0,
+                  "z_pool": 7.10420099060307,
+                  "z_source": 3.8488288018652392
+                },
+                {
+                  "abs_contribution": 0.20827895057853738,
+                  "coef": 0.029317716496764967,
+                  "feature": "has_attempt_result",
+                  "heldout_source_mean": 0.9367628250675003,
+                  "raw_value": 0.0,
+                  "z_pool": -7.1042009906030605,
+                  "z_source": -3.848828801865239
+                }
+              ],
+              "y": 0
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:iterative__dvc-3794:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t08-run_1-5de814a437:ep0",
+              "p_raw": 0.09031483990373268,
+              "parent_id": "swegym_openhands:iterative__dvc-3794:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t08-run_1-5de814a437",
+              "split_group": "swegym_openhands:iterative__dvc",
+              "top_features": [
+                {
+                  "abs_contribution": 0.9320701393808793,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 1.8,
+                  "z_pool": 43.217419029935044,
+                  "z_source": 9.795733775872998
+                },
+                {
+                  "abs_contribution": 0.4697876977703375,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.5556,
+                  "z_pool": 14.12051844908035,
+                  "z_source": 4.77552934785573
+                },
+                {
+                  "abs_contribution": 0.2082789505785377,
+                  "coef": -0.029317716496764974,
+                  "feature": "actions_since_last_observation",
+                  "heldout_source_mean": 0.06323717493249964,
+                  "raw_value": 1.0,
+                  "z_pool": 7.10420099060307,
+                  "z_source": 3.8488288018652392
+                },
+                {
+                  "abs_contribution": 0.20827895057853738,
+                  "coef": 0.029317716496764967,
+                  "feature": "has_attempt_result",
+                  "heldout_source_mean": 0.9367628250675003,
+                  "raw_value": 0.0,
+                  "z_pool": -7.1042009906030605,
+                  "z_source": -3.848828801865239
+                },
+                {
+                  "abs_contribution": 0.16728171071781262,
+                  "coef": 0.02314114784924356,
+                  "feature": "action_observation_closure_ratio",
+                  "heldout_source_mean": 0.9962735824925395,
+                  "raw_value": 0.8889,
+                  "z_pool": -7.228755972158085,
+                  "z_source": -6.40791871685775
+                }
+              ],
+              "y": 0
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "feature_scaling"
+        },
+        "TP": {
+          "cause_rationale": "no scaling/range/label-prior flag; residual hypothesis (adapter-semantics and environment-policy causes are not mechanically separable from this evidence surface)",
+          "diagnostics": {
+            "share_top_feature_outside_train_range": 0.4,
+            "share_top_feature_z_divergence_ge_1": 0.4666666666666667
+          },
+          "exemplars": [
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:iterative__dvc-3914:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-033238ea1a:ep2",
+              "p_raw": 0.8810278692181359,
+              "parent_id": "swegym_openhands:iterative__dvc-3914:gpt-4o-2024-08-06_maxiter_50_N_v2.1-no-hint-train-t0-run_1-033238ea1a",
+              "split_group": "swegym_openhands:iterative__dvc",
+              "top_features": [
+                {
+                  "abs_contribution": 1.3485357157316145,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 11.0,
+                  "z_pool": 35.274396008830024,
+                  "z_source": 17.612211185537795
+                },
+                {
+                  "abs_contribution": 0.781217065505265,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 0.33330000000000004,
+                  "z_pool": -36.22279466618632,
+                  "z_source": -7.978344779049702
+                },
+                {
+                  "abs_contribution": 0.09927846669000193,
+                  "coef": -0.03326986183010399,
+                  "feature": "actions_without_observation_rate",
+                  "heldout_source_mean": 0.050234730709109,
+                  "raw_value": 0.125,
+                  "z_pool": 2.984036038291284,
+                  "z_source": 0.7065062824755977
+                },
+                {
+                  "abs_contribution": 0.0204905483773898,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 0.9167000000000001,
+                  "z_pool": -0.5194306055516338,
+                  "z_source": 0.3113050945724413
+                },
+                {
+                  "abs_contribution": 0.0188590722233341,
+                  "coef": -0.0218346725037842,
+                  "feature": "n_observations",
+                  "heldout_source_mean": 15.525508028989627,
+                  "raw_value": 24.0,
+                  "z_pool": 0.8637213230500985,
+                  "z_source": 0.7634440146709076
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:getmoto__moto-5478:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t05-run_1-6593c354d7:ep1",
+              "p_raw": 0.7235393743610228,
+              "parent_id": "swegym_openhands:getmoto__moto-5478:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t05-run_1-6593c354d7",
+              "split_group": "swegym_openhands:getmoto__moto",
+              "top_features": [
+                {
+                  "abs_contribution": 0.4696784430581832,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 0.6000000000000001,
+                  "z_pool": -21.777642288225195,
+                  "z_source": -4.746363630486338
+                },
+                {
+                  "abs_contribution": 0.4129715624146657,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 4.0,
+                  "z_pool": 10.802326006691668,
+                  "z_source": 5.480033266836566
+                },
+                {
+                  "abs_contribution": 0.015018011986299451,
+                  "coef": 0.039448095969679915,
+                  "feature": "observation_novelty_rate",
+                  "heldout_source_mean": 0.8680845814977973,
+                  "raw_value": 1.0,
+                  "z_pool": 0.38070308888526333,
+                  "z_source": 0.8447102400348708
+                },
+                {
+                  "abs_contribution": 0.013725484405911854,
+                  "coef": 0.017466082995591912,
+                  "feature": "error_recovery_ratio",
+                  "heldout_source_mean": 0.7962028421202216,
+                  "raw_value": 1.0,
+                  "z_pool": 0.7858364356436351,
+                  "z_source": 0.6876361623586277
+                },
+                {
+                  "abs_contribution": 0.012694257858259235,
+                  "coef": -0.022148708542447937,
+                  "feature": "n_actions",
+                  "heldout_source_mean": 15.323859599261048,
+                  "raw_value": 6.0,
+                  "z_pool": -0.573137609081393,
+                  "z_source": -0.8483822110374307
+                }
+              ],
+              "y": 1
+            },
+            {
+              "dataset": "swegym_openhands",
+              "episode_id": "swegym_openhands:python__mypy-10392:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t03-run_1-c6a8bc4716:ep0",
+              "p_raw": 0.698598468224002,
+              "parent_id": "swegym_openhands:python__mypy-10392:gpt-4o-2024-08-06_maxiter_30_N_v2.1-no-hint-train-t03-run_1-c6a8bc4716",
+              "split_group": "swegym_openhands:python__mypy",
+              "top_features": [
+                {
+                  "abs_contribution": 0.4696784430581832,
+                  "coef": -0.021567001461500285,
+                  "feature": "action_observation_ratio",
+                  "heldout_source_mean": 0.991665397186301,
+                  "raw_value": 0.6000000000000001,
+                  "z_pool": -21.777642288225195,
+                  "z_source": -4.746363630486338
+                },
+                {
+                  "abs_contribution": 0.27931954051224445,
+                  "coef": 0.03822987402517236,
+                  "feature": "new_obs_between_failure_and_attempt",
+                  "heldout_source_mean": 0.8381412533750178,
+                  "raw_value": 3.0,
+                  "z_pool": 7.306316006386189,
+                  "z_source": 3.74686499273639
+                },
+                {
+                  "abs_contribution": 0.026212078623127643,
+                  "coef": 0.013039198612357606,
+                  "feature": "horizon_delta",
+                  "heldout_source_mean": 0.8429746909194259,
+                  "raw_value": 0.74,
+                  "z_pool": -2.0102522710472206,
+                  "z_source": -2.2913463199831177
+                },
+                {
+                  "abs_contribution": 0.017991384595274863,
+                  "coef": -0.02214870854244795,
+                  "feature": "fail_event_index",
+                  "heldout_source_mean": 27.854341338638623,
+                  "raw_value": 3.0,
+                  "z_pool": -0.8122994873852087,
+                  "z_source": -1.1258237137903804
+                },
+                {
+                  "abs_contribution": 0.017991384595274808,
+                  "coef": -0.022148708542447937,
+                  "feature": "n_actions",
+                  "heldout_source_mean": 15.323859599261048,
+                  "raw_value": 3.0,
+                  "z_pool": -0.8122994873852066,
+                  "z_source": -1.1213535708071558
+                }
+              ],
+              "y": 1
+            }
+          ],
+          "n_available": 3,
+          "tentative_cause": "genuinely_different_recovery_dynamics"
+        }
+      },
+      "top_k": 5,
+      "weighting": "parent_x_source_balanced"
+    }
+  },
+  "note": "T arm, primary weighting; 3 TP / 3 TN / 3 FP / 3 FN per cell by prediction confidence; z_pool uses the training-pool scaler, z_source a scaler fit on the held-out source only; tentative causes are heuristic annotations"
+}

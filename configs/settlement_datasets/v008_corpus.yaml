@@ -1,0 +1,67 @@
+# v008 normalized trajectory corpus configuration (correction slice V1c).
+#
+# Rebuild of the v007c corpus with the three preregistered adapter
+# normalizations from .agents/reports/v008-adapter-semantics.md (section 6):
+#
+#   N1 -- swegym_openhands: assistant tool_calls (OpenAI format) are
+#         rendered into the action content (same rendering as the
+#         swe_smith adapter), so cmd_family/mentions_bash and action
+#         hashes are meaningful for the ~48% of swegym actions whose
+#         raw content is empty.
+#   N2 -- corpus builder: cmd_family/mentions_bash are gated on
+#         kind == "action" alone, not on role == "assistant" (nebius
+#         carries role "ai"; previously 100% of its actions had
+#         cmd_family None and mentions_bash False).
+#   N3 -- nebius_swe_agent: user entries before the first ai/assistant
+#         action (the task issue statement) are extracted as context,
+#         not observations, removing the 100% leading-error-run
+#         artifact at its root.
+#
+# N4 (swe_smith dual-format observations) is deliberately NOT applied.
+#
+# Sources, revisions, splits, limits, and the usability rule are
+# IDENTICAL to configs/settlement_datasets/v007c_corpus.yaml.  Action
+# content and event derivation change, so trajectory content hashes (and
+# therefore parent ids) are NOT inherited from v007c; the v007c corpus
+# (data/settlement_datasets/corpora/v007c-trajectories/) is preserved
+# untouched.  The corrected corpus lands in a NEW root
+# (data/settlement_datasets/corpora/v008-trajectories/) and the build
+# summary is written to
+# data/settlement_datasets/runs/v008-transfer/corpus_summary_v1c.json
+# without overwriting earlier summaries.
+#
+# Usability rule (identical to v006/v007/v007c): a parent is accepted
+# iff its terminal label is defined (outcome.success is not None) AND
+# outcome confidence >= min_confidence.
+
+corpus_id: v008-trajectories
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+usability_rule: >-
+  parent accepted iff terminal label defined (outcome.success is not None)
+  AND outcome confidence >= 0.65
+
+datasets:
+  - name: swegym_openhands
+    source_uri: SWE-Gym/OpenHands-Sampled-Trajectories
+    adapter: swegym_openhands
+    split: train.raw
+    max_rows: 3000
+    revision_sha: baf3a4e4bff514d48ddc08a93a2ade5c126212c7
+    license_status: "ambiguous (dataset card declares no license; companion repo SWE-Gym/SWE-Gym is Apache-2.0)"
+
+  - name: nebius_swe_agent
+    source_uri: nebius/SWE-agent-trajectories
+    adapter: nebius_swe_agent
+    split: train
+    max_rows: 5000
+    revision_sha: 68195a1450865274106246d0d0296a1d6807b88e
+    license_status: "identified: cc-by-4.0"
+
+  - name: swe_smith
+    source_uri: SWE-bench/SWE-smith-trajectories
+    adapter: swe_smith
+    split: tool
+    max_rows: 5000
+    revision_sha: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
+    license_status: "identified: mit"

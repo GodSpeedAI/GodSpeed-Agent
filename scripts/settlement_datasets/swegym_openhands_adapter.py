@@ -2,6 +2,15 @@
 
 Normalises rows from ``SWE-Gym/OpenHands-Sampled-Trajectories`` into
 canonical settlement records classified as ``external-proxy-settlement``.
+
+Action content (v008 normalization N1): assistant messages carry the
+actual command in ``tool_calls[].function.{name,arguments}`` (OpenAI
+format) with ``content`` usually empty; each action's content appends
+the rendered tool-call signatures (same rendering as the swe_smith
+adapter).  Without this the corpus builder's ``cmd_family``/
+``mentions_bash`` derivation and the action-hash identity features
+would be degenerate for the ~48% of swegym actions whose ``content``
+is empty.  Assistant messages without ``tool_calls`` are unchanged.
 """
 
 from __future__ import annotations
@@ -17,6 +26,25 @@ from scripts.settlement_datasets.adapter_base import (
     make_empty_payment,
     make_empty_representational_state,
 )
+
+
+def _render_tool_calls(msg: dict[str, Any]) -> str:
+    """Render ``tool_calls[].function.{name,arguments}`` signatures.
+
+    Same rendering as the swe_smith adapter; null-safe for absent or
+    malformed ``tool_calls`` fields.
+    """
+    lines: list[str] = []
+    for call in msg.get("tool_calls") or []:
+        if not isinstance(call, dict):
+            continue
+        function = call.get("function")
+        if not isinstance(function, dict):
+            continue
+        lines.append(
+            f"{function.get('name') or ''} {function.get('arguments') or ''}".strip()
+        )
+    return "\n".join(lines)
 
 
 class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
@@ -81,12 +109,19 @@ class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
         actions: list[dict[str, Any]] = []
         for idx, msg in enumerate(raw.get("messages", [])):
             if msg.get("role") == "assistant":
+                # N1: render non-empty tool_calls into the content (the
+                # command lives there; ``content`` is usually empty).
+                # Null-safe: prose and tool-call signature are individually
+                # optional in the live rows.
+                text = msg.get("content", "")
+                calls = _render_tool_calls(msg)
+                content = "\n".join(part for part in (text, calls) if part)
                 actions.append(
                     {
                         "turn_index": idx,
                         "role": "assistant",
                         "action_type": "message",
-                        "content": msg.get("content", ""),
+                        "content": content,
                     }
                 )
         return actions
@@ -103,6 +138,21 @@ class SWEGymOpenHandsAdapter(SettlementDatasetAdapter):
                     }
                 )
         return observations
+
+    def context_positions(self, raw: dict[str, Any]) -> list[int]:
+        """Indices of context (non-event) messages in the raw message
+        sequence; enables prefix-scoped elapsed counts.
+
+        Actions are ``assistant`` messages and observations are ``tool``
+        messages (matching ``extract_actions``/``extract_observations``),
+        so every other role (system/user context, interleaved or leading)
+        is a context position.
+        """
+        return [
+            idx
+            for idx, msg in enumerate(raw.get("messages", []))
+            if msg.get("role") not in ("assistant", "tool")
+        ]
 
     def extract_outcome(self, raw: dict[str, Any]) -> dict[str, Any]:
         resolved = raw.get("resolved", False)

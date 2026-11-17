@@ -1,0 +1,795 @@
+# =============================================================================
+# PLAN: godspeed-agent-v006-dual-model
+# =============================================================================
+schema: agent.development_plan
+schema_version: "1.0"
+
+metadata:
+  id: "godspeed-agent-v006-dual-model"
+  title: "v006 dual-model settlement classifier: richer trajectory-state features + LightGBM, experimentally validated against explicit H/A/P baselines"
+  status: "settled"
+  version: "1.0.0"
+  created: "2026-09-15"
+  amended: "2026-09-15 (operator amendments 1-12 incorporated; see operator_amendments)"
+  settlement: >-
+    PARTIAL — implementation works but evidence does not justify changing the
+    default. All preregistered gains NOT EARNED; runtime unchanged; H intact.
+    Final report: .agents/reports/godspeed-agent-v006-final.md
+
+  purpose: >-
+    Upgrade the settlement calibration classifier into an experimentally
+    validated dual-model system (LogisticRegression + LightGBM) over a causally
+    prefix-safe trajectory representation, with three explicitly separated
+    baselines (historical H, contemporary A, prefix-compatible P), adopting
+    only what controlled evidence earns while preserving the historical v005
+    record untouched.
+
+# -----------------------------------------------------------------------------
+# SOURCE AUTHORITY
+# -----------------------------------------------------------------------------
+source:
+  spec:
+    intended_repository_path: null
+    artifact_name: "operator-v006-mission-brief + amendments 1-12 (2026-09-15)"
+    spec_id: "REQ-V006"
+    spec_version: "2026-09-15-amend2"
+    sha256: null
+    authority: normative
+  supporting_sources:
+    - path: "https://arxiv.org/html/2609.08183v1"
+      role: "NeoHorse-1 execution representation (distinctions only; §3.2 structural validation rules, §5.1 trace behaviors)"
+    - path: "data/settlement_datasets/runs/hf-calibration-005-features/"
+      role: "H — historical v005 artifacts (immutable)"
+    - path: ".agents/reports/v006-v005-reconstruction.md"
+      role: "T00 recon evidence (settled; verified by main agent)"
+    - path: ".agents/reports/v006-data-and-features.md"
+      role: "T01 research evidence (settled; verified by main agent)"
+
+# -----------------------------------------------------------------------------
+# BASELINE OBJECTS (operator amendment 1 — never conflate)
+# -----------------------------------------------------------------------------
+baselines:
+  H:
+    name: "historical v005 reference"
+    definition: >-
+      The completed hf-calibration-005-features run and its recorded artifacts
+      (ROC-AUC 0.8266, AP 0.6291, balanced-acc 0.7428, F1 0.5208, Brier 0.1771).
+      Uses the data and ingestion behavior that actually occurred, including
+      the agenttrove local-file anomaly (100 rows) and 441 swallowed nebius
+      adapter errors. Historical evidence only; artifacts immutable; never a
+      comparison target for v006 claims.
+  A:
+    name: "A-full — contemporary reproduction baseline (control)"
+    definition: >-
+      Newly trained LogisticRegression on the current shared corpus with the
+      current CORRECTED ingestion pipeline, current recoverable dataset
+      revisions, and the shared grouped splits, using v005 full-trajectory
+      feature semantics. A is NOT a reproduction of H (dataset revisions are
+      unrecoverable and historical ingestion deviated from configuration);
+      A vs H comparisons are forbidden as evidence of model improvement.
+  P:
+    name: "P — v005-prefix-compatible projection baseline"
+    definition: >-
+      The v005 feature family recomputed causally at a trajectory prefix cut.
+      Feature names resemble v005 but the prediction point and therefore some
+      feature semantics differ; it is never called the historical v005 model.
+      Serves as P-A (prefix control arm) and as the P-C estimator ablation.
+      Features without a meaningful causal prefix interpretation are omitted
+      from P and the omission recorded (amendment 10).
+
+# -----------------------------------------------------------------------------
+# NORMATIVE REQUIREMENTS (frozen; amended IDs marked)
+# -----------------------------------------------------------------------------
+requirements:
+  REQ-V006-BASELINE: "Historical v005 artifacts remain untouched; H/A/P baseline separation maintained everywhere results are reported."
+  REQ-V006-DUAL: "LogisticRegression AND lightgbm.LGBMClassifier supported; predictions exposed independently; no silent averaging; disagreement inspectable."
+  REQ-V006-FEATURES: "v005 full-trajectory semantics preserved and test-equivalent for full trajectories; v006 trajectory-state features deterministic and causally computable at the prediction point; unextractable features documented and excluded."
+  REQ-V006-DATA: "Re-stream the three v005 sources with configured limits under CORRECTED ingestion (amendment 8); investigate Toucan-1.5M (screened: REJECTED, no verified terminal label); new sources only under the six admissibility conditions."
+  REQ-V006-LICENSING: "Per-source license status recorded as identified/absent/ambiguous/incompatible; no committed corpus of trajectory contents from unclear-license sources; no permission inferred from prior use (amendment 9)."
+  REQ-V006-PREFIX: "Prefix prediction supported before the outcome is known; six canonical cuts; future events never in features; all prefixes of one parent in one partition (test-proven)."
+  REQ-V006-BALANCE: "Parent-balanced training influence: prefix sample_weight = 1/(training prefixes of that parent) or preregistered bounded-prefix sampling; per-cut reporting by prediction point; no pooled headline without qualification (amendments 3-4)."
+  REQ-V006-SOURCEBALANCE: "Pooled, per-source, and macro-averaged cross-source metrics reported; no source silently dominates the headline; any source weighting preregistered before final-test examination (amendment 5)."
+  REQ-V006-EXPERIMENTS: "Two separated experiment families (amendment 2): full-trajectory arms {H reference, A-full, C-full, optional v006-full} for ingestion/estimator effects; prefix arms {P-A, P-B, P-C, P-D} on identical parents/cuts/splits as the PRIMARY causal experiment for the new representation. Identity variants and LODO reported."
+  REQ-V006-EVALUATION: "ROC-AUC, AP, balanced accuracy, precision, recall, F1, Brier, calibration behavior; grouped held-out; per-cut prefix metrics; LODO; identity-removed variants; calibration necessity verdict."
+  REQ-V006-PREREG: "Frozen preregistration before final training covering datasets, revisions, inclusion/exclusion, parent identity, dedup, splits, prefix rule, parent weighting, source weighting (if any), feature schemas, target, calibration procedure, selection metric, secondary metrics, hyperparameter bounds, acceptance criteria (amendment 11)."
+  REQ-V006-RUNTIME: "Existing on-the-fly-refit affordance predictor and the new trajectory-prefix predictor remain semantically separate surfaces; operational contract documented before integration; new predictor is an additional advisory surface; deployment model (static artifact vs runtime refit vs hybrid) decided explicitly, not silently bundled; LightGBM absence degrades gracefully with explicit reporting; no authority grant or gate bypass (amendments 6-7)."
+  REQ-V006-EVIDENCE: "No target leakage, no future leakage, no parent across splits, defensible labels, dataset identity not carrying the classifier, artifacts match feature schemas, H intact; independent critique before settlement."
+  REQ-V006-REPORT: "Final report with all mandated sections, the H/A/P-separated evidence table (amendment 12), comparable-language results, and one settlement classification."
+
+# -----------------------------------------------------------------------------
+# CURRENT-STATE FINDINGS (updated after T00-T02 settlement, 2026-09-15)
+# -----------------------------------------------------------------------------
+current_state_findings:
+  v005_baseline_H:
+    run_id: "hf-calibration-005-features"
+    artifacts: "data/settlement_datasets/runs/hf-calibration-005-features/"
+    estimator: "LogisticRegression(class_weight='balanced', max_iter=1000, solver='lbfgs', random_state=42); row-level stratified 80/20 (random_state=42)"
+    metrics_held_out: {roc_auc: 0.8266, average_precision: 0.6291, balanced_accuracy: 0.7428, f1: 0.5208, brier: 0.1771}
+    corpus: "8100 scanned / 7659 normalized / 6497 usable / 1289 success (19.84%)"
+    ingestion_anomalies_diagnosed:
+      agenttrove: "AgentTroveAdapter.stream() never contacts HF — ignores source_uri/split and reads local data/agenttrove/raw_samples/sample.jsonl (exactly 100 lines); missing file yields zero rows silently. (adapter stream(): scripts/settlement_datasets/agenttrove_adapter.py:46-60)"
+      nebius: "441 adapter errors = per-row exceptions swallowed by pipeline try/except around to_settlement_record (run_calibration_pipeline.py:561-566); extract_payment crashes on explicit-null HF string fields: generated_patch=null -> TypeError at len(patch) (nebius_swe_agent_adapter.py:158-159); eval_logs=null -> AttributeError at .lower() (lines 161-166). Exact null-field split among the 441 UNDETERMINED (raw/ dir never committed)."
+    no_persisted_model: "No serialized model artifact exists for H; the 11-feature evaluation model is exactly refittable from calibration_frame.csv; godspeed_nav/ml.py runtime adapter refits per call on a DIFFERENT 4-feature subset with different hyperparameters and is NOT the H baseline."
+  research_findings_T01:
+    feature_verdicts: "17 DERIVABLE, 2 CONDITIONAL (evidence-acquisition as lexical novelty only; prefix position only against exogenous budget — fraction-of-final-length LEAKS and is excluded), 0 NOT-DERIVABLE among mechanical candidates"
+    toucan_verdict: "REJECT — no verified terminal outcome label in any of 4 configs; LLM-judge annotations do not gate success (sampled unfinished trajectory scored completeness=1); paper §5.2 uses Toucan only as matched-budget supervision baseline"
+    additional_datasets: "None admitted: nvidia/Nemotron-SFT-SWE-v3 (no outcome labels) and AgentBank (no outcome labels) both fail admissibility"
+    licensing:
+      swegym_openhands: "AMBIGUOUS — HF card declares NO license; companion GitHub repo SWE-Gym/SWE-Gym is Apache-2.0; dataset-level status formally undetermined; recorded as provenance; no trajectory-content commits from this source"
+      agenttrove: "apache-2.0 (identified)"
+      nebius_swe_agent: "cc-by-4.0 (identified)"
+    revision_shas_confirmed_2026_09_15:
+      swegym_openhands: "baf3a4e4bff514d48ddc08a93a2ade5c126212c7"
+      agenttrove: "b395a4307a2bc9950a90dc899438f149e115fc60"
+      nebius_swe_agent: "68195a1450865274106246d0d0296a1d6807b88e"
+  v006_constraints_from_T00:
+    - "All 11 v005 features are trajectory-global but prefix-recomputable (affordance_path preserves turn_indexed actions/observations)"
+    - "tool_diversity_count is de-facto a dataset indicator (nonzero only for swegym rows — only swegym sets metadata.tool_names)"
+    - "dataset_id exposes per-dataset base rates (swegym 12.68%, agenttrove 100%, nebius 21.91% success in H)"
+    - "Labels exist only at trajectory end; prefix rows back-propagate terminal settlement_success"
+    - "New extractors must use null-safe access (raw.get(k) or '') to avoid nebius-style crashes"
+    - "agenttrove needs a real HF streaming path for corrected ingestion"
+  dependency_state_T02:
+    lightgbm: "4.7.0 installed via uv (ml extra: lightgbm>=4.6); narwhals 2.26.0 added; import/fit/predict_proba verified in venv"
+    tests: "tests/test_computation.py extended (29 passed); tests/test_calibration_pipeline.py 19 passed"
+    operational_note: "uv sync --extra ml removes dev-extra packages; pair with --extra dev"
+
+# -----------------------------------------------------------------------------
+# OPERATOR AMENDMENTS (2026-09-15, items 1-12) — incorporated
+# -----------------------------------------------------------------------------
+operator_amendments:
+  amendment_1_H_A_P: "Three baselines separated (see baselines:). GAP-01 resolution revised accordingly."
+  amendment_2_matrix: "Experiment matrix corrected by prediction task: full-trajectory arms {H, A-full, C-full, optional v006-full} separate from prefix arms {P-A, P-B, P-C, P-D}; prefix family is the PRIMARY causal experiment; representation gain claims require same prediction point and same parent population."
+  amendment_3_parent_balance: "Grouped splits necessary but not sufficient; parent-balancing via sample_weight = 1/(training prefixes per parent) (both estimators accept sample_weight; chosen) or preregistered bounded-prefix sampling fallback."
+  amendment_4_per_cut: "Prefix metrics reported per prediction point (early, 25%, 50%, after_first_failure, after_first_recovery, pre_terminal) with eligible-parent counts and class balance; combined metric only parent-balanced and never replacing per-cut results."
+  amendment_5_source_balance: "Pooled + per-source + macro-averaged metrics; source weighting/bounded sampling only if preregistered before final-test examination; corrected ingestion may shift source mixture vs H — never silently."
+  amendment_6_runtime_contract: "Before T07: document current operational contract (trained offline vs fit at runtime, data, prediction, consumers); existing affordance/settlement-history predictor and new trajectory-prefix predictor kept separate unless evidence shows same problem; new surface is additional + advisory; no consumer-semantics changes to fit the diagram."
+  amendment_7_artifacts: "Persist experiment/training artifacts for reproducibility; operational deployment model (static pretrained artifact vs runtime refit vs hybrid) is an explicit, separately surfaced decision; do not silently bundle persisted production models into v006."
+  amendment_8_gap03: "H preserved as evidence; anomalies diagnosed (done in T00, verified); correct ingestion where justified; build contemporary corpus; record current SHAs; state historical revisions unrecoverable; final report must not write 'v006 improved from 0.8266' — use H/A/P comparable language."
+  amendment_9_gap06: "Licensing recorded per source as identified/absent/ambiguous/incompatible; no committed trajectory-content corpus from unclear-license sources; no silent inference from prior use."
+  amendment_10_gap09: "'v005 full-trajectory semantics' vs 'v005-prefix-compatible projection' named explicitly; never implied mathematically identical; prefix-incompatible v005 features omitted and omission recorded."
+  amendment_11_prereg: "Preregistration frozen before final training with the expanded content list (see REQ-V006-PREREG); final-test evidence evaluates the preregistered system, never redesigns it."
+  amendment_12_table: "Final report carries the H/A-full/C-full/P-A/P-B/P-C/P-D evidence table; additional arms only for specific questions."
+
+invalidated_completed_work:
+  T00_recon: "NOT invalidated — report remains valid evidence; its anomaly diagnoses now DRIVE T03 corrections (agenttrove HF streaming, nebius null-safety)."
+  T01_research: "NOT invalidated — feature verdicts and admissibility screens stand; licensing finding now ENFORCES amendment 9's no-commit rule in T03."
+  T02_lightgbm: "NOT invalidated — dependency work unaffected by amendments."
+  plan_T05_contract: "SUPERSEDED before execution (not yet started) — original single A/B/C/D matrix replaced by amendment-2 two-family matrix; preregistration contents expanded."
+  plan_GAP_01_resolution: "REVISED — A is explicitly NOT a reproduction of H; original observation preserved below."
+  plan_guardrail_freeze: "REVISED — 'do not modify v005 pipeline behavior' narrowed to: v005 run artifacts immutable + historical behavior documented; justified forward-looking ingestion corrections permitted (amendment 8) since they change A, not H."
+
+# -----------------------------------------------------------------------------
+# SURFACED INSTRUCTION GAPS (main agent, 2026-09-15 — not silently accepted)
+# -----------------------------------------------------------------------------
+# Original observations preserved; resolutions marked REVISED where amendments
+# superseded them.
+surfaced_instruction_gaps:
+  - id: GAP-01
+    gap: >
+      Brief says "the existing trained v005 model must remain preserved as the
+      baseline", but no persisted v005 model artifact exists: v005 produced
+      metrics + a calibration frame only; godspeed_nav/ml.py refits
+      LogisticRegression on-the-fly at runtime and the pipeline refits per run.
+    original_resolution: >
+      Baseline preservation = (a) v005 run artifacts byte-untouched, (b)
+      experiment arm A reproduces v005 features + LogisticRegression on the
+      shared corpus as the comparable baseline.
+    revised_resolution: >
+      AMENDED by operator amendment 1: three objects separated — H (historical
+      record, immutable, never a comparison target), A (contemporary control on
+      the shared corpus, NOT a reproduction of H), P (v005-prefix-compatible
+      projection). A-vs-H deltas are forbidden as improvement evidence.
+  - id: GAP-02
+    gap: >
+      "NeoHorse-1" is cited as the inspiration source; the paper exists at
+      arxiv 2609.08183v1 and defines NO classifier feature set. Its transferable
+      content is the deterministic structural-validation rule set (tool-call
+      closure, orphan observations, unresolved internal calls, causal event
+      order, duplicated/conflicting tool-call ids) and trace-analysis behavioral
+      distinctions (evidence acquisition, edit-test-inspect-repair loops,
+      verification after modification, strategy switching vs repeated failed
+      attempts, interaction-budget efficiency).
+    resolution: "CONFIRMED by T01: paper read and mined; distinctions mapped to 17 derivable + 2 conditional features; LLM-training architecture excluded."
+  - id: GAP-03
+    gap: >
+      Configured limits were recovered but the executed v005 run did not honor
+      them: agenttrove scanned 100 rows (max 5000), nebius logged 441 adapter
+      errors; v005 recorded no dataset revision SHAs, so the exact v005 data
+      revision is unrecoverable.
+    original_resolution: "T03 re-streams with configured limits, verifies yields, diagnoses anomalies, records current SHAs."
+    revised_resolution: >
+      AMENDED by operator amendment 8: diagnosis COMPLETE (T00 — agenttrove
+      local-file bug; nebius null-field crashes). T03 CORRECTS ingestion where
+      justified instead of reproducing anomalies; H stays as historical
+      evidence; final report uses H/A/P comparable language only.
+  - id: GAP-04
+    gap: >
+      Prefix rows of one parent share the terminal label and are strongly
+      correlated; grouped splitting alone still lets event-rich parents dominate
+      training.
+    original_resolution: "All splits grouped by parent; parent-level aggregation in metrics; known confound in preregistration."
+    revised_resolution: >
+      AMENDED by operator amendment 3: grouped splits PLUS explicit
+      parent-balancing — sample_weight(prefix) = 1/(number of training prefixes
+      for that parent); both estimators consume sample_weight; recorded in
+      preregistration.
+  - id: GAP-05
+    gap: >
+      Toucan-1.5M is synthetic tool-agent SFT data and likely lacks verified
+      terminal outcomes.
+    resolution: "CONFIRMED by T01: REJECTED for supervised training — no verified terminal label in any config; recorded with evidence."
+  - id: GAP-06
+    gap: >
+      SWE-Gym/OpenHands-Sampled-Trajectories exposes no license field via HF
+      API.
+    original_resolution: "T01 checks card/repo licensing; absence surfaced."
+    revised_resolution: >
+      AMENDED by operator amendment 9: status recorded as AMBIGUOUS (dataset
+      card license absent; companion GitHub Apache-2.0; formally undetermined).
+      Consequence enforced in T03: no trajectory-content files from this source
+      are committed; corpus stays local; feature-level aggregates (consistent
+      with existing committed calibration_frame.csv practice) are commit-eligible.
+      Licensing kept separate from statistical merits.
+  - id: GAP-07
+    gap: >
+      The brief's runtime diagram implies runtime prefix prediction, but the
+      existing runtime task (predict affordance candidates from settlement
+      history) is a different prediction point than v006's trajectory-prefix
+      success prediction.
+    original_resolution: "T07 integrates an additional advisory surface loading persisted artifacts; existing consumers byte-compatible."
+    revised_resolution: >
+      AMENDED by operator amendments 6-7: T07 must FIRST document the current
+      operational contract; the two predictors stay semantically separate;
+      deployment model (static artifact vs runtime refit vs hybrid) is an
+      explicit decision surfaced to the operator, not silently bundled;
+      persisted experiment artifacts remain for reproducibility regardless.
+  - id: GAP-08
+    gap: >
+      Early/25%/50% cuts coincide for very short trajectories;
+      after-first-recovery is undefined without a recovery attempt.
+    resolution: "STANDING (amendment 4 confirms): undefined cuts absent; per-cut eligible-parent counts reported; no synthetic padding."
+  - id: GAP-09
+    gap: >
+      v005 features horizon_delta / risk_estimate / debt_estimate are derived
+      proxies over the full trajectory; recomputing on prefixes changes
+      semantics.
+    original_resolution: "Exact replication for full trajectories (test-proven); causal recomputation on prefixes; difference documented."
+    revised_resolution: >
+      AMENDED by operator amendment 10: naming enforced — "v005 full-trajectory
+      semantics" vs "v005-prefix-compatible projection"; prefix-incompatible
+      features (if any are found during T04) are omitted from P and the
+      omission recorded, never smuggled.
+
+# -----------------------------------------------------------------------------
+# TARGET SETTLEMENT
+# -----------------------------------------------------------------------------
+target_settlement: >-
+  Immutable historical H; corrected contemporary ingestion producing a shared
+  local corpus with recorded revisions and licensing statuses; a causally
+  prefix-safe v006 extractor with purity and grouping tests; a frozen
+  preregistration; completed two-family experiment matrix (A-full/C-full
+  controls; P-A/P-B/P-C/P-D primary) with parent-balanced training, per-cut and
+  per-source reporting, LODO, identity variants, and calibration analysis; an
+  independent leakage/critique audit; an explicitly decided runtime posture
+  (integration only if earned, separate advisory surface, deployment model
+  surfaced); and a final report that separates H/A/P and states one settlement
+  classification with the smallest justified next move.
+
+# -----------------------------------------------------------------------------
+# OPERATING CONTRACT
+# -----------------------------------------------------------------------------
+operating_contract:
+  core_principle: >-
+    Deterministic features from causally available events only; comparable
+    claims only within the same corpus, prediction point, and parent
+    population; adoption decided by the frozen preregistered matrix; H stays
+    intact as historical record; v005 architecture remains the fallback.
+  rules:
+    - "Execute tasks by dependency; every task leaves the repository green."
+    - "A subagent summary is never proof; the main agent inspects diffs and reruns gates."
+    - "No tuning, threshold selection, or model selection against final-test parents."
+    - "H artifacts byte-untouched; git-verified in T08."
+    - "Ingestion corrections change A, never H; both facts documented."
+    - "All prefixes of one parent in one partition; parent-balanced training weights."
+    - "Future events never enter prefix features; prefix-purity tests prove it."
+    - "No invented labels or features; per-source licensing recorded; no trajectory-content commits from ambiguous-license sources."
+    - "Per-cut and per-source metrics accompany any pooled headline."
+    - "Preregistration frozen before final training; final test evaluates, never redesigns."
+    - "Runtime predictions advisory; deterministic ranking, gates, policies authoritative; existing predictor semantics unchanged."
+  claim_states: [OBSERVED, INFERRED, DECIDED, ASSUMED, UNKNOWN]
+  correction_protocol:
+    - "Preserve failed evidence; classify the failure; correct the smallest falsified layer."
+    - "Rerun gate + confirmation; append correction rounds; never weaken acceptance."
+  scope_control: >-
+    Discoveries that do not block a REQ-V006-* requirement go to
+    .agents/OBSERVED_DEBT.md.
+
+# -----------------------------------------------------------------------------
+# ARTIFACTS
+# -----------------------------------------------------------------------------
+artifacts:
+  current_status: ".agents/current_status.yml"
+  decision_log: ".agents/reports/godspeed-agent-v006-final.md + state/decisions.jsonl"
+  evidence_root: "data/settlement_datasets/runs/hf-calibration-006-experiments/"
+  reports_root: ".agents/reports/"
+  corpus_root: "data/settlement_datasets/corpora/v006-trajectories/  # LOCAL ONLY (gitignored; amendment 9)"
+  commit_rule: >-
+    Committed: corpus_summary.json (counts/SHAs/hashes, no trajectory content)
+    in evidence_root; feature-level frames consistent with existing
+    calibration_frame.csv practice. NOT committed: event-level corpus JSONL
+    (contains trajectory content; swegym license ambiguous).
+  status_rule: "current_status.yml is operational projection, never normative authority."
+
+# -----------------------------------------------------------------------------
+# VERIFICATION MODEL
+# -----------------------------------------------------------------------------
+verification:
+  global_gates:
+    - id: GATE_UNIT
+      command: "uv run pytest tests/test_calibration_pipeline.py tests/test_settlement_datasets.py tests/test_v006_corpus.py tests/test_v006_features.py tests/test_v006_experiments.py tests/test_computation.py -q"
+    - id: GATE_FULL
+      command: "uv run pytest -q"
+    - id: GATE_VALIDATE
+      command: "uv run python -m godspeed_nav.cli validate --workspace-root . --storage-root .godspeed-harness/validation"
+    - id: GATE_DOCS
+      command: "uv run pytest tests/test_docs_alignment.py -q"
+  gate_binding_rule: "Reuse existing gates; v006 adds its own test modules rather than competing surfaces."
+  proof_levels:
+    P0: "mechanical — narrow gate"
+    P1: "behavioral + teeth"
+    P2: "invariant-sensitive (leakage, purity, balance) — adversarial teeth + evidence"
+    P3: "settlement-critical (preregistered experiments, adoption, runtime) — frozen preregistration + fresh independent confirmation"
+
+# -----------------------------------------------------------------------------
+# DEPENDENCY GRAPH
+# -----------------------------------------------------------------------------
+dependency_graph:
+  edges:
+    - ["T00", "T03"]
+    - ["T01", "T03"]
+    - ["T01", "T04"]
+    - ["T00", "T04"]
+    - ["T02", "T05"]
+    - ["T03", "T04"]
+    - ["T04", "T05"]
+    - ["T05", "T06"]
+    - ["T06", "T07"]
+    - ["T06", "T08"]
+    - ["T07", "T08"]
+  critical_path: ["T00", "T03", "T04", "T05", "T06", "T08"]
+  settlement_sequence:
+    - "recon + research + dependency (T00,T01,T02) — SETTLED"
+    - "corrected ingestion + corpus (T03)"
+    - "features + prefixes (T04)"
+    - "preregistration + experiments (T05)"
+    - "independent critique (T06)"
+    - "runtime posture decision + conditional integration (T07)"
+    - "final verification, docs, report (T08)"
+
+initial_state:
+  current_task: "none — plan settled"
+  last_settled_task: "T08"
+  ready: []
+  blocked: {}
+
+task_status_record:
+  T00: {status: settled, evidence: ".agents/reports/v006-v005-reconstruction.md"}
+  T01: {status: settled, evidence: ".agents/reports/v006-data-and-features.md"}
+  T02: {status: settled, evidence: "pyproject.toml ml extra + tests/test_computation.py (lightgbm 4.7.0)"}
+  T03: {status: settled, evidence: "build_trajectory_corpus.py + corpus_summary.json (T03+T03b corrections)"}
+  T04: {status: settled, evidence: "v006_features.py + tests/test_v006_features.py (92 feature/corpus tests)"}
+  T05: {status: settled, evidence: "preregistration + run_v006_experiments.py + results artifacts; all gains NOT EARNED"}
+  T06: {status: settled, evidence: ".agents/reports/v006-critique.md — VERDICT: CONFIRM, zero blockers"}
+  T07: {status: settled, evidence: ".agents/reports/v006-runtime-contract.md — documented no-integration decision (amendment-6/7 path)"}
+  T08: {status: settled, evidence: ".agents/reports/godspeed-agent-v006-final.md — PARTIAL; gates 907 passed / 2 skipped / 0 failed; validate pass"}
+
+# =============================================================================
+# TASK CONTRACTS
+# =============================================================================
+
+tasks:
+
+  T00:
+    title: "Recon: reconstruct historical v005 (H)"
+    status: settled
+    settles: ["REQ-V006-BASELINE"]
+    evidence: ".agents/reports/v006-v005-reconstruction.md"
+    settlement_note: "Main agent verified anomaly diagnoses (agenttrove local-file stream; nebius null-field crashes; no persisted model; runtime 4-feature refit)."
+
+  T01:
+    title: "Research: NeoHorse distinctions + dataset admissibility + licensing"
+    status: settled
+    settles: ["REQ-V006-FEATURES", "REQ-V006-DATA", "REQ-V006-LICENSING"]
+    evidence: ".agents/reports/v006-data-and-features.md"
+    settlement_note: "17 derivable / 2 conditional features; Toucan REJECT; no additional datasets admitted; licensing statuses recorded (swegym AMBIGUOUS)."
+
+  T02:
+    title: "LightGBM dependency via uv"
+    status: settled
+    settles: ["REQ-V006-DUAL"]
+    evidence: "pyproject.toml (ml extra += lightgbm>=4.6), uv.lock, tests/test_computation.py LightGBM contract tests"
+    settlement_note: "lightgbm 4.7.0; 29+19 tests pass; skipif contract survives extra removal."
+
+  T03:
+    title: "Corrected ingestion + shared trajectory corpus (contemporary, A-feeding)"
+    status: settled
+    settles: ["REQ-V006-DATA", "REQ-V006-LICENSING"]
+    evidence: >-
+      scripts/settlement_datasets/build_trajectory_corpus.py +
+      configs/settlement_datasets/v006_corpus.yaml + tests/test_v006_corpus.py +
+      data/settlement_datasets/runs/hf-calibration-006-experiments/corpus_summary.json
+      (+ local gitignored corpus under data/settlement_datasets/corpora/v006-trajectories/)
+    settlement_note: >-
+      SETTLED after builder pass (T03) + correction pass (T03b), both verified
+      by main agent. Ingestion corrections: agenttrove adapter now streams HF
+      when no input_path (local-file bug fixed); nebius extract_payment +
+      metadata fields null-safe (441 historical crashes -> 0). Identity model:
+      parent_id = trajectory run (dataset:instance:run_discriminator with
+      content-hash component); group_key = dataset:instance (splits and prefix
+      grouping key on group_key — same-instance runs never straddle partitions);
+      dedup = true content duplicates only. AGENTTROVE REJECTED at live revision
+      b395a4307a2bc9950a90dc899438f149e115fc60: every label column (task_binary,
+      judgment, verifier_output, result, ground_truth) is null; README-documented
+      reward/task_id columns absent at this revision; only remaining label path
+      is agent self-report (confidence 0.6 < 0.65 gate) — amends T01's
+      conditional-admit finding (revision drift is material). Final corpus:
+      swegym_openhands 1574 parents (240 S / 1334 F; 318 true duplicates
+      dropped), nebius_swe_agent 225 parents (59 S / 166 F; 4329 exact
+      duplicates dropped — source is dominated by repeated identical runs),
+      total 1799 parents / 299 successes (16.6%). Dataset strategy for T05 is
+      TWO sources; LODO degenerates to two folds — reported but marked weak;
+      swegym = 87.8% of parents so amendment-5 source-balance reporting is
+      mandatory.
+    changes: >-
+      (1) CORRECT ingestion where justified (amendment 8): agenttrove adapter
+      gains a real HF streaming path (source_uri/split honored; local-file
+      fallback only when input_path given — fixtures keep working); nebius
+      extract_payment made null-safe (raw.get(k) or "" semantics) so explicit
+      nulls no longer crash normalization. H artifacts untouched; these
+      corrections change A, not H. (2) New scripts/settlement_datasets/build_trajectory_corpus.py
+      + configs/settlement_datasets/v006_corpus.yaml streaming the three
+      sources with configured limits (3000/5000/5000), normalizing each parent
+      into an ordered event list (turn_index, kind action|observation,
+      action_type, tool_name, is_error, content-derived markers), attaching
+      terminal label + dataset + revision SHA + per-source license status.
+      (3) Corpus materialized under data/settlement_datasets/corpora/v006-trajectories/
+      (LOCAL ONLY — .gitignore added; amendment 9). (4) Committed summary
+      artifact data/settlement_datasets/runs/hf-calibration-006-experiments/corpus_summary.json:
+      per-dataset scanned/normalized/usable/rejected/label counts, revision
+      SHAs, license statuses, corpus file sha256s, dedup stats. NO trajectory
+      content committed.
+    proves: "Contemporary corpus uses identical parents for all experiments; corrected ingestion yields materialize; event order causal; actions/observations distinguishable; terminal labels only from source outcome fields; licensing + revisions recorded; dedup counts logged."
+    does_not_prove: "Feature quality (T04) or predictive value (T05)."
+    hot_context:
+      - "scripts/settlement_datasets/agenttrove_adapter.py (stream() ignores HF kwargs — fix minimally, keep fixture path working)"
+      - "scripts/settlement_datasets/nebius_swe_agent_adapter.py:153-170 (null-unsafe extract_payment)"
+      - "KNOWN: swegym rows carry metadata.tool_names; agenttrove labels CONDITIONAL on per-source non-null label filter (T01); agenttrove parent id may need hash-of-first-user-message fallback (preregistration finalizes)"
+    steps:
+      - "Minimal adapter corrections + unit tests for corrected behavior (fixture-based)."
+      - "Corpus builder + config; run live streaming; write corpus + manifest."
+      - ".gitignore entry for corpora dir; corpus_summary.json committed."
+      - "tests/test_v006_corpus.py: ordering, causal indices, label provenance, null-safety, dedup, manifest contents."
+    gate:
+      - "uv run pytest tests/test_v006_corpus.py tests/test_agenttrove.py tests/test_settlement_datasets.py tests/test_calibration_pipeline.py -q"
+    teeth:
+      - attack: "Fixture row with no outcome field."
+        expected: "Rejected into rejected-ledger with reason; no invented label."
+      - attack: "agenttrove adapter called with source_uri but no input_path in a sandbox that blocks network (monkeypatched load_dataset)."
+        expected: "Adapter attempts HF path (proving the fix), not the local file."
+      - attack: "nebius fixture row with generated_patch=None and eval_logs=None."
+        expected: "Normalizes without exception; nulls recorded, not crashed."
+    redesign_trigger: "If live streaming schemas have drifted from adapter expectations materially, stop and reconcile before features."
+    evidence: "data/settlement_datasets/runs/hf-calibration-006-experiments/corpus_summary.json + local corpus + adapter diffs"
+    done_when:
+      - "Corpus materialized from live streams with corrected ingestion; counts + SHAs + licensing recorded; gates green; H artifacts untouched (git-verified)."
+
+  T04:
+    title: "v006 feature representation + v005-prefix-compatible projection + causal prefix generator"
+    initial_status: blocked
+    depends_on: ["T01", "T03"]
+    proof_level: P2
+    confirmation: builder_with_main_agent_review
+    settles: ["REQ-V006-FEATURES", "REQ-V006-PREFIX", "REQ-V006-BALANCE"]
+    changes: >-
+      New scripts/settlement_datasets/v006_features.py providing THREE named
+      feature families (amendments 1, 10): (a) v005_full_semantics — exact
+      replication of the 11 v005 features over a complete trajectory
+      (equivalence-tested against the H pipeline's formulas); (b)
+      v005_prefix_compatible — the causal projection of that family onto a
+      prefix (features without meaningful causal prefix interpretation omitted
+      and the omission recorded — none expected, since T00 showed all 11 are
+      prefix-recomputable, but the check is explicit); (c) v006 — the 17
+      derivable + accepted conditional trajectory-state features from T01.
+      Prefix generator produces the six canonical cuts (early=min(8 events,
+      10%), pct25, pct50, after_first_failure, after_first_recovery,
+      pre_terminal=all events strictly before the final event); undefined cuts
+      skipped with per-cut yield counts. Frame builder emits
+      (group_id=parent, prefix_kind, label, sample_weight_base, features…)
+      where sample_weight_base = 1/prefix_count_of_parent (amendment 3; final
+      training weights = base × preregistered source weight, if any).
+    proves: "Every feature value computable from events at/before the cut; future-event mutation leaves vectors bit-identical; v005_full_semantics reproduces H formulas exactly on full trajectories; P family named and separated; all prefixes of a parent share one group id."
+    does_not_prove: "Predictive value (T05)."
+    hot_context:
+      - "run_calibration_pipeline.py external_record_to_model_calibration (H formulas to replicate exactly)"
+      - ".agents/reports/v006-data-and-features.md derivability table"
+      - "KNOWN: fraction-of-final-length is EXCLUDED (leaks); evidence-acquisition admitted only as lexical observation novelty"
+    steps:
+      - "Implement the three families with a schema version tag; module docstring documents the H-vs-P semantic distinction verbatim."
+      - "Prefix generator + per-cut yield accounting."
+      - "tests/test_v006_features.py: purity (post-cut mutation invariance), v005 full equivalence vs external_record_to_model_calibration on fixture corpora, group integrity, per-cut yields, weight computation."
+    gate:
+      - "uv run pytest tests/test_v006_features.py -q"
+    teeth:
+      - attack: "Mutate events strictly after a cut."
+        expected: "Feature vector bit-identical."
+      - attack: "Compute prefix position as fraction of FINAL length."
+        expected: "Rejected/excluded — leaks (tested)."
+      - attack: "Ungrouped split helper."
+        expected: "Group-integrity test fails it."
+    redesign_trigger: "If a v005 feature proves non-reproducible even on full trajectories from corpus events, stop and document before proceeding."
+    evidence: "scripts/settlement_datasets/v006_features.py + tests"
+    done_when:
+      - "Three families implemented and named; purity + equivalence + grouping tests green; omissions (if any) recorded."
+
+  T05:
+    title: "Frozen preregistration + two-family experiment matrix + evaluation"
+    initial_status: blocked
+    depends_on: ["T02", "T04"]
+    proof_level: P3
+    confirmation: independent_adversarial
+    settles: ["REQ-V006-EXPERIMENTS", "REQ-V006-EVALUATION", "REQ-V006-PREREG", "REQ-V006-BALANCE", "REQ-V006-SOURCEBALANCE"]
+    changes: >-
+      (1) .agents/reports/v006-experiment-preregistration.yaml FROZEN before
+      final training, containing (amendment 11): admitted datasets + revision
+      SHAs + inclusion/exclusion reasons (Toucan rejection cited); parent
+      identity definition per dataset; deduplication rule; grouped split
+      strategy (parent-level, seed fixed, test touched once); prefix-generation
+      rule; parent weighting rule (1/n_train_prefixes; both estimators consume
+      sample_weight); source weighting rule if corpus parent counts are highly
+      unequal (bounded sampling OR weights — chosen before any final-test
+      examination, or explicitly 'none'); feature schemas (three families);
+      target definition; calibration procedure (out-of-fold isotonic or Platt
+      on train CV if needed; never fit on test); model-selection metric
+      (grouped-CV ROC-AUC primary, AP tiebreak); secondary metrics; small
+      preregistered hyperparameter grid bounds; acceptance criteria.
+      (2) scripts/settlement_datasets/run_v006_experiments.py executing:
+      FULL-TRAJECTORY FAMILY {A-full: v005_full_semantics + LogisticRegression;
+      C-full: same corpus/splits/features + LightGBM; optional v006-full arm
+      only if it answers the estimator-family question on full semantics};
+      PREFIX FAMILY (PRIMARY) {P-A: v005_prefix_compatible + LogisticRegression;
+      P-B: v006 + LogisticRegression; P-C: v005_prefix_compatible + LightGBM;
+      P-D: v006 + LightGBM}; identity variants (±dataset_id) for every arm;
+      LODO per source; parent-balanced training weights throughout; per-cut
+      metrics (eligible parents, class balance, ROC-AUC, AP, Brier, balanced
+      acc, precision, recall, F1) plus parent-balanced pooled prefix metric
+      clearly subordinated to per-cut results; pooled + per-source +
+      macro-averaged metrics; calibration analysis (reliability, ECE,
+      before/after out-of-fold calibration); disagreement analysis
+      (|p_logit − p_lgbm|) distribution and its per-cut behavior. Results
+      persisted under evidence_root with versions + seeds.
+    proves: "Which of {representation P-A→P-B, estimator P-A→P-C, combined P-A→P-D} is real at each prediction point on identical parents/splits; whether dataset identity carries the classifier; how signal develops along trajectories; whether calibration is needed; estimator behavior on full trajectories (C-full vs A-full)."
+    does_not_prove: "Local harness capability; trajectories outside the corpus; H-vs-A comparability."
+    preregistration:
+      required: true
+      artifact: ".agents/reports/v006-experiment-preregistration.yaml"
+      claim: >-
+        Primary endpoint: parent-balanced pooled ROC-AUC difference P-B vs P-A
+        on held-out test parents, with per-cut direction consistency as a
+        gating condition. Secondary: P-C, P-D vs P-A; AP; identity-removed
+        variants; LODO. Adoption requires preregistered material gains (see
+        acceptance criteria in the frozen file).
+      falsifier: >-
+        P-B ≤ P-A on the primary endpoint, or gains present only with
+        dataset_id and vanishing without it, or gains not direction-consistent
+        across cuts, or calibration-only improvement (i.e., ranking unchanged).
+      known_confounds:
+        - "dataset identity as proxy for label priors (identity variants + LODO)"
+        - "prefix-row correlation (parent balancing + grouped splits)"
+        - "source mixture shift vs H (per-source + macro metrics; H never compared)"
+        - "class imbalance (~20% success expected; balanced class weights fixed)"
+      confirmation_condition: >-
+        Independent critic (T06) finds no leakage/contamination/label defect
+        and reproduces the primary comparison from the frozen corpus within
+        rounding.
+    hot_context:
+      - "Corpus from T03; feature families from T04; lightgbm from T02"
+      - "Test parents touched exactly once, after all frozen choices."
+    steps:
+      - "Draft preregistration from corpus stats; freeze; only then implement runner."
+      - "Implement runner with grouping + weights + per-cut/per-source accounting; tests/test_v006_experiments.py (grouping enforced, label columns rejected, weights honored, reproducibility with fixed seed)."
+      - "Execute matrix; persist results + manifest (versions, seeds, runtimes)."
+      - "Summarize with H/A/P comparable language; include negative results."
+    gate:
+      - "uv run pytest tests/test_v006_experiments.py -q"
+      - "preregistration file exists, frozen (committed) before results artifacts"
+    teeth:
+      - attack: "Random ungrouped split in a helper."
+        expected: "Runner refuses; test proves refusal."
+      - attack: "settlement_success/settlement_score among features."
+        expected: "Whitelist rejects label columns; test proves."
+      - attack: "Fit calibration transform on test fold."
+        expected: "Runner structure prevents; audit test proves calibration uses out-of-fold train predictions only."
+    independent_confirmation:
+      verifier_receives:
+        - "preregistration, corpus summary, runner code, results artifacts"
+        - "exact question: preregistered comparisons valid, leakage-free, honestly summarized with H/A/P separation?"
+      verifier_should_not_receive:
+        - "builder's narrative conclusions (results data only)"
+      required_verdict: "CONFIRM or REJECT with evidence"
+    redesign_trigger: "Corpus size/classes making preregistered endpoints underpowered → stop, document, re-preregister; never quietly switch endpoints."
+    evidence: "data/settlement_datasets/runs/hf-calibration-006-experiments/"
+    done_when:
+      - "All preregistered arms + variants + LODO + per-cut + per-source + calibration + disagreement artifacts exist; preregistration honored; gates green."
+
+  T06:
+    title: "Independent leakage/critique audit"
+    initial_status: blocked
+    depends_on: ["T05"]
+    proof_level: P3
+    confirmation: independent_adversarial
+    settles: ["REQ-V006-EVIDENCE"]
+    changes: "No implementation. Fresh critic subagent audits: target leakage; future-prefix leakage; parent/split contamination; parent-weight correctness; label defensibility; dataset-identity dependence; per-cut/per-source reporting faithfulness; calibration correctness; artifact/schema consistency; H/A/P separation in all reported numbers; v005/H artifacts intact. Produces .agents/reports/v006-critique.md with BLOCKER/MAJOR/MINOR/NOTE findings."
+    proves: "An unconfounded auditor given code + data + results cannot find an audit-list defect — or findings are fixed and re-verified."
+    does_not_prove: "Significance beyond the corpus; production readiness."
+    hot_context:
+      - "run_v006_experiments.py, v006_features.py, build_trajectory_corpus.py, preregistration YAML"
+      - "data/settlement_datasets/runs/hf-calibration-005-features/ (must remain untouched)"
+    steps:
+      - "Fresh subagent runs its own checks (re-extract sampled parents, re-verify split integrity and weights, re-derive P-A vs P-B)."
+      - "Main agent adjudicates findings; repairs routed to owning task."
+    gate:
+      - ".agents/reports/v006-critique.md exists with verdict"
+    teeth:
+      - attack: "Critic actively attempts to forge a leak explanation that survives scrutiny."
+        expected: "Any surviving explanation disproven by targeted test, or finding stands."
+    redesign_trigger: "BLOCKER finding → back to owning task with failed evidence preserved."
+    evidence: ".agents/reports/v006-critique.md"
+    done_when:
+      - "Verdict CONFIRM (after repairs + re-verification if needed); main agent concurs after independent inspection."
+
+  T07:
+    title: "Runtime posture: operational-contract documentation + conditional integration"
+    initial_status: blocked
+    depends_on: ["T06"]
+    proof_level: P3
+    confirmation: independent_if_needed
+    settles: ["REQ-V006-RUNTIME"]
+    changes: >-
+      (1) MANDATORY FIRST: .agents/reports/v006-runtime-contract.md documenting
+      the CURRENT operational contract per amendment 6: what is trained offline
+      (answer today: nothing persisted; evaluation-time refits only), what is
+      fit at runtime (SklearnPredictiveModelAdapter refits LogisticRegression
+      per call on a 4-feature subset of settlement-history rows), what data
+      feeds each (ledger settlements vs external corpus), what prediction is
+      made (affordance-candidate success probability), what consumers use the
+      result (predictive extension plan / reports). Then the SEPARATE new
+      predictor: trajectory-prefix settlement success prediction. (2) Only
+      evidence-earned components integrated per preregistered acceptance: an
+      ADDITIONAL advisory surface (new provider name, existing registry
+      untouched defaults) exposing p_logit, p_lgbm, and |p_logit − p_lgbm|
+      independently — never averaged. (3) Deployment-model decision EXPLICIT
+      (amendment 7): static pretrained artifact vs runtime refit vs hybrid —
+      chosen from repo-architecture fit + predictor purpose, surfaced to the
+      operator in the final report; persisted production models NOT silently
+      introduced. (4) LightGBM absence → LogisticRegression-only path with
+      explicit degraded flag; no crashes, no silent fusion.
+    proves: "Two predictors remain semantically separate; earned surface loads/derives models matching their feature schema; both probabilities + disagreement exposed; degradation explicit; deterministic gates untouched; deployment decision documented."
+    does_not_prove: "Runtime predictions improve local harness outcomes (no local settlement claims)."
+    preregistration:
+      required: true
+      artifact: ".agents/reports/v006-runtime-integration.yaml"
+      claim: "Only experiment-earned components wired as an additional advisory surface; existing consumer semantics byte-compatible; defaults unchanged unless T05 evidence justifies; deployment model explicitly chosen."
+      falsifier: "Any averaged/silent fusion; any consumer-semantics change to fit the dual-model diagram; any bypass of deterministic ranking or policy gates; any silent new production-artifact architecture."
+      known_confounds: ["artifact/schema drift", "feature-family conflation (full vs prefix)"]
+      confirmation_condition: "Tests prove exposure, degradation, no-averaging, schema match; main agent verifies."
+    hot_context:
+      - "godspeed_nav/ml.py provider registry + gating patterns"
+      - "tests/test_computation.py, tests/test_cli_hooks_mcp.py"
+    steps:
+      - "Write runtime-contract doc from repository evidence."
+      - "Implement earned surface + tests (schema match, degradation, no-averaging, advisory notes, separate-from-existing-predictor)."
+      - "Record deployment-model decision + rationale."
+    gate:
+      - "uv run pytest tests/test_computation.py tests/test_cli_hooks_mcp.py -q"
+    teeth:
+      - attack: "Remove lightgbm from environment."
+        expected: "LogisticRegression-only predictions with degraded=true; no crash; no silent mean."
+      - attack: "Corrupt a model artifact's feature schema (if static artifacts chosen)."
+        expected: "Load refuses with explicit error."
+    redesign_trigger: "If evidence supports no runtime change, T07 becomes a documented no-op with the deployment decision recorded (do not integrate for architecture's sake)."
+    evidence: ".agents/reports/v006-runtime-contract.md + .agents/reports/v006-runtime-integration.yaml + code/tests"
+    done_when:
+      - "Contract documented; earned components (if any) integrated with tests; deployment decision explicit; fallback verified."
+
+  T08:
+    title: "Final verification, docs, memory, report"
+    initial_status: blocked
+    depends_on: ["T06", "T07"]
+    proof_level: P2
+    confirmation: main_agent
+    settles: ["REQ-V006-REPORT", "REQ-V006-BASELINE"]
+    changes: "Global gates; CURRENT_STATE.md, .agents/current_status.yml, OBSERVED_DEBT/LESSONS updates; final report .agents/reports/godspeed-agent-v006-final.md with: reconstructed H baseline (clearly historical); exact datasets + revisions + licensing statuses; streamed/accepted/rejected counts; exact feature sets (three families, H/P distinction verbatim); lightgbm version + config; evidence table (H | A-full | C-full | P-A | P-B | P-C | P-D with prediction point/representation/estimator/corpus/purpose); experiment results; per-cut prefix results; cross-dataset results; calibration; disagreement analysis; leakage audit; tests executed; independent verifier findings; runtime contract + posture; unresolved issues; H/A/P comparable language throughout (amendments 8, 12); one settlement classification; smallest justified next move."
+    proves: "Repository green; docs match reality; H intact; report claims do not exceed evidence."
+    does_not_prove: "Anything beyond the corpus and implemented surfaces."
+    steps:
+      - "Run GATE_UNIT, GATE_FULL, GATE_VALIDATE, GATE_DOCS."
+      - "git-verify H run dir untouched."
+      - "Write final report; update memory; refresh plan status."
+    gate:
+      - "uv run pytest -q"
+      - "uv run pytest tests/test_docs_alignment.py -q"
+    teeth:
+      - attack: "Diff v005 run directory against git HEAD."
+        expected: "No modifications."
+    redesign_trigger: "Any global-gate failure blocks settlement until corrected."
+    evidence: ".agents/reports/godspeed-agent-v006-final.md"
+    done_when:
+      - "All gates green; report complete with classification; memory refreshed."
+
+# -----------------------------------------------------------------------------
+# FINAL ACCEPTANCE
+# -----------------------------------------------------------------------------
+final_acceptance:
+  experiments:
+    - "Two separated families executed per frozen preregistration: {H reference, A-full, C-full} + {P-A, P-B, P-C, P-D} (+ optional v006-full)."
+    - "Parent-balanced weights honored; per-cut and per-source/macro metrics present; no unqualified pooled headline."
+    - "Identity variants + LODO + calibration verdict present."
+    - "No tuning against final test; preregistration frozen before final training."
+  integrity:
+    - "No target leakage, no future-prefix leakage, no parent across splits (test-proven)."
+    - "Labels trace to source outcome fields only."
+    - "H artifacts byte-identical to git HEAD; corpus trajectory content uncommitted; licensing statuses recorded."
+  runtime:
+    - "Operational contract documented; only earned components integrated as an additional advisory surface; degradation + no-averaging test-proven; deployment decision explicit; deterministic authority untouched."
+  reporting:
+    - "Final report contains every mandated section, the amendment-12 evidence table, H/A/P-separated language, exactly one classification, and the smallest justified next move."
+    - "Docs/status updated; all global gates exit 0."
+
+# -----------------------------------------------------------------------------
+# GUARDRAILS
+# -----------------------------------------------------------------------------
+guardrails:
+  - "H run artifacts immutable; historical behavior documented, never rewritten."
+  - "Ingestion corrections are forward-looking; they define A, never H (amendment 8)."
+  - "No external API dependencies beyond existing HF streaming; no global installs; dependency changes via pyproject/uv."
+  - "Model outputs advisory; never bypass deterministic ranking, policy gates, settlement evidence rules."
+  - "No trajectory-content commits from ambiguous-license sources; corpora local-only (amendment 9)."
+  - "No invented labels/features; exclusions + omissions documented."
+  - "LightGBM absent at runtime → LogisticRegression path with explicit degraded state."
+  - "Existing runtime predictor semantics unchanged (amendment 6)."
+
+# -----------------------------------------------------------------------------
+# ROLLBACK / FALLBACK
+# -----------------------------------------------------------------------------
+rollback:
+  strategy: >-
+    All v006 work is additive (new modules, config, run dirs, one optional
+    dependency, two minimal adapter corrections). Rollback = git revert of v006
+    commits; H remains the historical record and the operative fallback at
+    every point. Removing lightgbm degrades runtime per REQ-V006-RUNTIME.
+
+# -----------------------------------------------------------------------------
+# TRACEABILITY
+# -----------------------------------------------------------------------------
+traceability:
+  spec_requirement_count: 14
+  mapped_requirement_count: 14
+  unmapped_requirements: []
+  unknown_plan_requirement_ids: []
+  requirement_to_tasks:
+    REQ-V006-BASELINE: ["T00", "T08"]
+    REQ-V006-DUAL: ["T02", "T07"]
+    REQ-V006-FEATURES: ["T01", "T04"]
+    REQ-V006-DATA: ["T01", "T03"]
+    REQ-V006-LICENSING: ["T01", "T03"]
+    REQ-V006-PREFIX: ["T04"]
+    REQ-V006-BALANCE: ["T04", "T05"]
+    REQ-V006-SOURCEBALANCE: ["T05"]
+    REQ-V006-EXPERIMENTS: ["T05"]
+    REQ-V006-EVALUATION: ["T05"]
+    REQ-V006-PREREG: ["T05"]
+    REQ-V006-RUNTIME: ["T07"]
+    REQ-V006-EVIDENCE: ["T06"]
+    REQ-V006-REPORT: ["T08"]
+  coverage_rule: "Every REQ-V006-* requirement maps to at least one task; P3 tasks carry independent confirmation."

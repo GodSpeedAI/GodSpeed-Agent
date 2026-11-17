@@ -1,5 +1,10 @@
 # Live Harness Trace Capture Report
 
+> **Superseded by F-08.** GodSpeed-Agent no longer owns software hooks or live
+> trace capture; SWE_SEED is the proven owner. Synthetic calibration traces
+> live in `scripts/settlement_datasets/synthetic_trace_fixture.py`. This report
+> is retained as historical provenance only.
+
 ## Background
 
 The targeted reflection evidence run (`reflection-target-001`) evaluated whether `require_reflection_before_continuing_after_second_unresolved_error` could fire early enough to matter on the AgentTrove settlement surface.

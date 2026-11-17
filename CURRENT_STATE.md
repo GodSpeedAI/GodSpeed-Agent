@@ -5,21 +5,29 @@ horizon, not the full developmental memory. Read `state/current_state.json`
 first when a machine-readable view is better, and query the JSONL ledgers only
 when the active desired direction requires deeper history.
 
+## Stage 9 (CEP-0008 world_ref migration, 2026-10-05)
+
+Branch `migration/cep-world-ref`: work requests and loop events pin `world_ref`; inbound evidence is checked against the deployment pin; agent-local settlement is labelled. 1,131 tests pass / 2 skipped (see `docs/subsystems/agentic-loop-adapters.md` section 9). Not merged.
+
 ## Last Settlement
 
-- Date: 2026-06-03
-- Summary: hf-calibration-003 with held-out sklearn evaluation and multi-dataset
-  coverage. 1943 usable settlements from 2 datasets (swegym_openhands: 1892,
-  agenttrove: 51). sklearn ROC AUC: 0.7481, balanced accuracy: 0.7015,
-  F1: 0.4038. Beats success-rate baseline (0.1799) but not majority-class
-  baseline (0.8509). class_weight=balanced helped minority detection.
-  Leakage audit clean. 0 adapter errors across both datasets.
-- Settlement evidence: 536 tests pass, hf-calibration-003 exits 0.
-- Proof classification: `external-proxy-calibration`.
-- Known limit: class imbalance (15% success) still limits sklearn. nebius_swe_agent
-  not yet exercised (target reached from first 2 datasets). Next move: add richer
-  pre-outcome features (tool diversity, action sequence patterns, error recovery
-  signals) and exercise nebius_swe_agent.
+- Date: 2026-09-15
+- Summary: v008 R1-transfer plan settled (SETTLED - transferable R1 recovery
+  representation earned). Leave-one-source-out with LR only, after semantic
+  normalizations N1-N3 (nebius ai-role marker gating; swegym tool_calls
+  rendering; nebius issue-text reclassification) and a frozen preregistration.
+  Held-out macro ROC-AUC: minimal 0.6013, full v007 representation 0.6602,
+  transfer subset 0.6370 - T earned the preregistered gate (+0.0357, 3/3
+  environments, no degradation, identity-free), and the full corrected
+  representation transfers best. Secondary T>F refuted. Independent audit:
+  CONFIRM; three byte-identical executions. No runtime deployment.
+- Settlement evidence: 1,099 tests pass / 2 skipped; validate pass; final
+  report `.agents/reports/godspeed-agent-v008-r1-transfer-final.md`.
+- Proof classification: `external-proxy-calibration` (no local claims).
+- Known limit: swe_smith base-rate calibration failure (label-prior shift);
+  F4 selection effect; 3-environment evidence only.
+  Next move: N4 swe_smith dual-format ingestion fix + calibration re-check;
+  SWE-rebench fourth environment as follow-up.
 
 ## Active Desired Direction
 

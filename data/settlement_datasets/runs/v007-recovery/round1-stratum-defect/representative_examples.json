@@ -1,0 +1,240 @@
+{
+  "R0": {
+    "point": "R0",
+    "arm": "R_LGBM",
+    "schema": "v007_r0",
+    "identity_variant": "with_identity",
+    "top_features": [
+      "dataset_id",
+      "action_observation_ratio",
+      "observation_novelty_rate",
+      "tool_switch_rate",
+      "n_events"
+    ],
+    "highest_confidence_correct": [
+      {
+        "episode_id": "nebius_swe_agent:nose-devs__nose2-472:245d4ddefc:ep4",
+        "parent_id": "nebius_swe_agent:nose-devs__nose2-472:245d4ddefc",
+        "split_group": "nebius_swe_agent:nose-devs__nose2",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.019867417359590366,
+        "correct": true,
+        "confidence": 0.9801325826404096,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "action_observation_ratio": 0.973,
+          "observation_novelty_rate": 0.2432,
+          "tool_switch_rate": 0.0,
+          "n_events": 73.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:alvinwan__TexSoup-140:98bb42daf7:ep6",
+        "parent_id": "nebius_swe_agent:alvinwan__TexSoup-140:98bb42daf7",
+        "split_group": "nebius_swe_agent:alvinwan__TexSoup",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.020102560484839837,
+        "correct": true,
+        "confidence": 0.9798974395151602,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "action_observation_ratio": 0.973,
+          "observation_novelty_rate": 0.5135000000000001,
+          "tool_switch_rate": 0.0,
+          "n_events": 73.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:alvinwan__TexSoup-140:16239488ee:ep7",
+        "parent_id": "nebius_swe_agent:alvinwan__TexSoup-140:16239488ee",
+        "split_group": "nebius_swe_agent:alvinwan__TexSoup",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.020307608953518533,
+        "correct": true,
+        "confidence": 0.9796923910464814,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "action_observation_ratio": 0.975,
+          "observation_novelty_rate": 0.6000000000000001,
+          "tool_switch_rate": 0.0,
+          "n_events": 79.0
+        }
+      }
+    ],
+    "highest_confidence_incorrect": [
+      {
+        "episode_id": "nebius_swe_agent:serge-sans-paille__gast-59:74a0bc9c7d:ep3",
+        "parent_id": "nebius_swe_agent:serge-sans-paille__gast-59:74a0bc9c7d",
+        "split_group": "nebius_swe_agent:serge-sans-paille__gast",
+        "dataset": "nebius_swe_agent",
+        "y": 1,
+        "p_raw": 0.026721548626943863,
+        "correct": false,
+        "confidence": 0.9732784513730561,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "action_observation_ratio": 0.9655,
+          "observation_novelty_rate": 0.6897,
+          "tool_switch_rate": 0.0,
+          "n_events": 57.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:ppizarror__pygame-menu-357:499a199fa5:ep9",
+        "parent_id": "nebius_swe_agent:ppizarror__pygame-menu-357:499a199fa5",
+        "split_group": "nebius_swe_agent:ppizarror__pygame-menu",
+        "dataset": "nebius_swe_agent",
+        "y": 1,
+        "p_raw": 0.027275501642269325,
+        "correct": false,
+        "confidence": 0.9727244983577307,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "action_observation_ratio": 0.9677,
+          "observation_novelty_rate": 0.8065,
+          "tool_switch_rate": 0.0,
+          "n_events": 61.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:wireservice__csvkit-800:cca71e6814:ep8",
+        "parent_id": "nebius_swe_agent:wireservice__csvkit-800:cca71e6814",
+        "split_group": "nebius_swe_agent:wireservice__csvkit",
+        "dataset": "nebius_swe_agent",
+        "y": 1,
+        "p_raw": 0.028348901964077116,
+        "correct": false,
+        "confidence": 0.9716510980359229,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "action_observation_ratio": 0.975,
+          "observation_novelty_rate": 0.775,
+          "tool_switch_rate": 0.0,
+          "n_events": 79.0
+        }
+      }
+    ]
+  },
+  "R1": {
+    "point": "R1",
+    "arm": "R_LGBM",
+    "schema": "v007_r1",
+    "identity_variant": "with_identity",
+    "top_features": [
+      "dataset_id",
+      "observation_novelty_rate",
+      "avg_actions_per_step",
+      "tool_switch_rate",
+      "action_observation_ratio"
+    ],
+    "highest_confidence_correct": [
+      {
+        "episode_id": "nebius_swe_agent:alvinwan__TexSoup-140:b5087e365c:ep7",
+        "parent_id": "nebius_swe_agent:alvinwan__TexSoup-140:b5087e365c",
+        "split_group": "nebius_swe_agent:alvinwan__TexSoup",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.003709692457638288,
+        "correct": true,
+        "confidence": 0.9962903075423617,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "observation_novelty_rate": 0.8333,
+          "avg_actions_per_step": 0.4948,
+          "tool_switch_rate": 0.0,
+          "action_observation_ratio": 1.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:serge-sans-paille__gast-59:b3a46acc77:ep2",
+        "parent_id": "nebius_swe_agent:serge-sans-paille__gast-59:b3a46acc77",
+        "split_group": "nebius_swe_agent:serge-sans-paille__gast",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.004628372992082763,
+        "correct": true,
+        "confidence": 0.9953716270079173,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "observation_novelty_rate": 1.0,
+          "avg_actions_per_step": 0.4872,
+          "tool_switch_rate": 0.0,
+          "action_observation_ratio": 1.0
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:sanic-org__sanic-2837:7ddb0851c8:ep3",
+        "parent_id": "nebius_swe_agent:sanic-org__sanic-2837:7ddb0851c8",
+        "split_group": "nebius_swe_agent:sanic-org__sanic",
+        "dataset": "nebius_swe_agent",
+        "y": 0,
+        "p_raw": 0.004670955958862084,
+        "correct": true,
+        "confidence": 0.9953290440411379,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "observation_novelty_rate": 1.0,
+          "avg_actions_per_step": 0.4902,
+          "tool_switch_rate": 0.0,
+          "action_observation_ratio": 1.0
+        }
+      }
+    ],
+    "highest_confidence_incorrect": [
+      {
+        "episode_id": "nebius_swe_agent:serge-sans-paille__gast-59:74a0bc9c7d:ep3",
+        "parent_id": "nebius_swe_agent:serge-sans-paille__gast-59:74a0bc9c7d",
+        "split_group": "nebius_swe_agent:serge-sans-paille__gast",
+        "dataset": "nebius_swe_agent",
+        "y": 1,
+        "p_raw": 0.030022150426055036,
+        "correct": false,
+        "confidence": 0.969977849573945,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "observation_novelty_rate": 0.7000000000000001,
+          "avg_actions_per_step": 0.4833,
+          "tool_switch_rate": 0.0,
+          "action_observation_ratio": 0.9667
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:ithaka__apiron-8:5efce7d36f:ep17",
+        "parent_id": "nebius_swe_agent:ithaka__apiron-8:5efce7d36f",
+        "split_group": "nebius_swe_agent:ithaka__apiron",
+        "dataset": "nebius_swe_agent",
+        "y": 1,
+        "p_raw": 0.03606300993054244,
+        "correct": false,
+        "confidence": 0.9639369900694575,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "observation_novelty_rate": 0.6905,
+          "avg_actions_per_step": 0.48810000000000003,
+          "tool_switch_rate": 0.0,
+          "action_observation_ratio": 0.9762000000000001
+        }
+      },
+      {
+        "episode_id": "nebius_swe_agent:ithaka__apiron-8:5efce7d36f:ep18",
+        "parent_id": "nebius_swe_agent:ithaka__apiron-8:5efce7d36f",
+        "split_group": "nebius_swe_agent:ithaka__apiron",
+        "dataset": "nebius_swe_agent",
+        "y": 1,
+        "p_raw": 0.03606300993054244,
+        "correct": false,
+        "confidence": 0.9639369900694575,
+        "feature_values": {
+          "dataset_id": 2.0,
+          "observation_novelty_rate": 0.6591,
+          "avg_actions_per_step": 0.48860000000000003,
+          "tool_switch_rate": 0.0,
+          "action_observation_ratio": 0.9773000000000001
+        }
+      }
+    ]
+  }
+}

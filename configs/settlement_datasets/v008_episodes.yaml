@@ -1,0 +1,135 @@
+# v008 failure-episode construction configuration.
+#
+# Builds the recovery-prediction episode table over the v008 trajectory
+# corpus (new paths only; v006/v007 artifacts untouched).  Every definitional
+# parameter below is FROZEN by the v007 coordinator
+# decisions (.agents/plans/godspeed-agent-v007-recovery-prediction.yaml,
+# section coordinator_decisions) and is implemented in
+# scripts/settlement_datasets/v007_recovery.py.  This file is the
+# machine-readable record of the frozen choices; do not edit parameters
+# without an explicit re-decision (never silently).
+#
+# Source scope (T01c): three sources over the v007 corpus
+# (configs/settlement_datasets/v007_corpus.yaml).  nebius_swe_agent was
+# rebuilt after the adapter fix for the live ``text`` field, so it now
+# carries is_error events and is expected to contribute episodes (the
+# earlier v006-verified zero-episode expectation is obsolete); swe_smith
+# is newly admitted.  The builder still handles a zero-episode source
+# gracefully and records the zero in the manifest.
+#
+# V1c normalization rerun: sources now point at the v008 normalized
+# corpus (data/settlement_datasets/corpora/v008-trajectories/, built by
+# configs/settlement_datasets/v008_corpus.yaml with the N1/N2/N3
+# adapter normalizations from .agents/reports/v008-adapter-semantics.md
+# section 6: swegym tool-call rendering, kind-based marker gating,
+# nebius leading-issue reclassification).  Every episode-definition
+# parameter below is UNCHANGED (byte-identical to
+# configs/settlement_datasets/v007_episodes.yaml); only the corpus
+# paths, output paths, and ids move to v008 so the v007c episode table
+# (data/settlement_datasets/corpora/v007c-episodes/) stays intact.
+#
+# Identity model (v007): parent identity is inherited from the corpus
+# (group_key = "<dataset>:<instance_or_task_id>").  The v007 PARTITION
+# key is coarser: split_group = "<dataset>:<repository>", where
+# <repository> is parsed from the instance_id by stripping a trailing
+# "-<version>" tag (SWE-bench id convention, e.g.
+# "django__django-4.2" -> "django__django").  All episodes of one
+# split_group MUST land in one partition (enforced with
+# assert_grouped_by_split_group, which delegates to the v006
+# assert_grouped guard).
+# NOTE (T01c): swe_smith instance ids follow the SWE-smith convention
+# "<repo>.<commit>.<fault>.<suffix>" (no trailing "-<version>" tag), so
+# its split_group granularity is the fault-injected task instance, not
+# the repository -- finer than the SWE-bench convention, which is the
+# safe direction for the partition guard (groups never straddle).
+
+episodes_id: v008-episodes
+source_corpus: v008-trajectories
+settlement_classification: external-proxy-settlement
+
+sources:
+  - name: swegym_openhands
+    corpus_path: data/settlement_datasets/corpora/v008-trajectories/swegym_openhands.jsonl
+    revision_sha: baf3a4e4bff514d48ddc08a93a2ade5c126212c7
+    license_status: "ambiguous (dataset card declares no license; companion repo SWE-Gym/SWE-Gym is Apache-2.0)"
+
+  - name: nebius_swe_agent
+    corpus_path: data/settlement_datasets/corpora/v008-trajectories/nebius_swe_agent.jsonl
+    revision_sha: 68195a1450865274106246d0d0296a1d6807b88e
+    license_status: "identified: cc-by-4.0"
+
+  - name: swe_smith
+    corpus_path: data/settlement_datasets/corpora/v008-trajectories/swe_smith.jsonl
+    revision_sha: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
+    license_status: "identified: mit"
+
+# FROZEN episode definition (implemented in v007_recovery.py; the
+# entries below mirror the coordinator decisions verbatim in intent).
+episode_definition:
+  opening: >-
+    An episode opens at the first error observation of a MAXIMAL RUN of
+    error observations (intervening actions allowed -- they belong to
+    the failed state) that is preceded by at least one non-error
+    observation. Leading context errors never open episodes.
+  eligibility: >-
+    The opening error observation must not be the trajectory's final
+    event; such candidates are excluded and counted under
+    exclusion_buckets.
+  failure_event: "e = event index (list position) of the opening error observation"
+  r0_cut: "r0_k = e + 1 (window closes at the failure event, inclusive)"
+  r1_cut: >-
+    r1_k closes at the first ACTION event with index > e (the recovery
+    attempt, inclusive) PLUS any consecutive observation events that
+    directly follow that action before the next action event (the
+    attempt's immediate result). If no post-failure action exists,
+    r1_k is null (R0-only episode). If the action is the final event,
+    R1 closes at the action.
+  escape: >-
+    LABEL-SIDE ONLY: the first observation event with index > e and
+    is_error=False. Never a feature.
+  target: >-
+    recovery_success = 1 iff (parent_label == 1) AND (an escape exists).
+    Otherwise 0. Escape without settlement is not recovery; a changed
+    tool or another action alone is not recovery.
+
+audit_buckets:
+  - escape_with_settlement        # escape AND parent_label == 1 (recovery_success = 1)
+  - escape_no_settlement          # escape AND parent_label == 0
+  - no_escape_with_settlement     # no escape AND parent_label == 1 (trailing-error edge)
+  - no_escape_no_settlement       # no escape AND parent_label == 0
+
+exclusion_buckets:
+  - failure_is_final_event
+
+feature_schemas:
+  r0:
+    version: v007_r0@1
+    composition: >-
+      v006 family (29) recomputed at k=r0_k + v005_prefix_compatible
+      family (10, dataset_id carried as identity) + 5 episode-positional
+      causal additions.
+  r1:
+    version: v007_r1@1
+    composition: "R0 features recomputed at k=r1_k + 10 R1 additions."
+  ablation:
+    version: v005_minimal_recovery@1
+    composition: >-
+      7-feature minimal v005-compatible recovery set, pulled from the
+      v006/v005 extractor outputs (error_count_so_far == v006
+      error_count) plus consecutive_error_observations.
+
+weights: >-
+  Build-time weight_base = 1/(all episodes of the parent). The FROZEN
+  training weight 1/(number of TRAINING episodes of that parent) is
+  computed at partition time by parent_balanced_training_weights on the
+  single-point training frame (R0 and R1 never pooled).
+
+splits: >-
+  GroupShuffleSplit test_size=0.20 random_state=42 over split_group;
+  model selection GroupKFold(5) on train groups only; test touched once
+  (T03). Enforced with assert_grouped_by_split_group.
+
+output:
+  root: data/settlement_datasets/corpora/v008-episodes
+  episode_table: data/settlement_datasets/corpora/v008-episodes/episodes.jsonl
+  manifest: data/settlement_datasets/corpora/v008-episodes/manifest.json

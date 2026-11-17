@@ -1,0 +1,174 @@
+{
+  "plan": "godspeed-agent-v006-dual-model",
+  "task": "T05",
+  "preregistration": {
+    "path": "/home/sprime01/projects/godspeed_agent/.agents/reports/v006-experiment-preregistration.yaml",
+    "sha256": "2cce2a537fb1c8a4bce4ff8f31d2c8401aebfc5dd061430307eb8b341e0b6cd9",
+    "mtime_epoch": 1789503670.4555264,
+    "mtime_iso": "2026-09-15T20:21:10Z"
+  },
+  "created_at": "2026-09-15T20:42:50Z",
+  "runtime_seconds": 165.3051414489746,
+  "python": "3.14.6",
+  "platform": "Linux-6.18.35.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "versions": {
+    "scikit-learn": "1.8.0",
+    "lightgbm": "4.7.0",
+    "pandas": "3.0.3",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1"
+  },
+  "seeds": {
+    "random_state": 42,
+    "test_size": 0.2,
+    "cv_splits": 5
+  },
+  "determinism_flags": {
+    "lgbm": [
+      "deterministic=True",
+      "force_col_wise=True",
+      "n_jobs=1"
+    ]
+  },
+  "schema_versions": {
+    "v005_full_semantics": "v005_full_semantics@1",
+    "v005_prefix_compatible": "v005_prefix_compatible@1",
+    "v006": "v006@1"
+  },
+  "corpus": {
+    "root": "/home/sprime01/projects/godspeed_agent/data/settlement_datasets/corpora/v006-trajectories",
+    "sha256_by_file": {
+      "/home/sprime01/projects/godspeed_agent/data/settlement_datasets/corpora/v006-trajectories/swegym_openhands.jsonl": "b2bd19d636c3ff2b70ca04177f60235b1b1f79174376db4a5df3d95f94a21501",
+      "/home/sprime01/projects/godspeed_agent/data/settlement_datasets/corpora/v006-trajectories/nebius_swe_agent.jsonl": "963a2731968f18dcf3a2d447759420098bdccedd6e7079df461eb33cb62665d8"
+    },
+    "parents": 1799,
+    "datasets": {
+      "swegym_openhands": {
+        "revision_sha": "baf3a4e4bff514d48ddc08a93a2ade5c126212c7",
+        "license": "ambiguous-recorded",
+        "parents": 1574
+      },
+      "nebius_swe_agent": {
+        "revision_sha": "68195a1450865274106246d0d0296a1d6807b88e",
+        "license": "cc-by-4.0",
+        "parents": 225
+      },
+      "agenttrove": "rejected (label columns null at live revision; agent self-report only)"
+    },
+    "known_structural_confound": "nebius_swe_agent has ZERO is_error events; error/recovery features are swegym-supported only; after_first_failure/after_first_recovery cuts contain swegym parents only"
+  },
+  "split": {
+    "strategy": "frozen stratified group-level holdout (see preregistration)",
+    "train_groups": 533,
+    "test_groups": 134,
+    "train_parents": 1444,
+    "test_parents": 355,
+    "train_positives": 243,
+    "test_positives": 56
+  },
+  "per_cut_sizes": {
+    "early": {
+      "train_parents": 1444,
+      "train_rows": 1444,
+      "train_positives": 243,
+      "test_parents": 355,
+      "test_rows": 355,
+      "test_positives": 56
+    },
+    "pct25": {
+      "train_parents": 1386,
+      "train_rows": 1386,
+      "train_positives": 241,
+      "test_parents": 344,
+      "test_rows": 344,
+      "test_positives": 56
+    },
+    "pct50": {
+      "train_parents": 1442,
+      "train_rows": 1442,
+      "train_positives": 243,
+      "test_parents": 355,
+      "test_rows": 355,
+      "test_positives": 56
+    },
+    "after_first_failure": {
+      "train_parents": 981,
+      "train_rows": 981,
+      "train_positives": 142,
+      "test_parents": 244,
+      "test_rows": 244,
+      "test_positives": 32
+    },
+    "after_first_recovery": {
+      "train_parents": 929,
+      "train_rows": 929,
+      "train_positives": 158,
+      "test_parents": 234,
+      "test_rows": 234,
+      "test_positives": 34
+    },
+    "pre_terminal": {
+      "train_parents": 1443,
+      "train_rows": 1443,
+      "train_positives": 243,
+      "test_parents": 355,
+      "test_rows": 355,
+      "test_positives": 56
+    }
+  },
+  "per_cut_yields": {
+    "early": {
+      "parents_with_cut": 1799,
+      "rows": 1799,
+      "by_dataset": {
+        "nebius_swe_agent": 225,
+        "swegym_openhands": 1574
+      }
+    },
+    "pct25": {
+      "parents_with_cut": 1730,
+      "rows": 1730,
+      "by_dataset": {
+        "nebius_swe_agent": 221,
+        "swegym_openhands": 1509
+      }
+    },
+    "pct50": {
+      "parents_with_cut": 1797,
+      "rows": 1797,
+      "by_dataset": {
+        "nebius_swe_agent": 223,
+        "swegym_openhands": 1574
+      }
+    },
+    "after_first_failure": {
+      "parents_with_cut": 1225,
+      "rows": 1225,
+      "by_dataset": {
+        "swegym_openhands": 1225
+      }
+    },
+    "after_first_recovery": {
+      "parents_with_cut": 1163,
+      "rows": 1163,
+      "by_dataset": {
+        "swegym_openhands": 1163
+      }
+    },
+    "pre_terminal": {
+      "parents_with_cut": 1798,
+      "rows": 1798,
+      "by_dataset": {
+        "nebius_swe_agent": 224,
+        "swegym_openhands": 1574
+      }
+    }
+  },
+  "weighting": {
+    "primary": "natural mixture (no source weights)",
+    "within_cut_parent_balance": "structural (one row per parent per cut)",
+    "weight_base_use": "carried; no pooled training exists in the frozen matrix",
+    "sensitivity": "w_s = 0.5 / n_train_parents_of_source (per cut train partition)"
+  },
+  "artifacts_written_at": "2026-09-15T20:42:50Z"
+}

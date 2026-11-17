@@ -1,0 +1,68 @@
+{
+  "early": {
+    "n_test_parents": 355,
+    "mean": 0.2848777504826318,
+    "median": 0.29210504842342866,
+    "p90": 0.3662529269197605,
+    "frac_gt_0.2": 0.8338028169014085,
+    "corr_pearson_disagreement_vs_err_logit": 0.6113052460847881,
+    "corr_pearson_disagreement_vs_err_lgbm": 0.22564586181118637,
+    "corr_spearman_disagreement_vs_err_logit": 0.62477828550455,
+    "corr_spearman_disagreement_vs_err_lgbm": 0.47133658419555674
+  },
+  "pct25": {
+    "n_test_parents": 344,
+    "mean": 0.28533835272245395,
+    "median": 0.2839468620848017,
+    "p90": 0.4182165297513869,
+    "frac_gt_0.2": 0.7965116279069767,
+    "corr_pearson_disagreement_vs_err_logit": 0.47831322581091285,
+    "corr_pearson_disagreement_vs_err_lgbm": 0.08691865043372586,
+    "corr_spearman_disagreement_vs_err_logit": 0.45604561147912964,
+    "corr_spearman_disagreement_vs_err_lgbm": 0.10625634517301188
+  },
+  "pct50": {
+    "n_test_parents": 355,
+    "mean": 0.28531624616992146,
+    "median": 0.2900277645002211,
+    "p90": 0.44801761127220646,
+    "frac_gt_0.2": 0.7323943661971831,
+    "corr_pearson_disagreement_vs_err_logit": 0.3118038448948422,
+    "corr_pearson_disagreement_vs_err_lgbm": -0.05875907474369369,
+    "corr_spearman_disagreement_vs_err_logit": 0.32611370677137386,
+    "corr_spearman_disagreement_vs_err_lgbm": -0.13450354633551215
+  },
+  "after_first_failure": {
+    "n_test_parents": 244,
+    "mean": 0.34188931436215075,
+    "median": 0.354614601561018,
+    "p90": 0.3766527813792502,
+    "frac_gt_0.2": 0.9221311475409836,
+    "corr_pearson_disagreement_vs_err_logit": 0.4928830475143026,
+    "corr_pearson_disagreement_vs_err_lgbm": -0.12796807914640518,
+    "corr_spearman_disagreement_vs_err_logit": 0.516052759664922,
+    "corr_spearman_disagreement_vs_err_lgbm": -0.03037941455310849
+  },
+  "after_first_recovery": {
+    "n_test_parents": 234,
+    "mean": 0.3190586902945601,
+    "median": 0.32260760261262533,
+    "p90": 0.3634501860888436,
+    "frac_gt_0.2": 0.9615384615384616,
+    "corr_pearson_disagreement_vs_err_logit": 0.14626747220036324,
+    "corr_pearson_disagreement_vs_err_lgbm": -0.19203236269857718,
+    "corr_spearman_disagreement_vs_err_logit": 0.13758667049460901,
+    "corr_spearman_disagreement_vs_err_lgbm": -0.40526909563819
+  },
+  "pre_terminal": {
+    "n_test_parents": 355,
+    "mean": 0.27655763570241704,
+    "median": 0.2811123608954248,
+    "p90": 0.46118081597555205,
+    "frac_gt_0.2": 0.7070422535211267,
+    "corr_pearson_disagreement_vs_err_logit": 0.5340273853188375,
+    "corr_pearson_disagreement_vs_err_lgbm": 0.18793686721550143,
+    "corr_spearman_disagreement_vs_err_logit": 0.5696968721584483,
+    "corr_spearman_disagreement_vs_err_lgbm": 0.2554784246055556
+  }
+}

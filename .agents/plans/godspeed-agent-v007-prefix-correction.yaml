@@ -1,0 +1,146 @@
+# =============================================================================
+# PLAN: godspeed-agent-v007-prefix-correction (scoped correction slice)
+# =============================================================================
+schema: agent.development_plan
+schema_version: "1.0"
+
+metadata:
+  id: "godspeed-agent-v007-prefix-correction"
+  title: "Remove the v005-prefix context-total leak; rerun the frozen v007 recovery matrix cleanly"
+  status: "settled"
+  version: "1.0.0"
+  created: "2026-09-15"
+
+  purpose: >-
+    Correct exactly one known defect — full-trajectory context counts leaking
+    into prefix-time features — rerun the already-frozen v007 experiment
+    unchanged, independently verify, and report whether the v007 conclusions
+    survive. Nothing else changes.
+
+# -----------------------------------------------------------------------------
+# SOURCE AUTHORITY + SCOPE LOCK
+# -----------------------------------------------------------------------------
+source:
+  spec:
+    intended_repository_path: null
+    artifact_name: "operator-v007-correction-brief"
+    spec_id: "REQ-V007C"
+    spec_version: "2026-09-15"
+    authority: normative
+  supporting_sources:
+    - path: ".agents/reports/v007-critique.md"
+      role: "MAJOR-1 finding (verified first-hand by main agent)"
+    - path: ".agents/reports/v007-experiment-preregistration.yaml"
+      role: "frozen experiment (Amendment-1 split in force; Amendment-2 appended by this slice)"
+    - path: ".agents/reports/godspeed-agent-v007-recovery-final.md"
+      role: "round-2 reference values (comparison references, not targets)"
+
+scope_lock:
+  unchanged: [recovery_success definition, R0 definition, R1 definition, admitted datasets, grouping rules, parent weighting, source handling, model families, LGBM search bounds, LR specification, calibration trigger/method, primary metric, secondary metrics, acceptance thresholds, Amendment-1 split strata]
+  correction_only:
+    - "v005-prefix family elapsed: prefix-scoped context count replaces full-trajectory n_context_events"
+    - "narrowly necessary infrastructure: per-event cumulative context counts in the corpus (requires additive corpus-schema field + deterministic rebuild at the SAME dataset revisions)"
+  revision_rule: "Dataset revisions must remain baf3a4e4… / 68195a14… / 08e109b4…; any forced upstream revision change is surfaced before results are interpreted, with the previous corpus preserved."
+  v006_rule: "v006 artifacts/reports immutable; the shared feature code change is forward-looking. v005_full_semantics (verbatim counts block) is NOT touched — full-trajectory v005 semantics are preserved where full-trajectory evaluation is intended."
+
+# -----------------------------------------------------------------------------
+# THE BUG AND THE FIX (exact)
+# -----------------------------------------------------------------------------
+bug:
+  location: "scripts/settlement_datasets/v006_features.py v005_prefix_compatible_features: elapsed_raw = parent['n_context_events'] + k"
+  mechanism: "n_context_events counts context messages over the WHOLE trajectory; corpus events store no context positions, so prefix-time elapsed (and the 5 features derived from it) can include future context for sources with interleaved context (swe_smith 1271/3708 parents, up to 98 future messages; swegym 918/1574, up to 20; nebius 0/4554 — clean)."
+  affected_features: [payment_predicted_total, payment_error, horizon_delta, risk_estimate, avg_actions_per_step]
+fix:
+  corpus: >-
+    Additive schema field: each event gains "ctx" = number of context messages
+    (roles outside the adapter's action/observation role sets) with message
+    index strictly below the event's turn_index. Builders obtain context
+    positions from the raw row at stream time via a new adapter method
+    context_positions(raw) (implemented for swegym_openhands, nebius_swe_agent,
+    swe_smith; base-class default returns [] and the corpus manifest records
+    context_scoped per source). Parents otherwise byte-identical (deterministic
+    rebuild, same revisions). Corrected corpus written to a NEW directory
+    (v007c-trajectories) preserving v007-trajectories; manifest + summary note
+    the derivation. Trailing-context diagnostics recorded per parent.
+  features: >-
+    v005_prefix_compatible_features: elapsed_raw = events[k-1]["ctx"] + k
+    (prefix-scoped; exact). The five derived features inherit the fix; all
+    other features untouched. Module docstring corrected (the "context-first"
+    assumption language is replaced by the ctx-scoped rule). Schema tag
+    v005_prefix_compatible bumped @1 -> @2 (semantics changed; names/count
+    unchanged). v005_full_semantics@1 and v006@1 unchanged.
+  prereg: "Amendment-2 appended: documents the correction as the audit-mandated narrowly-necessary schema change; every frozen cell listed in scope_lock reaffirmed."
+
+# -----------------------------------------------------------------------------
+# TASKS
+# -----------------------------------------------------------------------------
+dependency_graph:
+  edges: [["C1", "C2"], ["C2", "C3"], ["C3", "C4"]]
+  critical_path: ["C1", "C2", "C3", "C4"]
+
+tasks:
+  C1:
+    title: "Implement prefix-scoped context accounting + regression tests"
+    proof_level: P2
+    confirmation: builder_with_main_agent_review
+    changes: "Corpus builder ctx field + 3 adapter context_positions methods + feature fix + schema tag bump + docstring correction + regression tests."
+    proves: >
+      (1) Appending future context/events after a cut leaves that prefix's
+      features bit-identical; (2) the five affected features equal values
+      computed from a raw row TRUNCATED at the cut (true causal test, all
+      three datasets, interleaved-context fixtures); (3) unaffected features
+      stable; (4) v005_full_semantics equivalence tests unchanged and green;
+      (5) v006 purity/grouping suites stay green.
+    gate: "uv run pytest tests/test_v007_features.py tests/test_v007_episodes.py tests/test_v006_features.py tests/test_settlement_datasets.py -q"
+    teeth:
+      - attack: "Re-introduce n_context_events into the prefix elapsed."
+        expected: "Truncation-regression test fails."
+    done_when: "All gates green; corrected corpus rebuilt (same revisions; swegym/nebius parents otherwise identical to v007-trajectories) and episode table regenerated (indices/labels unchanged)."
+  C2:
+    title: "Prereg Amendment-2 + freeze before rerun"
+    proof_level: P3
+    confirmation: main_agent
+    changes: "Amendment-2 block appended (correction record + reaffirmed frozen cells). Committed before the rerun."
+    done_when: "Committed; sha recorded by the round-3 manifest."
+  C3:
+    title: "Rerun the frozen matrix (round 3 post-correction)"
+    proof_level: P3
+    confirmation: independent_adversarial
+    changes: "Preserve round-2 artifacts (round2-pre-correction/); rerun run_v007_experiments on the corrected episode table; regenerate all artifacts + deltas-vs-round-2 table (exact deltas for every headline cell; attention cell R1 v007-LR minus minimal-LR, previous +0.0129)."
+    gate: "uv run pytest tests/test_v007_experiments.py -q; determinism double-run"
+    done_when: "All frozen cells present; deltas reported; no frozen rule altered."
+  C4:
+    title: "Independent critic + main-agent verification + corrected final report"
+    proof_level: P3
+    confirmation: independent_adversarial
+    changes: "Fresh critic verifies from code + raw predictions: leak removed (truncation + min-i reasoning), mutation invariance, split integrity (Amendment-1 strata), calibration isolation, weights, metrics, verdicts, deltas vs round 2. Main agent independently verifies. Final report .agents/reports/godspeed-agent-v007-corrected-final.md ending with exactly one of the three classifications + smallest next move. No runtime deployment."
+    done_when: "Critic verdict recorded; main agent concurs; report complete; gates green (full suite, docs, validate); committed."
+
+final_acceptance:
+  - "Leak removed and regression-tested (truncation test on all three datasets)."
+  - "Frozen experiment rerun unchanged except the corrected feature inputs; round-2 artifacts preserved."
+  - "Critic CONFIRM + main-agent independent verification."
+  - "Corrected final report with exact deltas and one classification."
+  - "All global gates green; no runtime changes."
+
+guardrails:
+  - "No new hypotheses; answer only the six primary questions."
+  - "No runtime deployment."
+  - "v005_full_semantics and v006 artifacts untouched."
+  - "Same dataset revisions; forced changes surfaced before interpretation."
+
+# -----------------------------------------------------------------------------
+# EXECUTION RECORD (settled 2026-09-15)
+# -----------------------------------------------------------------------------
+execution_record:
+  C1: {status: settled, evidence: "aabf707 — ctx field + feature fix + regression tests; parity verified by main agent"}
+  C2: {status: settled, evidence: "fc3f984 — Amendment-2 committed before rerun"}
+  C3: {status: settled, note: >-
+      First rerun attempt by the delegated agent was INVALID (runner default
+      consumed the old v007-episodes table; results byte-identical to round 2).
+      Detected by main-agent provenance check; re-executed directly with
+      --episode-table v007c-episodes --corpus-root v007c-trajectories, twice,
+      byte-identical (md5 b06ee86b). Runner gained a provenance-only
+      --corpus-root flag (frozen design untouched).}
+  C4: {status: settled, evidence: ".agents/reports/v007c-critique.md — VERDICT CONFIRM, zero blockers/majors; critic independently re-ran the matrix byte-identically"}
+  final: {classification: "SETTLED — corrected evidence confirms the existing v007 conclusion", report: ".agents/reports/godspeed-agent-v007-corrected-final.md"}

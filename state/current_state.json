@@ -8,15 +8,15 @@
   },
   "last_settlement": {
     "artifacts": [
-      ".claude/skills",
-      ".github/skills",
-      "state/current_state.json",
-      "state/milestones.jsonl"
+      "data/settlement_datasets/runs/hf-calibration-005-features/calibration/calibration_frame.csv",
+      "data/settlement_datasets/runs/hf-calibration-005-features/docs/hf-calibration-005-features-report.md",
+      "scripts/settlement_datasets/run_calibration_pipeline.py",
+      "godspeed_nav/ml.py"
     ],
-    "summary": "Linked the repository skills directory into `.claude/skills` for Claude pickup and `.github/skills` for GitHub Copilot agent skills pickup.",
+    "summary": "Completed hf-calibration-005-features pipeline run with 5 richer pre-outcome features across 3 external datasets (6497 usable settlements). Sklearn LogisticRegression achieved ROC-AUC 0.8266 and F1 0.5208 with zero leakage. Increased max_iter to 1000 for solver convergence.",
     "verification": [
-      "find -L .claude/skills .github/skills -maxdepth 2 -name SKILL.md -print",
-      "test -f .claude/skills/horizon-review/SKILL.md && test -f .github/skills/horizon-review/SKILL.md"
+      "uv run python -m scripts.settlement_datasets.run_calibration_pipeline --manifest configs/settlement_datasets/calibration_sources.yaml --run-id hf-calibration-005-features --output-run-dir data/settlement_datasets/runs/hf-calibration-005-features --target-usable-settlements 5000 --min-confidence 0.65 --provider sklearn --sampling-strategy natural --min-datasets 3",
+      "uv run pytest tests/test_calibration_pipeline.py tests/test_computation.py -q"
     ]
   },
   "lessons_learned": [
@@ -36,5 +36,5 @@
     "No known gaps in the local-first enterprise hardening scope described by docs/plans/2026-05-29-enterprise-hardening.md.",
     "Future productization may add packaged distribution, hosted multi-user services, or richer ML once settlement history exists."
   ],
-  "updated_at": "2026-06-03"
+  "updated_at": "2026-09-09"
 }

@@ -216,6 +216,44 @@ def test_cli_search_developmental_memory_returns_ruvector_matches(tmp_path: Path
     assert output["results"][0]["record_id"] == "set-1"
 
 
+def test_cli_record_settlement_rejects_non_executable_affordance(tmp_path: Path):
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "godspeed_nav.cli",
+            "record-settlement",
+            "--workspace-root",
+            str(workspace_root),
+            "--storage-root",
+            str(storage_root),
+            "--affordance-id",
+            "never-reviewed",
+            "--before",
+            '{"x": 0}',
+            "--after",
+            '{"x": 1}',
+            "--payment",
+            '{"time": 1}',
+            "--evidence",
+            '["none"]',
+            "--horizon-delta",
+            "1",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 2
+    error = json.loads(result.stderr)
+    assert error["code"] == "settlement_requires_executable_affordance"
+    assert "message" in error
+
+
 def test_cli_runtime_workflow_commands_write_connected_ledgers(tmp_path: Path):
     workspace_root = make_workspace(tmp_path)
     storage_root = workspace_root / ".godspeed-harness"
@@ -556,246 +594,6 @@ def test_mcp_wrapper_rejects_storage_root_outside_workspace(tmp_path: Path):
         )
 
 
-def test_pre_tool_hook_warns_on_unaffordable_action(tmp_path: Path):
-    workspace_root = make_workspace(tmp_path)
-    storage_root = workspace_root / ".godspeed-harness"
-    output = run_python(
-        ["hooks/pre_tool_use.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "tool_name": "Edit",
-            "costs": {"time": 9, "risk": 9},
-            "capacities": {"time": 1, "risk": 1},
-            "block_unaffordable_actions": False,
-        },
-    )
-
-    assert output["decision"] == "warn"
-    assert output["payment"]["spendability"] == "unaffordable"
-    assert output["policy_decision"]["code"] == "unaffordable_action"
-    assert {"repetition", "critique"} <= set(output["backlogs"])
-    assert '"tool_name": "Edit"' in (
-        storage_root / "ledgers" / "tool_payments.jsonl"
-    ).read_text(encoding="utf-8")
-
-
-def test_pre_tool_hook_rejects_storage_root_outside_workspace(tmp_path: Path):
-    workspace_root = make_workspace(tmp_path)
-    (workspace_root / "HARNESS.md").write_text("---\n---\n", encoding="utf-8")
-
-    result = subprocess.run(
-        [sys.executable, "hooks/pre_tool_use.py"],
-        input=json.dumps(
-            {
-                "workspace_root": str(workspace_root),
-                "storage_root": str(tmp_path / "outside-root"),
-                "tool_name": "Edit",
-            }
-        ),
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-    )
-
-    assert result.returncode != 0
-    assert "invalid_storage_root" in result.stderr
-
-
-def test_user_prompt_hook_records_direction_hypothesis(tmp_path: Path):
-    workspace_root = make_workspace(tmp_path)
-    storage_root = workspace_root / ".godspeed-harness"
-
-    output = run_python(
-        ["hooks/user_prompt_submit.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "prompt": "Build the next affordable path to enterprise readiness.",
-        },
-    )
-
-    assert output["outcome_as_terminal"] is False
-    assert output["needs_horizon_review"] is True
-    assert output["desired_direction_hypothesis"]["statement"] == (
-        "Build the next affordable path to enterprise readiness."
-    )
-    assert "cognitive-surfaces" in output["next_public_surfaces"]
-    assert (storage_root / "ledgers" / "prompt_submissions.jsonl").exists()
-
-
-def test_post_tool_hook_records_settlement_event(tmp_path: Path):
-    workspace_root = make_workspace(tmp_path)
-    storage_root = workspace_root / ".godspeed-harness"
-
-    output = run_python(
-        ["hooks/post_tool_use.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "affordance_id": "aff-1",
-            "before_state": {"tests": 0},
-            "after_state": {"tests": 1},
-            "payment_actual": {"time": 1},
-            "evidence": ["pytest passed"],
-            "horizon_delta": 2,
-            "observed_consequence": "tests now cover the slice",
-            "unexpected_consequence": ["new docs task created"],
-            "payment_variance": {"time": 0},
-            "capability_delta": {"testing": "active"},
-            "identity_delta": {"quality_posture": "stricter"},
-            "future_constraints_created": ["keep tests green"],
-            "future_affordances_created": ["add report coverage"],
-        },
-    )
-
-    assert output["recorded"] is True
-    ledger = storage_root / "ledgers" / "settlements.jsonl"
-    assert '"affordance_id": "aff-1"' in ledger.read_text(encoding="utf-8")
-    assert output["snapshot"]["counts"]["settlements"] == 1
-    assert output["snapshot"]["counts"]["trajectories"] == 1
-    assert output["report"]["settlement_quality"]["success"] == 1
-    assert output["settlement"]["identity_delta"] == {"quality_posture": "stricter"}
-    assert output["settlement"]["future_affordances_created"] == ["add report coverage"]
-
-
-def test_post_tool_hook_surfaces_metabolization_candidate_after_repeated_success(tmp_path: Path):
-    workspace_root = make_workspace(tmp_path)
-    storage_root = workspace_root / ".godspeed-harness"
-
-    final_output = None
-    for index, key in enumerate(["hook_a", "hook_b", "hook_c"], start=1):
-        final_output = run_python(
-            ["hooks/post_tool_use.py"],
-            {
-                "workspace_root": str(workspace_root),
-                "storage_root": str(storage_root),
-                "affordance_id": "aff-repeat",
-                "before_state": {key: 0},
-                "after_state": {key: 1},
-                "payment_actual": {"time": 1},
-                "evidence": [f"hook pass {index}"],
-                "horizon_delta": 2,
-            },
-        )
-
-    assert final_output is not None
-    assert final_output["report"]["metabolization"]["candidate_count"] == 1
-    assert final_output["report"]["metabolization"]["candidate_ids"] == ["aff-repeat"]
-
-
-def test_stop_hook_consolidates_developmental_memory(tmp_path: Path):
-    workspace_root = make_workspace(tmp_path)
-    storage_root = workspace_root / ".godspeed-harness"
-
-    run_python(
-        ["hooks/post_tool_use.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "affordance_id": "stop-loop",
-            "before_state": {"runtime": 0},
-            "after_state": {"runtime": 1},
-            "payment_actual": {"time": 1},
-            "evidence": ["runtime updated"],
-            "horizon_delta": 2,
-            "observed_consequence": "runtime state advanced",
-            "identity_delta": {"runtime_identity": "more_coherent"},
-            "future_affordances_created": ["schedule repetition"],
-        },
-    )
-
-    output = run_python(
-        ["hooks/stop.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "previous_theta": 0,
-            "previous_radius": 1,
-            "settlement_score": 0.8,
-            "horizon_delta": 2,
-        },
-    )
-
-    assert output["recorded"] is True
-    assert (storage_root / "ledgers" / "trajectories.jsonl").exists()
-    assert "report" in output
-    assert output["latest_settlement"]["observed_consequence"] == "runtime state advanced"
-    assert output["latest_settlement"]["future_affordances_created"] == ["schedule repetition"]
-
-
-def test_hooks_trace_one_session_through_prompt_payment_settlement_and_stop(tmp_path: Path):
-    workspace_root = make_workspace(tmp_path)
-    storage_root = workspace_root / ".godspeed-harness"
-    session_id = "sess-123"
-
-    prompt_output = run_python(
-        ["hooks/user_prompt_submit.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "prompt": "Build the next affordable documentation loop.",
-            "session_id": session_id,
-        },
-    )
-    desired_direction_id = prompt_output["desired_direction_hypothesis"]["id"]
-
-    pre_output = run_python(
-        ["hooks/pre_tool_use.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "tool_name": "Edit",
-            "session_id": session_id,
-            "desired_direction_id": desired_direction_id,
-            "costs": {"time": 1},
-            "capacities": {"time": 5},
-        },
-    )
-    post_output = run_python(
-        ["hooks/post_tool_use.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "tool_name": "Edit",
-            "affordance_id": "edit-docs",
-            "session_id": session_id,
-            "desired_direction_id": desired_direction_id,
-            "before_state": {"docs": 0},
-            "after_state": {"docs": 1},
-            "payment_actual": {"time": 1},
-            "evidence": ["docs changed"],
-            "horizon_delta": 1,
-        },
-    )
-    stop_output = run_python(
-        ["hooks/stop.py"],
-        {
-            "workspace_root": str(workspace_root),
-            "storage_root": str(storage_root),
-            "session_id": session_id,
-            "desired_direction_id": desired_direction_id,
-            "previous_theta": 0,
-            "previous_radius": 1,
-            "settlement_score": 0.9,
-            "horizon_delta": 1,
-        },
-    )
-
-    assert prompt_output["session_context"]["session_id"] == session_id
-    assert pre_output["session_context"]["desired_direction_id"] == desired_direction_id
-    assert post_output["session_context"]["session_id"] == session_id
-    assert stop_output["session_context"]["desired_direction_id"] == desired_direction_id
-
-    tool_payments = (storage_root / "ledgers" / "tool_payments.jsonl").read_text(encoding="utf-8")
-    post_events = (storage_root / "ledgers" / "post_tool_use_events.jsonl").read_text(encoding="utf-8")
-    stop_events = (storage_root / "ledgers" / "stop_events.jsonl").read_text(encoding="utf-8")
-
-    assert f'"session_id": "{session_id}"' in tool_payments
-    assert f'"desired_direction_id": "{desired_direction_id}"' in post_events
-    assert f'"session_id": "{session_id}"' in stop_events
-
-
 def test_mcp_wrapper_registers_required_tools():
     from mcp.cybernetic_nav_server.server import TOOL_NAMES
 
@@ -1051,6 +849,31 @@ def test_mcp_wrapper_dispatches_connected_runtime_workflow(tmp_path: Path):
     assert review["next_affordance"]["id"] == "mcp-loop"
     assert settlement["status"] == "success"
     assert settlement["trajectory"]["new_radius"] > 1
+
+
+def test_mcp_record_settlement_propagates_typed_rejection(tmp_path: Path):
+    from godspeed_nav.schemas import DomainRuleError
+    from mcp.cybernetic_nav_server.server import call_tool
+
+    workspace_root = make_workspace(tmp_path)
+    storage_root = workspace_root / ".godspeed-harness"
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        call_tool(
+            "cybernetic_nav.record_settlement",
+            {
+                "workspace_root": str(workspace_root),
+                "storage_root": str(storage_root),
+                "affordance_id": "never-reviewed",
+                "before_state": {"x": 0},
+                "after_state": {"x": 1},
+                "payment_actual": {"time": 1},
+                "evidence": ["none"],
+                "horizon_delta": 1,
+            },
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
 
 
 def test_mcp_wrapper_dispatches_enterprise_validation(tmp_path: Path):

@@ -14,7 +14,10 @@ from scripts.settlement_datasets.live_shadow_policy_eval import (
     normalize_live_run_event,
     validate_live_run_event,
 )
-from godspeed_nav.trace_capture import read_trace_events, read_run_summary
+from scripts.settlement_datasets.synthetic_trace_fixture import (
+    read_trace_events,
+    read_run_summary,
+)
 
 
 EVALUATOR_POLICY_MAP = {

@@ -24,6 +24,7 @@ RUN uv sync --no-dev --no-install-project
 
 # Source.
 COPY godspeed_nav/ godspeed_nav/
+COPY agentic_capability_loop/ agentic_capability_loop/
 COPY bin/ bin/
 COPY mcp/ mcp/
 COPY README.md HARNESS.md LICENSE ./

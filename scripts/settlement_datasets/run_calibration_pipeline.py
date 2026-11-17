@@ -350,7 +350,7 @@ def _evaluate_sklearn_held_out(
 
     clf = LogisticRegression(
         class_weight="balanced",
-        max_iter=200,
+        max_iter=1000,
         solver="lbfgs",
         random_state=42,
     )

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Install and verify Godspeed Agent Harness as a local-first Claude Code plugin and Python runtime.
+Install and verify the GodSpeed-Agent settlement and navigation runtime as a local-first Claude Code plugin and Python runtime.
 
 ## Prerequisites
 

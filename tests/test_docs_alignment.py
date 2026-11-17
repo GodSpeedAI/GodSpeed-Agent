@@ -268,3 +268,24 @@ def test_docs_include_calibration_pipeline_smoke_command():
     assert "--target-usable-settlements 500" in framework
     assert "external-proxy-settlement" in framework
     assert "model_provider: sklearn" in config
+
+
+def test_docs_pin_settlement_and_ownership_boundary():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    harness = (ROOT / "HARNESS.md").read_text(encoding="utf-8")
+    ledger_ref = (ROOT / "docs" / "references" / "ledger-reference.md").read_text(
+        encoding="utf-8"
+    )
+
+    # Executable-affordance requirement is documented.
+    assert "settlement_requires_executable_affordance" in readme
+    assert "settlement_requires_executable_affordance" in harness
+    # Provisional execution-evidence classification is documented.
+    assert "provisional" in harness.lower()
+    assert "incomplete_execution_evidence" in harness
+    # Ownership boundary: SWE_SEED owns hooks/traces.
+    assert "SWE_SEED" in readme
+    assert "F-08" in harness
+    # Canonical learning-proposal storage and outbound outbox are documented.
+    assert "agentic_learning_proposals" in ledger_ref
+    assert "agentic_outbound_events" in ledger_ref

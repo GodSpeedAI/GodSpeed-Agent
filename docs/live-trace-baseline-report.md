@@ -1,5 +1,10 @@
 # Live Trace Baseline Collection Report
 
+> **Superseded by F-08.** GodSpeed-Agent no longer owns live trace capture;
+> SWE_SEED is the proven owner. Calibration traces are now explicit synthetic
+> fixtures (`scripts/settlement_datasets/synthetic_trace_fixture.py`). This
+> report and its generated artifacts are retained as historical provenance only.
+
 ## Scope
 
 - Pass: Live Trace Baseline Collection

@@ -23,11 +23,22 @@ def test_validate_enterprise_readiness_checks_core_surfaces(tmp_path: Path):
         "cognitive_os_conformance",
         "runtime_workflow",
         "agents",
-        "hooks",
         "mcp",
         "reports",
         "cognitive_runtime_bridge",
+        "settlement_invariants",
+        "adapter_authority",
+        "developmental_truth_storage",
+        "distribution_configuration",
     } <= set(result["checks"])
+
+    for invariant in (
+        "settlement_invariants",
+        "adapter_authority",
+        "developmental_truth_storage",
+        "distribution_configuration",
+    ):
+        assert result["checks"][invariant]["status"] == "pass", invariant
 
     assert (
         result["checks"]["mcp"]["details"]["snapshot_counts"]["desired_directions"] >= 0
@@ -94,3 +105,73 @@ def test_validate_enterprise_readiness_does_not_mutate_target_storage(tmp_path: 
     assert store.read("horizon_reviews") == []
     assert store.read("settlements") == []
     assert store.read("trajectories") == []
+
+
+# ---------------------------------------------------------------------------
+# Task 5: invariant-check teeth (each fails under a controlled regression)
+# ---------------------------------------------------------------------------
+
+
+def test_settlement_invariants_fails_when_unknown_can_settle(tmp_path: Path):
+    from godspeed_nav.runtime import NavigationRuntime
+    from godspeed_nav.validation import _probe_settlement_invariants
+
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    # Controlled regression: seed the probe's "unknown" id as executable so the
+    # runtime no longer rejects it.
+    runtime.store.append(
+        "affordances",
+        {
+            "id": "invariant-unknown-affordance",
+            "direction_id": "dir-1",
+            "current_status": "affordance",
+            "pathway": "seeded",
+        },
+    )
+
+    result = _probe_settlement_invariants(runtime)
+
+    assert result["status"] == "fail"
+    assert result["details"]["rejected_unknown_affordance"] is False
+
+
+def test_adapter_authority_fails_when_evidence_not_provisional(tmp_path: Path):
+    from godspeed_nav.runtime import NavigationRuntime
+    from godspeed_nav.validation import _probe_adapter_authority
+
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    # No affordance seeded: ingestion rejects instead of classifying provisional.
+    result = _probe_adapter_authority(runtime, "missing-affordance")
+
+    assert result["status"] == "fail"
+    assert result["details"]["complete_evidence_provisional"] is False
+
+
+def test_developmental_truth_storage_fails_on_root_level_file(tmp_path: Path):
+    from godspeed_nav.validation import _probe_developmental_truth_storage
+
+    probe_root = tmp_path / "truth-probe"
+    probe_root.mkdir(parents=True, exist_ok=True)
+    # Controlled regression: a root-level truth file exists alongside canonical.
+    (probe_root / "agentic_learning_proposals.jsonl").write_text("{}\n", encoding="utf-8")
+
+    result = _probe_developmental_truth_storage(probe_root)
+
+    assert result["status"] == "fail"
+    assert result["details"]["no_root_level_truth_file"] is False
+
+
+def test_distribution_configuration_fails_when_adapter_omitted(tmp_path: Path):
+    from godspeed_nav.validation import _compute_distribution_configuration
+
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    (workspace / "pyproject.toml").write_text(
+        '[tool.hatch.build.targets.wheel]\npackages = ["godspeed_nav"]\n'
+        "[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        encoding="utf-8",
+    )
+
+    result = _compute_distribution_configuration(workspace)
+
+    assert result["status"] == "fail"

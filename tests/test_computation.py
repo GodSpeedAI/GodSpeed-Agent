@@ -1,5 +1,8 @@
 import math
+import tomllib
+from pathlib import Path
 
+import numpy as np
 import pytest
 
 from godspeed_nav.absorption import review_absorbability
@@ -559,3 +562,37 @@ def test_sklearn_provider_reports_clear_missing_dependency(monkeypatch):
             ],
             payment_estimates={"candidate-1": {"payment_burden": 1}},
         )
+
+
+# ---------------------------------------------------------------------------
+# Task 8: LightGBM optional dependency contract
+# ---------------------------------------------------------------------------
+
+
+def test_lightgbm_imports_and_classifier_exposes_fit_and_predict_proba():
+    lightgbm = pytest.importorskip("lightgbm")
+
+    assert hasattr(lightgbm.LGBMClassifier, "fit")
+    assert hasattr(lightgbm.LGBMClassifier, "predict_proba")
+
+
+def test_lightgbm_classifier_smoke_fit_and_predict_proba():
+    lightgbm = pytest.importorskip("lightgbm")
+    rng = np.random.default_rng(0)
+    features = rng.normal(size=(64, 3))
+    labels = (features[:, 0] + features[:, 1] > 0).astype(int)
+
+    model = lightgbm.LGBMClassifier(n_estimators=10, verbose=-1)
+    model.fit(features, labels)
+    probabilities = model.predict_proba(features)
+
+    assert probabilities.shape == (64, 2)
+
+
+def test_pyproject_ml_extra_declares_lightgbm():
+    config_path = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    config = tomllib.loads(config_path.read_text())
+
+    ml_extra = config["project"]["optional-dependencies"]["ml"]
+
+    assert any(requirement.startswith("lightgbm") for requirement in ml_extra)

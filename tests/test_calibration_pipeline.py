@@ -143,6 +143,25 @@ def test_nebius_swe_agent_adapter_registered_and_validates_fixture():
     assert all(adapter.validate_record(record) == [] for record in records)
 
 
+def test_swe_smith_adapter_registered_and_validates_fixture():
+    from scripts.settlement_datasets.registry import available_datasets, get_adapter
+
+    assert "swe_smith" in available_datasets()
+    adapter = get_adapter("swe_smith")
+    fixture = Path("tests/fixtures/settlement_datasets/swe_smith/sample.jsonl")
+
+    records = [
+        adapter.to_settlement_record(raw)
+        for raw in adapter.stream(input_path=str(fixture))
+    ]
+
+    assert len(records) == 3
+    assert records[0]["outcome"]["success"] is True
+    assert records[1]["outcome"]["success"] is False
+    assert records[1]["payment"]["error_count"] >= 1
+    assert all(adapter.validate_record(record) == [] for record in records)
+
+
 # ---------------------------------------------------------------------------
 # Task 5: Calibration pipeline orchestrator
 # ---------------------------------------------------------------------------

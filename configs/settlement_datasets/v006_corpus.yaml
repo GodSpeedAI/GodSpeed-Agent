@@ -1,0 +1,64 @@
+# v006 shared trajectory corpus configuration.
+#
+# Contemporary parent-trajectory corpus feeding all v006 experiments.
+# Sources, limits, and splits mirror configs/settlement_datasets/calibration_sources.yaml.
+# revision_sha pins the exact Hugging Face revision ingested;
+# license_status records the license evidence for each source.
+#
+# Usability rule (mirrors v005): a parent is accepted iff its terminal
+# label is defined (outcome.success is not None) AND outcome
+# confidence >= min_confidence.
+#
+# Identity model (see corpus_manifest.json identity_model for the
+# normative text): group_key = "<dataset>:<instance_or_task_id>" names
+# the shared task instance -- same-instance trajectories never straddle
+# partitions, so splits and prefix grouping key on group_key.
+# parent_id = group_key + ":" + run_discriminator names one distinct
+# parent run. Deduplication drops only TRUE duplicates (identical
+# full-trajectory content hash incl. label); distinct runs over one
+# instance always survive.
+#
+# REJECTED SOURCE (T03b, 2026-09-15): agenttrove
+#   open-thoughts/AgentTrove @ b395a4307a2bc9950a90dc899438f149e115fc60
+#   is excluded from v006 because the live revision provides no
+#   defensible terminal success label:
+#   - task_binary / judgment / verifier_output / result / ground_truth
+#     are null in every inspected row (8-row and 60-row live samples;
+#     the HF viewer lists them as null-typed columns).
+#   - The dataset card (README) documents `reward` and `task_id` as the
+#     outcome-bearing columns, but neither column exists in this
+#     revision (live schema drift; the conversation column is
+#     `conversations`, not `messages`).
+#   - Where the `judgment` column is populated in upstream source repos
+#     (e.g. "...with-gpt-4o-mini-judgments-correct"), it is an
+#     LLM-judge artifact, not a verified outcome.
+#   - The adapter's remaining label path is structural inference from
+#     the agent's self-reported task_complete marker (confidence 0.6),
+#     which is an agent self-report rather than a settlement and falls
+#     below the 0.65 gate (T03: 5000/5000 rows rejected).
+#   The agenttrove adapter itself is unchanged and still works on
+#   messages-style fixture/local input (tests rely on it).
+
+corpus_id: v006-trajectories
+min_confidence: 0.65
+settlement_classification: external-proxy-settlement
+usability_rule: >-
+  parent accepted iff terminal label defined (outcome.success is not None)
+  AND outcome confidence >= 0.65
+
+datasets:
+  - name: swegym_openhands
+    source_uri: SWE-Gym/OpenHands-Sampled-Trajectories
+    adapter: swegym_openhands
+    split: train.raw
+    max_rows: 3000
+    revision_sha: baf3a4e4bff514d48ddc08a93a2ade5c126212c7
+    license_status: "ambiguous (dataset card declares no license; companion repo SWE-Gym/SWE-Gym is Apache-2.0)"
+
+  - name: nebius_swe_agent
+    source_uri: nebius/SWE-agent-trajectories
+    adapter: nebius_swe_agent
+    split: train
+    max_rows: 5000
+    revision_sha: 68195a1450865274106246d0d0296a1d6807b88e
+    license_status: "identified: cc-by-4.0"

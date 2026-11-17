@@ -1,0 +1,185 @@
+# =============================================================================
+# PLAN: godspeed-agent-v008-r1-transfer
+# =============================================================================
+schema: agent.development_plan
+schema_version: "1.0"
+
+metadata:
+  id: "godspeed-agent-v008-r1-transfer"
+  title: "R1 recovery-signal transfer: does any recovery representation survive a change of agent environment?"
+  status: "settled"
+  version: "1.0.0"
+  created: "2026-09-15"
+
+  purpose: >-
+    Test directly whether the R1 recovery signal (prediction after the first
+    recovery attempt following a meaningful failure) transfers to an agent
+    environment the model never trained on, comparing the minimal baseline (M),
+    the full corrected v007 R1 representation (F), and a leakage-safely derived
+    transfer-oriented subset (T) under leave-one-source-out evaluation with
+    LogisticRegression only.
+
+# -----------------------------------------------------------------------------
+# SOURCE AUTHORITY
+# -----------------------------------------------------------------------------
+source:
+  spec:
+    intended_repository_path: null
+    artifact_name: "operator-v008-mission-brief"
+    spec_id: "REQ-V008"
+    spec_version: "2026-09-15"
+    authority: normative
+  supporting_sources:
+    - path: ".agents/reports/godspeed-agent-v007-corrected-final.md"
+      role: "corrected v007 evidence carried forward (immutable): R1 pooled LR 0.7649 (F) vs 0.7529 (M), delta +0.0120, direction 3/3; cross-source generalization the open weakness"
+    - path: ".agents/reports/v007-experiment-preregistration.yaml"
+      role: "frozen v007 design (Amendments 1-2) — R1/target/weighting definitions reused verbatim"
+    - path: "data/settlement_datasets/corpora/v007c-episodes/episodes.jsonl"
+      role: "corrected episode table (R1 rows only in v008)"
+
+# -----------------------------------------------------------------------------
+# NORMATIVE REQUIREMENTS
+# -----------------------------------------------------------------------------
+requirements:
+  REQ-V008-POINT: "R1 only, defined exactly as corrected v007 (failure → first recovery attempt → its immediate observable result). No R0, prefixes, pre-terminal, or full-trajectory arms."
+  REQ-V008-TARGET: "recovery_success exactly as corrected v007 (meaningful failure + observed escape + verified terminal settlement). No redefinition."
+  REQ-V008-SOURCES: "The three corrected-v007 sources at their exact revisions (baf3a4e4 / 68195a14 / 08e109b4) with all licensing/provenance constraints; a fourth source only under full admissibility (stable parents, real trajectories, genuine failure/recovery, defensible terminal outcome, compatible license, causally reconstructable R1) — never weak data for source count."
+  REQ-V008-ESTIMATOR: "LogisticRegression only in primary arms; LightGBM only as a narrow diagnostic if ever needed."
+  REQ-V008-REPRESENTATIONS: "M = v005_minimal_recovery sans dataset_id (6 features, primary; M+identity diagnostic only); F = corrected v007_r1@1 (54 features, already identity-free); T = transfer-oriented subset derived ONLY from the two training sources of each held-out cell, by a preregistered mechanical rule."
+  REQ-V008-ISOLATION: "For each held-out source: feature selection, preprocessing statistics, hyperparameter tuning, and calibration fitting use ONLY the two training sources. Held-out-source rows (features or labels) may influence nothing before the single test evaluation."
+  REQ-V008-IDENTITY: "Primary arms exclude dataset_id or any equivalent source identity; identity arms are diagnostics only."
+  REQ-V008-BALANCE: "Parent-balanced weighting preserved; primary weighting = parent-balanced × source-balanced (no source silently dominates training); parent-only weighting as preregistered sensitivity."
+  REQ-V008-STABILITY: "Cross-source feature stability quantified on development evidence BEFORE final fitting: per-source distributions, missingness, univariate direction, coefficient sign consistency, source-identifiability; features acting as environment identifiers are excluded from T; distribution difference alone is not removal grounds."
+  REQ-V008-SEMANTICS: "Adapter semantic audit: every T feature documented (source fields, transformation, meaning, missing/default); semantically divergent features normalized or excluded from T."
+  REQ-V008-PREREG: "Acceptance thresholds and full procedure frozen and committed before any held-out-source test result is examined."
+  REQ-V008-REPORT: "Final report with all mandated sections ending in exactly one of the four classifications + smallest next move. No runtime deployment."
+
+# -----------------------------------------------------------------------------
+# CURRENT-STATE FINDINGS (main agent recon, 2026-09-15)
+# -----------------------------------------------------------------------------
+current_state_findings:
+  carried_forward:
+    - "Corrected v007 (round 3): R1 pooled LR 0.7649 (F) vs 0.7529 (M), delta +0.0120, direction 3/3 sources; LGBM <= LR; audit clean; leak corrected."
+    - "R1 episode table: data/settlement_datasets/corpora/v007c-episodes/episodes.jsonl — 37,426 rows (nebius 17,642 / swe_smith 12,797 / swegym 6,987), 8,028 positives (21.4%); 56 feature columns (54 F-schema + consecutive_error_observations + n_parent_episodes extras); identity column dataset_id present for diagnostics."
+    - "Per-source episode positive rates: swegym 10.1%, nebius 14.1%, swe_smith 37.8% (gate-selection documented)."
+    - "v007 LOSO (weak, train-partition): swegym 0.469-0.589 (F) vs 0.599/0.601 (M) — the transfer question is genuinely open."
+  design_constraints:
+    - "With 3 sources, a GLOBAL T cannot avoid dev-contact with every source; therefore T is derived per held-out cell from that cell's two training sources (the only fully clean design). Selection-set overlap across the three cells is reported as descriptive transfer evidence."
+    - "M's 7th feature is dataset_id: primary M excludes it (6 features); M+identity is a diagnostic arm."
+    - "F's 54-feature schema is already identity-free."
+
+# -----------------------------------------------------------------------------
+# COORDINATOR DECISIONS (frozen here; prereg embeds verbatim)
+# -----------------------------------------------------------------------------
+coordinator_decisions:
+  units: "Corrected v007c R1 episodes only; parent grouping via split_group; parent-balanced weights = 1/(training episodes of that parent)."
+  representations:
+    M: "v005_minimal_recovery sans dataset_id: error_count, consecutive_error_observations, repeated_error_rate, error_rate, action_observation_ratio, tool_diversity_count (6)."
+    F: "v007_r1@1 complete (54)."
+    T: "Per held-out cell; rule below."
+  T_selection_rule:
+    candidates: "F's 54 features."
+    folds: "GroupKFold(5) over the training pool's split_groups."
+    per_fold_measurements:
+      - "weighted LR (spec below) coefficient sign on the 4 training folds"
+      - "univariate AUC(feature, label) computed SEPARATELY within each training source's fold-train rows; sign(AUC-0.5)"
+      - "per-source structural-absence check (all-constant/missing)"
+    gates_all_required:
+      - "univariate direction consistent across BOTH training sources in >= 80% of folds"
+      - "coefficient sign consistent in >= 80% of folds"
+      - "NOT an environment identifier: one-vs-rest source-identifiability AUC (fit on training pool, group-split) < 0.85"
+      - "present (non-constant) in both training sources"
+    size_rule: "If |T| < 5, fill to 5 by stability score (fold-consistency counts, ties by name); if |T| > 20, keep top 20 by min(direction consistency, coefficient consistency)."
+    reporting: "The three selected sets + pairwise overlap reported; per-feature gate table persisted."
+  weighting: "Primary: parent-balanced x source-balanced within the training pool (each training source equal total weight; parents equal within source). Sensitivity: parent-balanced only."
+  preprocessing: "StandardScaler fit on training-pool rows only (fitted statistics never touch the held-out source), applied to it. Motivated by cross-source scale differences; recorded per cell."
+  estimator: "LogisticRegression(class_weight='balanced', max_iter=1000, solver='lbfgs', random_state=42); C in {0.01, 0.1, 1.0} selected per (cell, representation) by GroupKFold(5) mean ROC-AUC inside the training pool. No LightGBM in primary arms."
+  calibration: "Isotonic on out-of-fold training-pool predictions iff selected model OOF ECE > 0.05; applied to the held-out source; never fit on it."
+  metrics: "Per held-out cell: ROC-AUC (primary), AP, Brier, ECE(10), balanced accuracy, precision/recall/F1 at fixed 0.5, confusion matrix. Macro = unweighted mean over the 3 cells. Pooled reported as secondary context only."
+  acceptance_frozen:
+    primary_T_earned: >-
+      ALL of: (i) macro(T) - macro(M) >= +0.02; (ii) T >= M in >= 2/3 held-out
+      cells; (iii) no cell with T < M - 0.03; (iv) parent-only-weighting
+      sensitivity preserves the direction of (i); (v) schema audit confirms no
+      source identity in any primary arm.
+    secondary_T_vs_F: "Reported; 'T improves transfer over F' iff macro(T) - macro(F) >= +0.02 and T >= F in >= 2/3 cells (lower pooled acceptable)."
+    descriptive: "F vs M macro (does the full representation transfer at all?); T-set overlap across cells."
+    failure_result: "If T earns nothing, report plainly and stop optimizing this hypothesis."
+  error_analysis: "Per held-out cell: 3 TP / 3 TN / 3 FP / 3 FN (T arm) with feature snippets; causes classified into: representation mismatch | feature scaling | adapter semantics | label semantics | environment policy differences | genuinely different recovery dynamics — never collapsed into one 'distribution shift' label."
+  fourth_source: "Bounded research pass; admit only under full admissibility incl. causally reconstructable R1; expectation: none; proceed with three if none."
+
+# -----------------------------------------------------------------------------
+# TASKS
+# -----------------------------------------------------------------------------
+dependency_graph:
+  edges: [["V1a", "V2"], ["V1b", "V2"], ["V2", "V3"], ["V3", "V4"], ["V4", "V5"]]
+  critical_path: ["V1a", "V2", "V3", "V4", "V5"]
+
+tasks:
+  V1a:
+    title: "Representation stability audit (development evidence)"
+    proof_level: P2
+    confirmation: builder_with_main_agent_review
+    changes: "No model fitting. Produces .agents/reports/v008-feature-stability.md: per-feature per-source distributions, missingness/structural absence, univariate direction per source, coefficient sign stability across group-aware folds (pooled dev), source-identifiability AUC per feature, correlation with dataset identity, scale differences (standardized), and semantic-equivalence notes feeding V1b. Flags environment-identifier candidates for the prereg gate."
+    proves: "The T gate thresholds (0.80/0.85) are sensible against measured stability; environment-identifier candidates are named with evidence."
+    does_not_prove: "That T transfers (V3). Not a license to touch acceptance thresholds after seeing LOSO results."
+    gate: "report exists; every claim numeric with table citations"
+  V1b:
+    title: "Adapter semantic audit + bounded fourth-source research"
+    proof_level: P1
+    confirmation: builder_with_main_agent_review
+    changes: "Produces .agents/reports/v008-adapter-semantics.md: for each F/T-candidate feature, per-source fields + transformation + meaning + missing/default; semantic-divergence verdicts (shared / normalize / exclude). Bounded fourth-source pass: quick HF screen for a clearly admissible outcome-labeled failure/recovery trajectory dataset; expect none; record outcome."
+    gate: "both reports exist with per-feature verdicts"
+  V2:
+    title: "Preregistration freeze"
+    proof_level: P3
+    confirmation: main_agent
+    changes: ".agents/reports/v008-transfer-preregistration.yaml embedding coordinator_decisions verbatim + V1 evidence (gate thresholds confirmed/adjusted BEFORE any LOSO test), committed before the final evaluation."
+    gate: "committed; sha recorded by round manifest"
+  V3:
+    title: "Transfer experiment implementation + execution"
+    proof_level: P3
+    confirmation: independent_adversarial
+    changes: "scripts/settlement_datasets/run_v008_transfer.py + tests/test_v008_transfer.py; artifacts under data/settlement_datasets/runs/v008-transfer/. For each held-out source: derive T by the frozen rule from A+B only; fit/tune/scale/calibrate on A+B only; test once on C. Arms M, F, T (+ diagnostics F+id, T+id; sensitivity weighting). Persist per-cell predictions, per-feature gate tables, selected T sets, error-analysis exemplars, acceptance verdicts."
+    gate: "uv run pytest tests/test_v008_transfer.py -q; determinism double-run"
+    teeth:
+      - attack: "Held-out-source rows entering selection/scaling/tuning/calibration."
+        expected: "Structural guards refuse (tested)."
+      - attack: "dataset_id in a primary arm."
+        expected: "Whitelist refuses (tested)."
+  V4:
+    title: "Independent critic"
+    proof_level: P3
+    confirmation: independent_adversarial
+    changes: ".agents/reports/v008-critique.md: source isolation, selection/scaling/calibration isolation, weighting, metrics, verdict fidelity, raw-prediction reproduction, T-rule audit."
+    gate: "verdict recorded; main agent independently verifies"
+  V5:
+    title: "Final report + memory + gates"
+    proof_level: P2
+    confirmation: main_agent
+    changes: ".agents/reports/godspeed-agent-v008-r1-transfer-final.md (all mandated sections, one classification, smallest next move); plan/current_status/CURRENT_STATE refreshed; global gates."
+    gate: "uv run pytest -q; validate; docs"
+
+final_acceptance:
+  - "LOSO executed exactly per frozen prereg; isolation test-proven."
+  - "Acceptance decided mechanically from frozen thresholds."
+  - "Critic CONFIRM + main-agent verification."
+  - "Report complete with one classification; no runtime deployment; gates green."
+
+guardrails:
+  - "No new hypotheses after results; failure reported plainly."
+  - "No runtime/controller wiring."
+  - "v006/v007 artifacts untouched; corrected ctx accounting preserved."
+  - "No weak fourth source; no tuning on held-out sources."
+
+# -----------------------------------------------------------------------------
+# EXECUTION RECORD (settled 2026-09-15)
+# -----------------------------------------------------------------------------
+execution_record:
+  V1a: {status: settled, evidence: ".agents/reports/v008-feature-stability.md (gate break: max-OVR 0.85)"}
+  V1b: {status: settled, evidence: ".agents/reports/v008-adapter-semantics.md + v008-fourth-source.md (19/21/14 semantics; SWE-rebench conditional-admit deferred)"}
+  V1c: {status: settled, evidence: "c5839ff — N1-N3 normalizations; nebius markers 0%->populated; swegym empty actions 48%->0%; leading runs 4554->183"}
+  V2: {status: settled, evidence: "b61edc3 — prereg frozen before held-out evaluation"}
+  V3: {status: settled, evidence: "runs/v008-transfer/ — macro M 0.6013 / F 0.6602 / T 0.6370; primary_T_earned TRUE; secondary T-vs-F FALSE; determinism x3 byte-identical"}
+  V4: {status: settled, evidence: ".agents/reports/v008-critique.md — VERDICT CONFIRM, zero blockers/majors; critic re-derived T gate + re-ran matrix byte-identically"}
+  V5: {status: settled, evidence: ".agents/reports/godspeed-agent-v008-r1-transfer-final.md — classification: SETTLED (transferable R1 recovery representation earned); scope: F transfers best, T>F refuted"}

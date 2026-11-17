@@ -1,6 +1,30 @@
 from pathlib import Path
+from typing import Any
+
+import pytest
 
 from godspeed_nav.runtime import NavigationRuntime
+from godspeed_nav.schemas import DomainRuleError
+
+_DERIVED_LEDGERS = (
+    "settlements",
+    "trajectories",
+    "capabilities",
+    "repetition_schedules",
+)
+
+
+def _seed_affordance(runtime: NavigationRuntime, affordance_id: str) -> None:
+    runtime.store.append(
+        "affordances",
+        {
+            "id": affordance_id,
+            "direction_id": "dir-seed",
+            "statement": "seeded executable affordance",
+            "pathway": "seeded",
+            "current_status": "affordance",
+        },
+    )
 
 
 def test_runtime_completes_connected_developmental_cycle(tmp_path: Path):
@@ -98,6 +122,7 @@ def test_runtime_marks_unaffordable_candidates_as_possibilities(tmp_path: Path):
 
 def test_runtime_promotes_repeated_success_into_metabolization_evidence(tmp_path: Path):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "repeatable-loop")
 
     for before_state, after_state in [
         ({"context_a": 0}, {"context_a": 1}),
@@ -280,6 +305,7 @@ def test_runtime_settlement_records_environment_identity_and_future_state_deltas
     tmp_path: Path,
 ):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "identity-loop")
 
     settlement = runtime.record_settlement(
         affordance_id="identity-loop",
@@ -312,6 +338,7 @@ def test_runtime_schedules_repetition_after_successful_non_metabolized_settlemen
     tmp_path: Path,
 ):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "repeat-loop")
 
     runtime.record_settlement(
         affordance_id="repeat-loop",
@@ -336,6 +363,7 @@ def test_runtime_escalates_repetition_schedule_when_circular_motion_repeats(
     tmp_path: Path,
 ):
     runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "repeat-loop")
     runtime.store.append("trajectories", {"new_theta": 0.0, "new_radius": 1.0})
     runtime.store.append("trajectories", {"new_theta": 7.0, "new_radius": 1.01})
 
@@ -423,3 +451,251 @@ def test_record_settlement_persists_cognitive_model_calibration_fields(tmp_path:
     assert calibration["settlement_success"] is True
     assert "payment_predicted" in calibration
     assert "horizon_delta" in calibration
+
+
+# ---------------------------------------------------------------------------
+# Task 1: Settlement requires an executable affordance
+# ---------------------------------------------------------------------------
+
+
+def _snapshot_derived(runtime: NavigationRuntime) -> dict[str, int]:
+    return {ledger: len(runtime.store.read(ledger)) for ledger in _DERIVED_LEDGERS}
+
+
+def test_record_settlement_rejects_unknown_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    before = _snapshot_derived(runtime)
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="does-not-exist",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+    assert _snapshot_derived(runtime) == before
+
+
+def test_record_settlement_rejects_potential_only_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "potentials",
+        {
+            "id": "potential-only",
+            "direction_id": "dir-1",
+            "current_status": "potential",
+            "missing_pathway_reason": "no_pathway",
+        },
+    )
+    before = _snapshot_derived(runtime)
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="potential-only",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+    assert _snapshot_derived(runtime) == before
+
+
+def test_record_settlement_rejects_possibility_only_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "possibilities",
+        {
+            "id": "possibility-only",
+            "direction_id": "dir-1",
+            "current_status": "possibility",
+            "candidate_pathway": "big migration",
+            "unknowns": ["payment_exceeds_capacity"],
+        },
+    )
+    before = _snapshot_derived(runtime)
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="possibility-only",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+    assert _snapshot_derived(runtime) == before
+
+
+def test_record_settlement_rejects_non_executable_status(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "affordances",
+        {
+            "id": "spent-affordance",
+            "direction_id": "dir-1",
+            "current_status": "settled",
+            "pathway": "done",
+        },
+    )
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.record_settlement(
+            affordance_id="spent-affordance",
+            before_state={"x": 0},
+            after_state={"x": 1},
+            payment_actual={"time": 1},
+            evidence=["none"],
+            horizon_delta=1,
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+
+
+def test_record_settlement_succeeds_for_seeded_executable_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "executable-aff")
+
+    settlement = runtime.record_settlement(
+        affordance_id="executable-aff",
+        before_state={"x": 0},
+        after_state={"x": 1},
+        payment_actual={"time": 1},
+        evidence=["passed"],
+        horizon_delta=1,
+    )
+
+    assert settlement["status"] == "success"
+    assert runtime.snapshot()["counts"]["settlements"] == 1
+    assert runtime.snapshot()["counts"]["capabilities"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Task 2: Execution evidence is provisional and capability-neutral
+# ---------------------------------------------------------------------------
+
+
+def _evidence_event(
+    event_id: str = "ev-1",
+    affordance_id: str = "exec-ev-aff",
+    expected: str = "ok",
+    observed: str = "ok",
+) -> dict[str, Any]:
+    return {
+        "schema_version": "v1",
+        "event_id": event_id,
+        "source_agent": "sea-forge",
+        "event_type": "EvidenceRecorded",
+        "occurred_at": "2026-07-01T00:00:00+00:00",
+        "idempotency_key": event_id,
+        "payload": {
+            "namespace": "agentic_capability_loop",
+            "affordance_id": affordance_id,
+            "work_request_id": "wr-1",
+            "proof_result_id": "pr-1",
+            "expected_result": expected,
+            "observed_result": observed,
+        },
+    }
+
+
+def test_ingest_execution_evidence_is_provisional_and_writes_no_settlement_state(
+    tmp_path: Path,
+):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+    before = _snapshot_derived(runtime)
+
+    cases = [
+        ("ev-match-1", "ok", "ok"),
+        ("ev-match-2", "ok", "ok"),
+        ("ev-differ-1", "ok", "different"),
+    ]
+    for event_id, expected, observed in cases:
+        result = runtime.ingest_execution_evidence(
+            _evidence_event(event_id=event_id, expected=expected, observed=observed)
+        )
+        assert result["classification"] == "provisional"
+
+    assert _snapshot_derived(runtime) == before
+    assert len(runtime.store.read("execution_evidence")) == 3
+    by_id = {r["evidence_event_id"]: r["proof_match"] for r in runtime.store.read("execution_evidence")}
+    assert by_id == {"ev-match-1": True, "ev-match-2": True, "ev-differ-1": False}
+
+
+def test_ingest_execution_evidence_rejects_incomplete(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.ingest_execution_evidence(
+            _evidence_event(observed="")
+        )
+
+    assert exc_info.value.code == "incomplete_execution_evidence"
+    assert len(runtime.store.read("execution_evidence")) == 0
+
+
+def test_ingest_execution_evidence_is_idempotent(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+
+    first = runtime.ingest_execution_evidence(_evidence_event())
+    second = runtime.ingest_execution_evidence(_evidence_event())
+
+    assert first["id"] == second["id"]
+    assert len(runtime.store.read("execution_evidence")) == 1
+
+
+def test_ingest_execution_evidence_requires_executable_affordance(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+
+    with pytest.raises(DomainRuleError) as exc_info:
+        runtime.ingest_execution_evidence(
+            _evidence_event(affordance_id="not-persisted")
+        )
+
+    assert exc_info.value.code == "settlement_requires_executable_affordance"
+
+
+def test_ingest_execution_evidence_rejects_non_executable_statuses(tmp_path: Path):
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    runtime.store.append(
+        "potentials",
+        {"id": "pot-only", "current_status": "potential", "missing_pathway_reason": "x"},
+    )
+    runtime.store.append(
+        "possibilities",
+        {"id": "poss-only", "current_status": "possibility", "candidate_pathway": "p", "unknowns": []},
+    )
+
+    for affordance_id in ("pot-only", "poss-only"):
+        with pytest.raises(DomainRuleError) as exc_info:
+            runtime.ingest_execution_evidence(_evidence_event(affordance_id=affordance_id))
+        assert exc_info.value.code == "settlement_requires_executable_affordance"
+
+
+def test_ingest_execution_evidence_concurrent_redelivery_is_idempotent(tmp_path: Path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    runtime = NavigationRuntime(tmp_path / ".godspeed-harness")
+    _seed_affordance(runtime, "exec-ev-aff")
+    event = _evidence_event(event_id="ev-concurrent")
+
+    def ingest(_index: int) -> dict[str, Any]:
+        return NavigationRuntime(runtime.store.root).ingest_execution_evidence(event)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(ingest, range(8)))
+
+    stored = NavigationRuntime(runtime.store.root).store.read("execution_evidence")
+    assert len(stored) == 1
+    assert all(r["id"] == stored[0]["id"] for r in results)

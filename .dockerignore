@@ -29,7 +29,6 @@ agents/
 policies/
 configs/
 schemas/
-agentic_capability_loop/
 hassos-addon-agent-memory-ledger/
 tools/ruvector/node_modules/
 
