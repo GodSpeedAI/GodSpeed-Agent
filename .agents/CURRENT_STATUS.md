@@ -82,3 +82,7 @@ new tests (`test_distribution`, `test_swe_seed_trace_ingestion`,
 - Package/plugin name kept as `godspeed-agent-harness` (not externally renamed);
   only descriptions changed to settlement/navigation runtime language.
 - Task 8 deletions were explicitly user-confirmed.
+
+## GodSpeed glossary consolidation (2026-11-20)
+
+Reconciled `GLOSSARY.md` against its owner contracts and source. Cross-checked glossary targets, source links and the eleven semantic scenarios. Runtime and proof behavior are outside this change.
