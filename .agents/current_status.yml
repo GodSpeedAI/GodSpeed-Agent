@@ -28,3 +28,4 @@ domain_vocabulary:
   status: "documentation validated"
   glossary: "GLOSSARY.md"
   verification: "Cross-checked glossary targets, source links and the eleven semantic scenarios."
+  review_followup: "Capability Promotion entry corrected to the enforced gate: variation only for metabolized (developmental_memory.py _evaluate_promotion)."
