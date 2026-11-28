@@ -22,3 +22,10 @@ decisions:
   - "T derived per held-out cell from training sources only (only clean design with 3 sources); selection overlap reported as descriptive transfer evidence."
   - "Primary weighting parent-balanced x source-balanced; StandardScaler training-pool-only."
   - "No runtime deployment; advisory signal established for transfer only."
+
+domain_vocabulary:
+  updated: "2026-11-20"
+  status: "documentation validated"
+  glossary: "GLOSSARY.md"
+  verification: "Cross-checked glossary targets, source links and the eleven semantic scenarios."
+  review_followup: "Capability Promotion entry corrected to the enforced gate: variation only for metabolized (developmental_memory.py _evaluate_promotion)."
